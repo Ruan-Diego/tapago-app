@@ -3,3 +3,19 @@
 .env.*
 !.env.example
 google-services.json
+
+# Dependências e builds
+node_modules/
+dist/
+.expo/
+.turbo/
+apps/app/android/
+apps/app/ios/
+apps/app/expo-env.d.ts
+*.apk
+*.aab
+*.tsbuildinfo
+
+# Firebase
+.firebase/
+*-debug.log

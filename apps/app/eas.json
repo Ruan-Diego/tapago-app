@@ -1,0 +1,26 @@
+{
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "base": {
+      "node": "22.19.0",
+      "pnpm": "12.23.0",
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
+    },
+    "development": {
+      "extends": "base",
+      "developmentClient": true
+    },
+    "preview": {
+      "extends": "base",
+      "env": {
+        "EXPO_PUBLIC_USE_EMULATOR": "false"
+      }
+    }
+  }
+}

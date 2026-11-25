@@ -1,0 +1,10 @@
+node_modules
+dist
+.expo
+.turbo
+android
+expo-env.d.ts
+pnpm-lock.yaml
+design
+docs
+.claude

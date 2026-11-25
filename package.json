@@ -1,0 +1,29 @@
+{
+  "name": "tapago",
+  "private": true,
+  "packageManager": "pnpm@12.23.0",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @tapago/app start",
+    "android": "pnpm --filter @tapago/app android",
+    "web": "pnpm --filter @tapago/app web",
+    "lint": "turbo run lint && prettier --check .",
+    "format": "prettier --write .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:rules": "firebase emulators:exec --project demo-tapago --only firestore \"pnpm --filter @tapago/firebase-tests test:emulator\"",
+    "build": "turbo run build",
+    "emulators": "firebase emulators:start"
+  },
+  "devDependencies": {
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "~58.0.4",
+    "eslint-config-prettier": "^10.1.8",
+    "firebase-tools": "^14.0.0",
+    "prettier": "^3.10.1",
+    "turbo": "^2.11.13",
+    "typescript": "~6.0.3"
+  }
+}

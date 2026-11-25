@@ -1,0 +1,15 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // Cada usuário só lê e escreve nos próprios dados. Todo o resto é negado.
+    // A validação por coleção (lançamentos, campos, saldo) entra na F1 e na F4.
+    match /users/{uid}/{document=**} {
+      allow read, write: if isOwner(uid);
+    }
+  }
+}

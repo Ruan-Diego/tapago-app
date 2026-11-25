@@ -1,0 +1,13 @@
+# O .easignore substitui o .gitignore no envio ao EAS Build.
+# O .env e o google-services.json ficam fora do git, mas precisam ir para o build,
+# por isso não são listados aqui.
+node_modules/
+dist/
+.expo/
+.turbo/
+.firebase/
+.claude/
+.git/
+apps/app/android/
+apps/app/ios/
+*-debug.log

@@ -130,40 +130,40 @@ Ordem fixa: o livro-caixa (F1) fica sólido antes de sessão e notificação (F2
 **Intervenção humana necessária:** HUM-01 a HUM-06 (ver [aba 4](#4--intervenção-humana)).
 
 **Base do projeto**
-- [ ] Monorepo com pnpm workspaces + Turborepo: `apps/app`, `packages/core`, `packages/data`, `packages/ui`, `firebase/`
-- [ ] TypeScript estrito compartilhado (`tsconfig.base.json`)
-- [ ] ESLint + Prettier; scripts `lint`, `typecheck`, `test`, `build` no Turborepo
-- [ ] Vitest configurado em `packages/core`
-- [ ] App Expo (SDK atual) com Expo Router, rodando em Android e web (sem configuração de iOS)
-- [ ] `.env.example` com todas as variáveis (config Firebase web, ID OAuth do Google, `EXPO_PUBLIC_USE_EMULATOR`) e `.gitignore` cobrindo `.env*` e `google-services.json`
-- [ ] CI no GitHub Actions: install, lint, typecheck, test em cada push e PR
+- [x] Monorepo com pnpm workspaces + Turborepo: `apps/app`, `packages/core`, `packages/data`, `packages/ui`, `firebase/`
+- [x] TypeScript estrito compartilhado (`tsconfig.base.json`)
+- [x] ESLint + Prettier; scripts `lint`, `typecheck`, `test`, `build` no Turborepo
+- [x] Vitest configurado em `packages/core`
+- [x] App Expo (SDK atual) com Expo Router, rodando em Android e web (sem configuração de iOS)
+- [x] `.env.example` com todas as variáveis (config Firebase web, ID OAuth do Google, `EXPO_PUBLIC_USE_EMULATOR`) e `.gitignore` cobrindo `.env*` e `google-services.json`
+- [x] CI no GitHub Actions: install, lint, typecheck, test em cada push e PR
 
 **Firebase**
-- [ ] `firebase.json` + `.firebaserc` apontando para o projeto único `tapago-51ecc` (Spark)
-- [ ] Emulator Suite configurado (Auth e Firestore) e script `pnpm emulators`
-- [ ] `firestore.rules` fechadas por `uid` (`users/{uid}/**` só para o dono)
-- [ ] Cadastro aberto: qualquer pessoa cria conta; o documento `users/{uid}` é criado no primeiro login
-- [ ] Testes de regras com `@firebase/rules-unit-testing` em `firebase/tests/` (usuário A não lê nem escreve dados do usuário B)
-- [ ] `packages/data`: camada de acesso com React Native Firebase no Android e JS SDK modular (`persistentLocalCache`) na web, mesma interface
+- [x] `firebase.json` + `.firebaserc` apontando para o projeto único `tapago-51ecc` (Spark)
+- [x] Emulator Suite configurado (Auth e Firestore) e script `pnpm emulators`
+- [x] `firestore.rules` fechadas por `uid` (`users/{uid}/**` só para o dono)
+- [x] Cadastro aberto: qualquer pessoa cria conta; o documento `users/{uid}` é criado no primeiro login
+- [x] Testes de regras com `@firebase/rules-unit-testing` em `firebase/tests/` (usuário A não lê nem escreve dados do usuário B)
+- [x] `packages/data`: camada de acesso com React Native Firebase no Android e JS SDK modular (`persistentLocalCache`) na web, mesma interface
 
 **Autenticação** (AUTH-01, 02, 04, 05)
-- [ ] Telas: entrar, criar conta, esqueci a senha
-- [ ] Login com e-mail e senha; sessão mantida ao reabrir
-- [ ] Login com Google no Android e na web
-- [ ] Recuperar senha pelo e-mail do Firebase
-- [ ] Sair: limpa o cache local e cancela as notificações agendadas no aparelho
+- [x] Telas: entrar, criar conta, esqueci a senha
+- [x] Login com e-mail e senha; sessão mantida ao reabrir
+- [x] Login com Google no Android e na web
+- [x] Recuperar senha pelo e-mail do Firebase
+- [x] Sair: limpa o cache local e cancela as notificações agendadas no aparelho
 
 **Design system** (`packages/ui`)
-- [ ] Tokens: cores (Tinta, Papel, Branco, Grafite, Borda, Lazer, Ruim, Destaque `#D4FF3A`), tipografia, espaçamento, raios
-- [ ] Fontes: Space Grotesk, Inter, JetBrains Mono (via `expo-font`)
-- [ ] Componentes base: botão (primário, secundário, contorno), cartão (normal e tracejado para negativos), campo de texto, abas, valor monetário (`Intl`, pt-BR)
-- [ ] Layout web com menu lateral; layout mobile com barra de abas
+- [x] Tokens: cores (Tinta, Papel, Branco, Grafite, Borda, Lazer, Ruim, Destaque `#D4FF3A`), tipografia, espaçamento, raios
+- [x] Fontes: Space Grotesk, Inter, JetBrains Mono (via `expo-font`)
+- [x] Componentes base: botão (primário, secundário, contorno), cartão (normal e tracejado para negativos), campo de texto, abas, valor monetário (`Intl`, pt-BR)
+- [x] Layout web com menu lateral; layout mobile com barra de abas
 
 **Distribuição**
-- [ ] `eas.json` com perfis `development` e `preview` gerando **APK** para Android
-- [ ] Config plugins do React Native Firebase no `app.config.ts` (só Android; módulos Auth, Firestore e Crashlytics)
+- [x] `eas.json` com perfis `development` e `preview` gerando **APK** para Android
+- [x] Config plugins do React Native Firebase no `app.config.ts` (só Android; módulos Auth, Firestore e Crashlytics)
 - [ ] Deploy da web no Firebase Hosting (`firebase deploy --only hosting`)
-- [ ] Workflow de CI publicando Hosting e regras no push da `main` (usa segredo HUM-05)
+- [x] Workflow de CI publicando Hosting e regras no push da `main` (usa segredo HUM-05)
 
 **Critério de saída:** as 2 pessoas instalam o APK e abrem a web, e entram cada uma com a própria conta (HUM-06).
 
@@ -387,7 +387,7 @@ Atualizado pelo agente no início e no fim de cada fase.
 
 | Fase | Status | Início | Fim | Commit |
 | --- | --- | --- | --- | --- |
-| F0 | não iniciada | | | |
+| F0 | em andamento (falta o deploy e a validação humana) | 25/11/2026 | | |
 | F1 | não iniciada | | | |
 | F2 | não iniciada | | | |
 | F3 | não iniciada | | | |
@@ -397,7 +397,20 @@ Atualizado pelo agente no início e no fim de cada fase.
 **Decisões tomadas pelo agente**
 
 - Projeto Firebase: `tapago-51ecc`; pacote Android: `com.tapago.app`; config web em `apps/app/.env` (fora do git).
+- F0 · Versões: Expo SDK 58, TypeScript 6.0 (o ESLint ainda não suporta o 7), ESLint 9, Firebase JS 13.3.0 (a mesma do React Native Firebase 27).
+- F0 · pnpm com `nodeLinker: hoisted`, para evitar problemas de caminho e autolinking no Android.
+- F0 · Emulador do Firestore na porta 8180 (a 8080 estava ocupada). `firebase-tools` 14 no repositório, que roda com Java 17; o 15 exige Java 21.
+- F0 · `packages/data`: uma interface `Backend` com `backend.ts` (web) e `backend.native.ts` (Android).
+- F0 · `users/{uid}` só é criado quando o servidor confirma que não existe, em transação, para um cache vazio nunca zerar o saldo.
+- F0 · Sair avisa antes se houver escritas ainda não enviadas.
+- F0 · O `.easignore` envia `.env` e `google-services.json` ao EAS Build sem colocá-los no git.
+- F0 · O deploy no CI usa o segredo `FIREBASE_SERVICE_ACCOUNT` e variáveis `EXPO_PUBLIC_*` do GitHub; sem eles, é pulado com aviso.
+- F0 · Login com Google implementado nas duas plataformas, mas ainda não testado contra o Google (depende do HUM-05 no Android).
+- F0 · Kotlin 2.3.21 (via `expo-build-properties`): o Firebase Android atual não compila com o 2.2 padrão do Expo.
+- F0 · Build local no Windows exige ninja 1.12+ por causa de caminhos longos (ver README). APK local assinado com a chave de debug, SHA-1 `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`; o APK do EAS usa outra chave.
 
 **Pendências humanas em aberto**
 
-- HUM-05 (SHA-1 do Android, domínio do Hosting e segredos do GitHub): feito durante a F0, não bloqueia o início.
+- HUM-05: SHA-1/SHA-256 do Android no Firebase, domínio do Hosting autorizado, segredo `FIREBASE_SERVICE_ACCOUNT` e variáveis `EXPO_PUBLIC_*` no GitHub.
+- EAS: rodar `eas init` em `apps/app` antes do primeiro build na nuvem.
+- HUM-06: instalar o APK nos 2 celulares, abrir a web e entrar com cada conta.
