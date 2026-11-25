@@ -19,3 +19,5 @@ nodeLinker: hoisted
 allowBuilds:
   '@firebase/util': false
   protobufjs: false
+  # Dependência opcional do firebase-tools; sem ela, o Hosting local usa o RegExp do Node.
+  re2: false
