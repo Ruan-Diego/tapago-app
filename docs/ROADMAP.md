@@ -7,7 +7,7 @@ Baseado em [`PRD.md`](PRD.md) e no protótipo em [`design/`](../design/README.md
 0. [Decisões fechadas](#0-decisões-fechadas)
 1. [Protocolo de execução (leia antes de qualquer fase)](#1-protocolo-de-execução)
 2. [Visão geral das fases](#2-visão-geral-das-fases)
-3. [Fases detalhadas (F0 a F5)](#3-fases-detalhadas)
+3. [Fases detalhadas (F0 a F8)](#3-fases-detalhadas)
 4. [🧑 Intervenção humana](#4--intervenção-humana)
 5. [Registro de progresso](#5-registro-de-progresso)
 
@@ -105,7 +105,7 @@ Posso fazer o commit e o push desta fase para a `main`?
 
 ## 2. Visão geral das fases
 
-Cerca de 9 semanas do zero ao uso diário, com o MVP em uso a partir da semana 4.
+Cerca de 12 semanas do zero ao uso diário, com o MVP em uso a partir da semana 4.
 
 | Fase | Nome | Duração estimada | Marco (critério de saída) | Requisitos |
 | --- | --- | --- | --- | --- |
@@ -113,10 +113,18 @@ Cerca de 9 semanas do zero ao uso diário, com o MVP em uso a partir da semana 4
 | F1 | MVP | 3 semanas | 1 semana de uso real sem perder dados | AUTH-06, ACT-01–04, ACT-07, SHOP-01–02, HIST-02, HIST-08 |
 | F2 | Inventário e timer | 2 semanas | Aviso chega no celular com o app fechado; na web, com a aba aberta | SHOP-03–04, INV-01–02, TMR-01–05, NOTIF-01–03 |
 | F3 | Onboarding e histórico completo | 2 semanas | Pessoa 2 configura sozinha em 2 min | ONB-01–05, PROF-01–02, HIST-01, HIST-03–07 |
+| F6 | Hábitos diários e sequências | 1 semana | Hábito completo paga o bônus uma vez; positivas sobem com a sequência e negativas encarecem a cada registro | HAB-01–03, SEQ-01–04 |
+| F7 | Missões diárias | 1 semana | Uma missão nova por dia, igual no Android e na web, com o bônus pago uma vez | MIS-01–04 |
+| F8 | Animações e visual (UX/UI) | 1 semana | Troca de abas com a gota de vidro no Android e na web, fluida e aprovada pelo usuário | ANIM-01–05 |
 | F4 | Polimento | 1 semana | 1 mês de uso diário sem travar | ACT-05 + não funcionais |
 | F5 | Extras | quando der | Prioridade pelo uso real | NOTIF-04–05, ACT-06, ONB-06, PROF-03, AUTH-05 (excluir) |
 
-Ordem fixa: o livro-caixa (F1) fica sólido antes de sessão e notificação (F2).
+**Ordem de execução:** F0 → F1 → F2 → F3 → **F6 → F7 → F8** → F4 → F5. A tabela está nessa ordem; F6, F7 e F8 entraram depois, e os números evitam renumerar as outras fases.
+
+- O livro-caixa (F1) fica sólido antes de sessão e notificação (F2).
+- F6 vem antes de F7, que usa o lançamento de bônus criado nela.
+- F6 e F7 vêm antes do polimento, para o desfazer e a validação de saldo (F4) já cobrirem bônus e valores variáveis. As duas dependem só da F1 e podem ser antecipadas se o usuário pedir.
+- F8 vem depois das telas novas, para animar tudo de uma vez, e antes da F4, que confere a acessibilidade do visual final.
 
 ---
 
@@ -285,6 +293,149 @@ Ordem fixa: o livro-caixa (F1) fica sólido antes de sessão e notificação (F2
 
 ---
 
+### F6 · Hábitos diários e sequências
+
+**Objetivo:** atividades positivas podem ser hábitos diários com bônus e valem mais a cada dia de sequência; as negativas custam mais a cada registro.
+**Quando:** depois da F3 e antes da F4.
+**PRD:** Conceitos e regras de negócio, Modelo de dados. O PRD ainda não cobre esta fase: valem as regras abaixo, e o primeiro item as leva para lá.
+**Design:** sem tela no protótipo; partir de `ActivitySheet`, `ActivityCard`, `EntryRow` e dos componentes de `packages/ui`.
+**Intervenção humana necessária:** nenhuma para código. HUM-14 para o marco.
+
+**Regras**
+
+- **R13 — Hábito diário** (só positivas). Tem meta de registros por dia (1 a 20) e um bônus em reais. O registro que atinge a meta paga o valor normal e gera **também** o bônus, em lançamento separado. O bônus sai no máximo uma vez por dia em cada atividade; registros além da meta pagam só o valor normal. O progresso zera na virada do dia, no fuso do usuário. O bônus é fixo: não cresce com a sequência.
+- **R14 — Sequência positiva.** Cada atividade positiva tem o próprio "aumento por sequência" (pode ser R$ 0) e a própria contagem. Valor do dia = `valor + aumento × dias seguidos anteriores`. Ex.: R$ 100 com aumento de R$ 10 paga 100, 110, 120… Todos os registros do mesmo dia pagam o mesmo valor. Um registro no dia mantém a sequência, mesmo em hábito que não bateu a meta. Um dia inteiro sem registro faz voltar ao valor inicial.
+- **R15 — Escalada negativa.** Cada registro soma o valor inicial ao custo: `valor × (registros desde o último zeramento + 1)`. Ex.: R$ 70 custa 70, 140, 210, 280… Vale também para vários registros no mesmo dia. Não zera com o tempo: **só o usuário zera**, na própria atividade.
+- **R16 — Teto e cópia.** O valor calculado respeita `LIMITS.valueMax` (R$ 10.000). O lançamento guarda o que foi de fato pago ou cobrado (R2); mudar valor, aumento, meta ou bônus não altera o passado.
+
+**Exemplo no histórico** — escovar os dentes: R$ 50, 3 vezes por dia, bônus de R$ 50, aumento de sequência R$ 0.
+
+| Lançamento | Valor |
+| --- | --- |
+| Escovar os dentes | + R$ 50 |
+| Escovar os dentes | + R$ 50 |
+| Escovar os dentes | + R$ 50 |
+| **Bônus de hábito completo** · Escovar os dentes (3 de 3 no dia) | + R$ 50 |
+
+**Documentação**
+- [ ] Levar R13–R16 e os requisitos HAB-01–03 e SEQ-01–04 para o `PRD.md`; ajustar R2, R11 e o modelo de dados
+
+**Livro-caixa** (`packages/core`)
+- [ ] `Activity` ganha `habit?: { target, bonus }`, `streakStep` e `streak { days, lastDay }` (positivas) e `penaltyCount` (negativas); atividades já existentes ficam sem hábito, com aumento R$ 0 e contagens zeradas
+- [ ] Novo tipo de lançamento `bonus`, com a origem (hábito ou missão) e `minutes = 0`: soma no saldo, em `earned` e na meta semanal, sem contar como registro nem como tempo
+- [ ] Lançamentos `earn` e `loss` guardam o que explica o valor (valor inicial e nível da sequência ou da escalada)
+- [ ] Funções puras para o valor do dia, o custo atual, o progresso do hábito e o direito ao bônus
+- [ ] Testes de R13–R16: virada do dia e fuso, sequência quebrada, vários registros no dia, meta ultrapassada, teto
+
+**Escritas** (`packages/data`)
+- [ ] Registrar atualiza a sequência ou a contagem da negativa no mesmo `writeBatch` do lançamento
+- [ ] Bônus em lote próprio (lançamento + saldo + `daily`) com id fixo `habit_{activityId}_{AAAA-MM-DD}`: se outro aparelho já pagou, só o lote do bônus é recusado e o registro fica
+- [ ] Anotar a limitação aceita: dois aparelhos offline podem pagar ou cobrar o mesmo nível de sequência ou de escalada
+
+**Formulário** (HAB-01, SEQ-01)
+- [ ] HAB-01 · Criar e editar positiva: pergunta "É um hábito diário?"; se marcado, pede "Quantas vezes por dia?" e "Bônus ao completar", os dois obrigatórios
+- [ ] SEQ-01 · Criar e editar positiva: campo "Aumento por dia de sequência", próprio de cada atividade (sugestão inicial R$ 10, aceita R$ 0)
+- [ ] Negativa não mostra hábito nem aumento; o formulário avisa que o custo sobe a cada registro
+
+**Atividades e histórico** (HAB-02–03, SEQ-02–04)
+- [ ] SEQ-02 · O cartão mostra o valor que o próximo toque vai pagar ou cobrar
+- [ ] HAB-02 · O cartão do hábito mostra o progresso do dia ("2 de 3") e o estado "completo"
+- [ ] SEQ-03 · O cartão positivo mostra os dias de sequência; o negativo, quantos registros houve desde o zeramento
+- [ ] SEQ-04 · "Zerar custo" na negativa, com confirmação: o próximo registro volta ao valor inicial e o histórico não muda
+- [ ] HAB-03 · O bônus aparece como linha própria no histórico, identificado como bônus, com aviso na tela quando é pago
+
+**Regras e testes**
+- [ ] `firestore.rules`: validar os campos novos da atividade; aceitar `bonus` com `minutes = 0` e só com os campos dele
+- [ ] Testes de regras para os campos novos e para o bônus repetido
+
+**Critério de saída:** uso real com um hábito completado, uma sequência que subiu e quebrou e uma negativa escalada e zerada, com saldo igual no Android e na web (HUM-14).
+
+---
+
+### F7 · Missões diárias
+
+**Objetivo:** o app cria sozinho uma missão por dia, que paga bônus quando cumprida.
+**Quando:** depois da F6 e antes da F4.
+**PRD:** Conceitos e regras de negócio, Modelo de dados. O PRD ainda não cobre esta fase: valem as regras abaixo, e o primeiro item as leva para lá.
+**Design:** sem tela no protótipo; cartão de missão no topo da tela de Atividades, com os componentes de `packages/ui`.
+**Intervenção humana necessária:** nenhuma para código. HUM-15 para o marco.
+
+**Regras**
+
+- **R17 — Missão do dia.** Uma por dia, com 2 atividades positivas não arquivadas, sorteadas pelo app. Com menos de 2, não há missão. O par não repete o do dia anterior quando existe outra combinação possível.
+- **R18 — Bônus fixo de R$ 100.** A missão é cumprida quando as 2 atividades têm pelo menos 1 registro no dia (em hábitos, 1 registro basta). O bônus é pago uma vez, em lançamento separado, e se soma ao valor das atividades e ao bônus de hábito. Registros feitos no dia antes de a missão ser criada também contam. Missão não cumprida expira na virada do dia, sem penalidade.
+- **Sem servidor** (Spark): o app gera a missão ao abrir ou na virada do dia, com sorteio determinado por `uid` + data. A primeira missão gravada no dia vale para todos os aparelhos.
+
+**Documentação**
+- [ ] Levar R17–R18 e os requisitos MIS-01–04 para o `PRD.md`, com o caminho `users/{uid}/missions/{AAAA-MM-DD}`
+
+**Missões**
+- [ ] MIS-01 · Gerar a missão do dia: sorteio e checagem de cumprimento como funções puras em `packages/core`, com testes (semente, poucas atividades, não repetir, virada do dia)
+- [ ] Documento `users/{uid}/missions/{AAAA-MM-DD}`: ids e nomes das 2 atividades, bônus e `completedAt`; criado só se ainda não existir, em escrita separada dos registros
+- [ ] Atividade da missão arquivada antes de a missão ser cumprida é trocada por outra; sem substituta, a missão some
+- [ ] MIS-02 · Cartão "Missão do dia" com as 2 atividades, o que já foi feito e o bônus
+- [ ] MIS-03 · Pagar o bônus em lote próprio com id fixo `mission_{AAAA-MM-DD}` (lançamento + saldo + `daily` + `completedAt`), com aviso na tela
+- [ ] MIS-04 · O histórico mostra "**Bônus da missão do dia**" com os nomes das atividades
+
+**Regras e testes**
+- [ ] `firestore.rules`: bloco de `missions` (só o dono; bônus sempre de R$ 100; nunca `delete`)
+- [ ] Testes de regras: outro `uid`, campos inválidos e bônus repetido
+
+**Critério de saída:** missões diferentes em dias seguidos, iguais no Android e na web, e pelo menos uma cumprida com o bônus pago uma única vez (HUM-15).
+
+---
+
+### F8 · Animações e visual (UX/UI)
+
+**Objetivo:** visual minimalista e moderno, com animações como as do iPhone: vidro translúcido e seleção que desliza como uma gota, no Android e na web.
+**Quando:** depois da F7 e antes da F4.
+**PRD:** Requisitos não funcionais (velocidade, acessibilidade, plataformas).
+**Design:** referência de estilo é o iOS (efeito "Liquid Glass"). Galeria indicada pelo usuário: [Collect UI](https://collectui.com/). Os links específicos chegam pelo HUM-16 e entram na tabela abaixo; onde divergirem do protótipo em `design/`, valem as referências.
+**Intervenção humana necessária:** HUM-16 antes de começar. HUM-17 para o marco.
+
+| Referência | O que aproveitar |
+| --- | --- |
+| https://collectui.com/ | Inspiração geral: minimalista e moderno |
+
+**Requisitos**
+
+| ID | Requisito | Critério de aceite |
+| --- | --- | --- |
+| ANIM-01 | Barra de abas (Android e web estreita) de vidro | Fundo translúcido com desfoque; o conteúdo passa por trás ao rolar |
+| ANIM-02 | Gota na troca de aba | O indicador desliza do item antigo ao novo, esticando no caminho e assentando com mola; acompanha o dedo ao arrastar sobre a barra |
+| ANIM-03 | Gota no menu lateral da web | Mesmo efeito na vertical, também ao navegar por teclado; resposta suave ao passar o mouse |
+| ANIM-04 | Movimento consistente no resto do app | Abas segmentadas, botões, cartões, folhas, listas, avisos, saldo e transições de tela com as mesmas molas |
+| ANIM-05 | Acessível e rápido | Respeita "reduzir movimento"; registrar continua em < 100 ms |
+
+**Base** (`packages/ui`)
+- [ ] Antes de programar, resumir no registro de progresso o que será tirado de cada referência
+- [ ] Tokens de movimento (molas, durações, curvas) e de vidro (desfoque, opacidade, borda, brilho, sombra)
+- [ ] Componente de vidro com versão por plataforma: na web, `backdrop-filter` (distorção de lente só onde o navegador suportar); no Android, a melhor opção de desfoque compatível com o SDK. Onde não houver suporte (Android antigo, aparelho fraco), fundo translúcido sem desfoque
+- [ ] Animações com `react-native-reanimated` (já no projeto); biblioteca nova só se funcionar no Android e na web
+
+**Navegação** (ANIM-01–03)
+- [ ] `TabBar`: vidro, barra flutuante e indicador em gota, com arrastar entre abas
+- [ ] `Sidebar`: vidro, indicador em gota e estados de mouse e foco
+- [ ] Ajustar o espaçamento das telas para a barra flutuante não esconder conteúdo
+
+**Resto do app** (ANIM-04)
+- [ ] `Tabs` com o mesmo indicador deslizante
+- [ ] Botões e cartões afundam ao toque e voltam com mola
+- [ ] `Sheet` sobe com mola e fecha arrastando para baixo
+- [ ] Saldo conta até o novo valor; lançamentos, itens e avisos entram e saem animados
+- [ ] Transições entre telas
+- [ ] Animar o que a F6 e a F7 criaram: progresso do hábito, sequência, bônus e missão cumprida
+
+**Qualidade** (ANIM-05)
+- [ ] "Reduzir movimento" troca os efeitos por transições simples
+- [ ] Contraste ≥ 4,5:1 do texto sobre o vidro, com qualquer conteúdo atrás
+- [ ] Animações não atrasam o toque nem a escrita; sem engasgos perceptíveis nos 2 celulares (meta: 60 quadros por segundo)
+- [ ] Conferir no Chrome, Safari e Edge
+
+**Critério de saída:** o usuário compara com as referências nos celulares e na web e aprova as animações (HUM-17).
+
+---
+
 ### F4 · Polimento
 
 **Objetivo:** confiabilidade e acabamento para uso diário prolongado.
@@ -292,7 +443,8 @@ Ordem fixa: o livro-caixa (F1) fica sólido antes de sessão e notificação (F2
 **Intervenção humana necessária:** HUM-10 (Crashlytics), HUM-11 (feedback de uso real).
 
 - [ ] Desfazer por 10 s com lançamento de estorno (ACT-05, R8), igual para positivas e negativas
-- [ ] Regra de saldo com `getAfter()`: saldo muda exatamente pelo valor; `value` confere com `refId`; `purchase` só com saldo ≥ 0
+- [ ] O desfazer também reverte a sequência ou a escalada (F6) e estorna o bônus de hábito ou de missão que deixou de valer (F6, F7); se a meta for atingida de novo no dia, o bônus volta a ser pago (revisar os ids fixos para isso)
+- [ ] Regra de saldo com `getAfter()`: saldo muda exatamente pelo valor; `value` confere com `refId` (nas atividades, o valor calculado por R14 e R15; nos bônus, o do hábito ou o da missão); `purchase` só com saldo ≥ 0
 - [ ] Testes de regras para a validação de saldo
 - [ ] Acessibilidade: contraste ≥ 4,5:1, alvos ≥ 44 pt, labels para leitor de tela
 - [ ] Crashlytics no Android
@@ -357,6 +509,25 @@ As decisões de produto já foram tomadas (ver [aba 0](#0-decisões-fechadas)). 
 | --- | --- | --- | --- | --- |
 | HUM-09 | Depois | A Pessoa 2 faz o onboarding sozinha, cronometrando (meta: 2 min) | Aparelho da Pessoa 2 | [ ] |
 
+### F6 · Hábitos diários e sequências
+
+| ID | Quando | Ação | Onde | Feito |
+| --- | --- | --- | --- | --- |
+| HUM-14 | Depois | Instalar o APK novo nos 2 celulares **antes de usar** (a versão antiga não lê o lançamento de bônus). Completar um hábito, deixar uma sequência subir e quebrar, escalar e zerar uma negativa | Aparelhos | [ ] |
+
+### F7 · Missões diárias
+
+| ID | Quando | Ação | Onde | Feito |
+| --- | --- | --- | --- | --- |
+| HUM-15 | Depois | Acompanhar as missões por alguns dias no Android e na web e cumprir pelo menos uma | Uso real | [ ] |
+
+### F8 · Animações e visual
+
+| ID | Quando | Ação | Onde | Feito |
+| --- | --- | --- | --- | --- |
+| HUM-16 | Antes | Enviar os links (ou vídeos de tela) das referências, dizendo o que gostou em cada um | Chat | [ ] |
+| HUM-17 | Depois | Testar as animações nos 2 celulares e na web, comparar com as referências e aprovar ou listar ajustes | Aparelhos | [ ] |
+
 ### F4 · Polimento
 
 | ID | Quando | Ação | Onde | Feito |
@@ -391,6 +562,9 @@ Atualizado pelo agente no início e no fim de cada fase.
 | F1 | código pronto (falta a validação humana)   | 25/11/2026 | | |
 | F2 | código pronto (falta a validação humana) | 25/11/2026 | | |
 | F3 | não iniciada | | | |
+| F6 | não iniciada | | | |
+| F7 | não iniciada | | | |
+| F8 | não iniciada | | | |
 | F4 | não iniciada | | | |
 | F5 | não iniciada | | | |
 
