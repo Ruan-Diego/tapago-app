@@ -14,19 +14,30 @@ import {
 } from 'firebase/auth';
 import {
   clearIndexedDbPersistence,
+  collection,
   connectFirestoreEmulator,
   doc,
+  getDocs,
+  increment,
   initializeFirestore,
+  limit,
   onSnapshot,
+  orderBy,
   persistentLocalCache,
   persistentMultipleTabManager,
+  query,
   runTransaction,
   serverTimestamp,
+  startAfter,
   terminate,
   waitForPendingWrites,
+  where,
+  writeBatch,
   type Firestore,
+  type QuerySnapshot,
 } from 'firebase/firestore';
 
+import { decodeData, encodeData, type QueryResult, type QuerySpec } from './documents';
 import { EMULATOR_PORTS, env } from './env';
 import { isStillPending } from './pendingWrites';
 import type { Backend } from './types';
@@ -66,6 +77,24 @@ function db(): Firestore {
     }
   }
   return dbInstance;
+}
+
+function buildQuery(spec: QuerySpec) {
+  const { field, direction } = spec.orderBy;
+  const constraints = [
+    ...(spec.from === undefined ? [] : [where(field, '>=', spec.from)]),
+    orderBy(field, direction),
+    ...(spec.after === undefined ? [] : [startAfter(spec.after)]),
+    ...(spec.limit === undefined ? [] : [limit(spec.limit)]),
+  ];
+  return query(collection(db(), spec.path), ...constraints);
+}
+
+function toResult(snapshot: QuerySnapshot): QueryResult {
+  return {
+    docs: snapshot.docs.map((item) => ({ id: item.id, data: decodeData(item.data()) })),
+    fromCache: snapshot.metadata.fromCache,
+  };
 }
 
 export const backend: Backend = {
@@ -140,5 +169,38 @@ export const backend: Backend = {
         transaction.set(ref, { ...profile, createdAt: serverTimestamp() });
       }
     });
+  },
+
+  newId(collectionPath) {
+    return doc(collection(db(), collectionPath)).id;
+  },
+
+  commit(ops) {
+    const batch = writeBatch(db());
+    for (const op of ops) {
+      const ref = doc(db(), op.path);
+      if (op.kind === 'delete') {
+        batch.delete(ref);
+        continue;
+      }
+      const data = encodeData(op.data, increment);
+      if (op.kind === 'set') batch.set(ref, data);
+      else if (op.kind === 'merge') batch.set(ref, data, { merge: true });
+      else batch.update(ref, data);
+    }
+    return batch.commit();
+  },
+
+  watchQuery(spec, onChange, onError) {
+    return onSnapshot(
+      buildQuery(spec),
+      { includeMetadataChanges: true },
+      (snapshot) => onChange(toResult(snapshot)),
+      onError,
+    );
+  },
+
+  async getQuery(spec) {
+    return toResult(await getDocs(buildQuery(spec)));
   },
 };

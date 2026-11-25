@@ -1,19 +1,20 @@
 import { TextField, type TextFieldProps } from '@tapago/ui';
 import { useController, type Control, type FieldValues, type Path } from 'react-hook-form';
 
-type FormFieldProps<Values extends FieldValues> = Omit<
+type FormFieldProps<Values extends FieldValues, Output> = Omit<
   TextFieldProps,
   'value' | 'onChangeText' | 'error'
 > & {
-  control: Control<Values, unknown, Values>;
+  control: Control<Values, unknown, Output>;
   name: Path<Values>;
 };
 
-export function FormField<Values extends FieldValues>({
+/** `Output` é o que o esquema devolve quando difere do texto digitado. */
+export function FormField<Values extends FieldValues, Output = Values>({
   control,
   name,
   ...rest
-}: FormFieldProps<Values>) {
+}: FormFieldProps<Values, Output>) {
   const {
     field: { value, onChange, onBlur },
     fieldState: { error },

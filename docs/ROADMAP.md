@@ -177,38 +177,38 @@ Ordem fixa: o livro-caixa (F1) fica sólido antes de sessão e notificação (F2
 **Intervenção humana necessária:** nenhuma para código. HUM-07 (1 semana de uso real) para o marco.
 
 **Livro-caixa** (`packages/core`)
-- [ ] Tipos e esquemas Zod: `User`, `Activity`, `ShopItem`, `Entry`, `InventoryItem`, `Session`, `Daily`
-- [ ] Valores em centavos inteiros (R1); formatação "R$ 18"
-- [ ] Funções puras: saldo a partir dos lançamentos, agregados `daily`, estatísticas do período, meta semanal (R11), dia limpo e sequência (R12) no fuso do usuário
-- [ ] Testes Vitest cobrindo todas as regras R1–R12 aplicáveis
+- [x] Tipos e esquemas Zod: `User`, `Activity`, `ShopItem`, `Entry`, `InventoryItem`, `Session`, `Daily`
+- [x] Valores em centavos inteiros (R1); formatação "R$ 18"
+- [x] Funções puras: saldo a partir dos lançamentos, agregados `daily`, estatísticas do período, meta semanal (R11), dia limpo e sequência (R12) no fuso do usuário
+- [x] Testes Vitest cobrindo todas as regras R1–R12 aplicáveis
 
 **Repositórios** (`packages/data`)
-- [ ] `activities`, `shop`, `entries`, `profile` com listeners em tempo real
-- [ ] Um `writeBatch` por ação: lançamento + saldo + `daily` (escrita otimista, funciona offline)
-- [ ] Cada lançamento copia nome e valor (R2)
-- [ ] Mesmos dados no Android e na web em até 2 s (AUTH-06)
-- [ ] Leituras econômicas (cota Spark): histórico lido de `daily`, lançamentos sempre paginados
+- [x] `activities`, `shop`, `entries`, `profile` com listeners em tempo real
+- [x] Um `writeBatch` por ação: lançamento + saldo + `daily` (escrita otimista, funciona offline)
+- [x] Cada lançamento copia nome e valor (R2)
+- [x] Mesmos dados no Android e na web em até 2 s (AUTH-06)
+- [x] Leituras econômicas (cota Spark): histórico lido de `daily`, lançamentos sempre paginados
 
 **Atividades** (ACT-01–04, ACT-07)
-- [ ] Criar atividade: tipo +/− escolhido antes; rótulos "Você ganha" / "Você perde"
-- [ ] Editar e arquivar (R10); lançamentos antigos intactos
-- [ ] Registrar com 1 toque, **positiva ou negativa, sem confirmação**; saldo atualiza em < 100 ms
-- [ ] Listas "Ganham" e "Custam"; negativas com borda tracejada, botão de contorno e sinal "−"
-- [ ] Resumo do dia no topo (ganhos, perdas, quantidade)
+- [x] Criar atividade: tipo +/− escolhido antes; rótulos "Você ganha" / "Você perde"
+- [x] Editar e arquivar (R10); lançamentos antigos intactos
+- [x] Registrar com 1 toque, **positiva ou negativa, sem confirmação**; saldo atualiza em < 100 ms
+- [x] Listas "Ganham" e "Custam"; negativas com borda tracejada, botão de contorno e sinal "−"
+- [x] Resumo do dia no topo (ganhos, perdas, quantidade)
 
 **Loja** (SHOP-01–02)
-- [ ] Criar, editar e arquivar itens (nome, preço, duração)
-- [ ] Comprar: bloqueado se saldo < preço, mostrando quanto falta (R3)
-- [ ] Nesta fase a compra vai direto para o inventário (o modal "usar agora / guardar" é F2)
+- [x] Criar, editar e arquivar itens (nome, preço, duração)
+- [x] Comprar: bloqueado se saldo < preço, mostrando quanto falta (R3)
+- [x] Nesta fase a compra vai direto para o inventário (o modal "usar agora / guardar" é F2)
 
 **Histórico básico** (HIST-02, HIST-08)
-- [ ] Cartões: ganhou, perdeu, gastou, tempo bom, lazer, tempo perdido, com variação contra o período anterior
-- [ ] Atividade recente com paginação
+- [x] Cartões: ganhou, perdeu, gastou, tempo bom, lazer, tempo perdido, com variação contra o período anterior
+- [x] Atividade recente com paginação
 
 **Regras e testes**
-- [ ] Regras de `entries`: só `create`; `update` só em `minutes` de `use`; nunca `delete`
-- [ ] Validação de campos (valor 1–1.000.000, minutos 1–1.440, nome 1–60)
-- [ ] Testes de regras cobrindo acesso de outro `uid`, campos inválidos e delete bloqueado
+- [x] Regras de `entries`: só `create`; `update` só em `minutes` de `use`; nunca `delete`
+- [x] Validação de campos (valor 1–1.000.000, minutos 1–1.440, nome 1–60)
+- [x] Testes de regras cobrindo acesso de outro `uid`, campos inválidos e delete bloqueado
 
 **Critério de saída:** 1 semana de uso real pelas 2 pessoas, saldo igual no Android e na web (HUM-07).
 
@@ -388,7 +388,7 @@ Atualizado pelo agente no início e no fim de cada fase.
 | Fase | Status | Início | Fim | Commit |
 | --- | --- | --- | --- | --- |
 | F0 | em andamento (falta a validação humana) | 25/11/2026 | | c3a8c51, 2fd49ad |
-| F1 | não iniciada | | | |
+| F1 | código pronto (falta a validação humana)   | 25/11/2026 | | |
 | F2 | não iniciada | | | |
 | F3 | não iniciada | | | |
 | F4 | não iniciada | | | |
@@ -409,6 +409,14 @@ Atualizado pelo agente no início e no fim de cada fase.
 - F0 · Kotlin 2.3.21 (via `expo-build-properties`): o Firebase Android atual não compila com o 2.2 padrão do Expo.
 - F0 · `pnpm apk` gera o APK local (só `arm64` por padrão) mantendo `android/` entre execuções; o plugin `withLocalAndroidBuild` aplica os ajustes de build.
 - F0 · Build local no Windows exige ninja 1.12+ por causa de caminhos longos (ver README). APK local assinado com a chave de debug, SHA-1 `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`; o APK do EAS usa outra chave.
+- F1 · O tipo (+/−) é escolhido na criação e não muda na edição. Tocar no cartão abre a edição e o arquivamento.
+- F1 · `daily` ganhou os campos `date` (para consultar por período), `buyCount` (quantidade de compras) e `counts` (registros por atividade, para o "feito 2× hoje").
+- F1 · Histórico com período fixo de 30 dias (o filtro é a F3). Os agregados lidos são os dos últimos 60 dias.
+- F1 · Escritas com `increment()` em um `writeBatch`; a tela não espera o servidor. O botão de comprar trava por 1 s contra toque duplo.
+- F1 · Sem a regra de saldo da F4, duas compras offline em aparelhos diferentes ainda podem deixar o saldo negativo.
+- F1 · A meta da semana só aparece com `weeklyGoal` > 0; a edição dela é a F3. O inventário é gravado, mas a lista é da F2.
+- F1 · As regras agora liberam coleção por coleção: `state/session` (F2) e `avatar` (F3) precisam de blocos próprios.
+- F1 · Id do aparelho guardado com `expo-file-system` no Android e `localStorage` na web.
 
 **Pendências humanas em aberto**
 
@@ -416,3 +424,4 @@ Atualizado pelo agente no início e no fim de cada fase.
 - HUM-05: SHA-1/SHA-256 do Android no Firebase, domínio do Hosting autorizado, segredo `FIREBASE_SERVICE_ACCOUNT` e variáveis `EXPO_PUBLIC_*` no GitHub.
 - EAS: rodar `eas init` em `apps/app` antes do primeiro build na nuvem.
 - HUM-06: instalar o APK nos 2 celulares, abrir a web e entrar com cada conta.
+- HUM-07: usar a F1 por 1 semana. Antes, publicar (push na `main` ou deploy manual) e instalar um APK novo: a F1 foi testada na web contra o emulador, não em um Android.

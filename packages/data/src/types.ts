@@ -1,5 +1,7 @@
 import type { UserProfile } from '@tapago/core';
 
+import type { QueryResult, QuerySpec, WriteOp } from './documents';
+
 export interface AuthUser {
   uid: string;
   email: string | null;
@@ -39,4 +41,15 @@ export interface Backend {
   ): Unsubscribe;
   /** Cria `users/{uid}` em uma transação, sem nunca sobrescrever um documento existente. */
   createUserDocIfMissing(uid: string, profile: UserProfile): Promise<void>;
+  /** Id novo para um documento da coleção, gerado no aparelho (funciona offline). */
+  newId(collectionPath: string): string;
+  /** Um `writeBatch`. Vale na hora no cache local; resolve quando o servidor confirma. */
+  commit(ops: readonly WriteOp[]): Promise<void>;
+  watchQuery(
+    spec: QuerySpec,
+    onChange: (result: QueryResult) => void,
+    onError: (error: Error) => void,
+  ): Unsubscribe;
+  /** Leitura única, para as páginas antigas. */
+  getQuery(spec: QuerySpec): Promise<QueryResult>;
 }

@@ -6,10 +6,145 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == uid;
     }
 
-    // Cada usuário só lê e escreve nos próprios dados. Todo o resto é negado.
-    // A validação por coleção (lançamentos, campos, saldo) entra na F1 e na F4.
-    match /users/{uid}/{document=**} {
-      allow read, write: if isOwner(uid);
+    // Faixas iguais às de `LIMITS` em packages/core.
+    function validName(name) {
+      return name is string && name.size() >= 1 && name.size() <= 60;
+    }
+    function validValue(value) {
+      return value is int && value >= 1 && value <= 1000000;
+    }
+    function validMinutes(minutes) {
+      return minutes is int && minutes >= 1 && minutes <= 1440;
+    }
+    function validId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128;
+    }
+
+    function hasShape(data, required, optional) {
+      return data.keys().hasAll(required) && data.keys().hasOnly(required.concat(optional));
+    }
+
+    function validActivity(data) {
+      return hasShape(data,
+          ['name', 'description', 'kind', 'value', 'minutes', 'order', 'archived', 'createdAt'], [])
+        && validName(data.name)
+        && data.description is string && data.description.size() <= 140
+        && data.kind in ['positive', 'negative']
+        && validValue(data.value)
+        && validMinutes(data.minutes)
+        && data.order is number
+        && data.archived is bool
+        && data.createdAt is timestamp;
+    }
+
+    function validShopItem(data) {
+      return hasShape(data, ['name', 'value', 'minutes', 'order', 'archived', 'createdAt'], [])
+        && validName(data.name)
+        && validValue(data.value)
+        && validMinutes(data.minutes)
+        && data.order is number
+        && data.archived is bool
+        && data.createdAt is timestamp;
+    }
+
+    // A F4 acrescenta a conferência do saldo (`getAfter`) e do valor referenciado.
+    function validEntry(data) {
+      return hasShape(data,
+          ['type', 'refId', 'name', 'value', 'minutes', 'at', 'deviceId'], ['reverses'])
+        && data.type in ['earn', 'loss', 'purchase', 'use', 'reversal']
+        && validId(data.refId)
+        && validName(data.name)
+        && validValue(data.value)
+        && validMinutes(data.minutes)
+        && data.at is timestamp
+        && validId(data.deviceId)
+        // Só o estorno aponta para outro lançamento.
+        && (data.type == 'reversal') == ('reverses' in data)
+        && (!('reverses' in data) || validId(data.reverses));
+    }
+
+    /** A única mudança aceita em um lançamento: os minutos realmente usados de um `use`. */
+    function isUseMinutesOnly() {
+      return resource.data.type == 'use'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['minutes'])
+        && validMinutes(request.resource.data.minutes);
+    }
+
+    function validInventoryItem(data) {
+      return hasShape(data,
+          ['shopItemId', 'name', 'value', 'minutes', 'purchaseEntryId', 'purchasedAt'], [])
+        && validId(data.shopItemId)
+        && validName(data.name)
+        && validValue(data.value)
+        && validMinutes(data.minutes)
+        && validId(data.purchaseEntryId)
+        && data.purchasedAt is timestamp;
+    }
+
+    // Cada escrita traz só os campos que mudaram; os outros podem nem existir.
+    function validDaily(data, day) {
+      return hasShape(data, ['date'], ['earned', 'lost', 'spent', 'posMin', 'negMin',
+          'leisureMin', 'posCount', 'negCount', 'buyCount', 'counts'])
+        && day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+        && data.date == day
+        && data.get('earned', 0) is int
+        && data.get('lost', 0) is int
+        && data.get('spent', 0) is int
+        && data.get('posMin', 0) is int
+        && data.get('negMin', 0) is int
+        && data.get('leisureMin', 0) is int
+        && data.get('posCount', 0) is int
+        && data.get('negCount', 0) is int
+        && data.get('buyCount', 0) is int
+        && data.get('counts', {}) is map;
+    }
+
+    function validUser(data) {
+      return data.name is string && data.name.size() <= 60
+        && data.balance is int;
+    }
+
+    // Cada usuário só lê e escreve nos próprios dados. Todo o resto é negado: um caminho novo
+    // precisa de um bloco próprio aqui.
+    match /users/{uid} {
+      allow read: if isOwner(uid);
+      allow create, update: if isOwner(uid) && validUser(request.resource.data);
+      // Excluir a conta (com os dados) é a F5.
+      allow delete: if false;
+
+      // Arquivar em vez de apagar (R10).
+      match /activities/{id} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid) && validActivity(request.resource.data);
+        allow delete: if false;
+      }
+
+      match /shopItems/{id} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid) && validShopItem(request.resource.data);
+        allow delete: if false;
+      }
+
+      // Livro-caixa: só inclusão.
+      match /entries/{id} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && validEntry(request.resource.data);
+        allow update: if isOwner(uid) && isUseMinutesOnly();
+        allow delete: if false;
+      }
+
+      // Apagado quando o uso começa (F2).
+      match /inventory/{id} {
+        allow read, delete: if isOwner(uid);
+        allow create: if isOwner(uid) && validInventoryItem(request.resource.data);
+        allow update: if false;
+      }
+
+      match /daily/{day} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid) && validDaily(request.resource.data, day);
+        allow delete: if false;
+      }
     }
   }
 }

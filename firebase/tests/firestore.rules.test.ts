@@ -39,7 +39,18 @@ describe('isolamento por uid', () => {
     const db = as('ana');
     await assertSucceeds(setDoc(doc(db, 'users/ana'), { name: 'Ana', balance: 0 }));
     await assertSucceeds(getDoc(doc(db, 'users/ana')));
-    await assertSucceeds(setDoc(doc(db, 'users/ana/activities/a1'), { name: 'Louça' }));
+    await assertSucceeds(
+      setDoc(doc(db, 'users/ana/activities/a1'), {
+        name: 'Louça',
+        description: '',
+        kind: 'positive',
+        value: 1000,
+        minutes: 15,
+        order: 1,
+        archived: false,
+        createdAt: new Date(),
+      }),
+    );
     await assertSucceeds(getDocs(collection(db, 'users/ana/activities')));
   });
 

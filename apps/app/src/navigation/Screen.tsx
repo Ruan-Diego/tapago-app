@@ -12,14 +12,16 @@ import type { ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useLedger } from '@/ledger/store';
 import { useSession } from '@/session/store';
 
 /** Moldura das abas: no celular, cabeçalho com o saldo; na web larga, título grande. */
-export function Screen({ title, children }: { title: string; children: ReactNode }) {
+export function Screen({ title, children }: { title?: string; children: ReactNode }) {
   const { width } = useWindowDimensions();
   const wide = width >= SIDEBAR_BREAKPOINT;
   const balance = useSession((state) => state.profile?.balance);
   const profileError = useSession((state) => state.profileError);
+  const ledgerError = useLedger((state) => state.error);
 
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
@@ -38,10 +40,12 @@ export function Screen({ title, children }: { title: string; children: ReactNode
       )}
       <ScrollView contentContainerStyle={[styles.scroll, wide && styles.scrollWide]}>
         <View style={styles.content}>
-          <Text accessibilityRole="header" style={[styles.title, wide && styles.titleWide]}>
-            {title}
-          </Text>
-          {profileError ? (
+          {title ? (
+            <Text accessibilityRole="header" style={[styles.title, wide && styles.titleWide]}>
+              {title}
+            </Text>
+          ) : null}
+          {profileError || ledgerError ? (
             <Text accessibilityRole="alert" style={styles.error}>
               Não foi possível carregar a sua conta. Confira a conexão e abra o app de novo.
             </Text>
