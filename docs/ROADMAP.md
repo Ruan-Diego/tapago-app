@@ -162,7 +162,7 @@ Ordem fixa: o livro-caixa (F1) fica sólido antes de sessão e notificação (F2
 **Distribuição**
 - [x] `eas.json` com perfis `development` e `preview` gerando **APK** para Android
 - [x] Config plugins do React Native Firebase no `app.config.ts` (só Android; módulos Auth, Firestore e Crashlytics)
-- [ ] Deploy da web no Firebase Hosting (`firebase deploy --only hosting`)
+- [x] Deploy da web no Firebase Hosting (`firebase deploy --only hosting`)
 - [x] Workflow de CI publicando Hosting e regras no push da `main` (usa segredo HUM-05)
 
 **Critério de saída:** as 2 pessoas instalam o APK e abrem a web, e entram cada uma com a própria conta (HUM-06).
@@ -387,7 +387,7 @@ Atualizado pelo agente no início e no fim de cada fase.
 
 | Fase | Status | Início | Fim | Commit |
 | --- | --- | --- | --- | --- |
-| F0 | em andamento (falta o deploy e a validação humana) | 25/11/2026 | | |
+| F0 | em andamento (falta a validação humana) | 25/11/2026 | | c3a8c51, 2fd49ad |
 | F1 | não iniciada | | | |
 | F2 | não iniciada | | | |
 | F3 | não iniciada | | | |
@@ -407,10 +407,12 @@ Atualizado pelo agente no início e no fim de cada fase.
 - F0 · O deploy no CI usa o segredo `FIREBASE_SERVICE_ACCOUNT` e variáveis `EXPO_PUBLIC_*` do GitHub; sem eles, é pulado com aviso.
 - F0 · Login com Google implementado nas duas plataformas, mas ainda não testado contra o Google (depende do HUM-05 no Android).
 - F0 · Kotlin 2.3.21 (via `expo-build-properties`): o Firebase Android atual não compila com o 2.2 padrão do Expo.
+- F0 · `pnpm apk` gera o APK local (só `arm64` por padrão) mantendo `android/` entre execuções; o plugin `withLocalAndroidBuild` aplica os ajustes de build.
 - F0 · Build local no Windows exige ninja 1.12+ por causa de caminhos longos (ver README). APK local assinado com a chave de debug, SHA-1 `5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25`; o APK do EAS usa outra chave.
 
 **Pendências humanas em aberto**
 
+- Web publicada em https://tapago-51ecc.web.app (regras e Hosting publicados em 25/11/2026).
 - HUM-05: SHA-1/SHA-256 do Android no Firebase, domínio do Hosting autorizado, segredo `FIREBASE_SERVICE_ACCOUNT` e variáveis `EXPO_PUBLIC_*` no GitHub.
 - EAS: rodar `eas init` em `apps/app` antes do primeiro build na nuvem.
 - HUM-06: instalar o APK nos 2 celulares, abrir a web e entrar com cada conta.

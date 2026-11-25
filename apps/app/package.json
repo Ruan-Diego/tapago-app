@@ -9,7 +9,8 @@
     "web": "expo start --web",
     "lint": "eslint .",
     "typecheck": "tsc -p tsconfig.json",
-    "build": "expo export --platform web"
+    "build": "expo export --platform web",
+    "apk": "node scripts/apk.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/inter": "^0.4.2",

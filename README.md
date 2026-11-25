@@ -36,7 +36,11 @@ Android (precisa do Android SDK e de um aparelho ou emulador):
 pnpm android
 ```
 
-No Windows, a compilação local do Android pode falhar com `ninja: error: mkdir(...)`: o ninja 1.10 do CMake 3.22 não aceita caminhos longos. Use um ninja 1.12 ou mais novo (passando `-DCMAKE_MAKE_PROGRAM` ao CMake do módulo `app`), com o repositório num caminho curto, ou compile pelo EAS. Se faltar memória, rode o Gradle com `--max-workers=2`.
+No Windows, a compilação precisa de um ninja 1.12 ou mais novo (o do Android SDK não aceita caminhos longos). O plugin `apps/app/plugins/withLocalAndroidBuild.js` procura em `NINJA_PATH`, no `PATH` e na instalação do WinLibs, e limita o paralelismo para não faltar memória. Para instalar um:
+
+```powershell
+winget install Ninja-build.Ninja
+```
 
 Para não tocar no projeto real, ponha `EXPO_PUBLIC_USE_EMULATOR=true` no `.env` e rode em outro terminal:
 
@@ -65,6 +69,17 @@ pnpm test:rules
 ```
 
 ## Distribuir
+
+APK na própria máquina (precisa de `ANDROID_HOME`). Sai na raiz do repositório, para celulares `arm64`:
+
+```powershell
+pnpm apk
+```
+
+- A primeira compilação leva cerca de 10 minutos ou mais; as seguintes, cerca de 3, porque `apps/app/android` é mantida.
+- Para o emulador, use `pnpm apk --emulator`.
+- Depois de remover um plugin ou trocar a versão do Expo, use `pnpm apk --clean`.
+- O APK é assinado com a chave de debug.
 
 APK pelo EAS, a partir de `apps/app` (na primeira vez, `eas init` cria o projeto na sua conta Expo):
 

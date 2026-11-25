@@ -9,6 +9,7 @@
     "dev": "pnpm --filter @tapago/app start",
     "android": "pnpm --filter @tapago/app android",
     "web": "pnpm --filter @tapago/app web",
+    "apk": "pnpm --filter @tapago/app run apk",
     "lint": "turbo run lint && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "turbo run typecheck",
