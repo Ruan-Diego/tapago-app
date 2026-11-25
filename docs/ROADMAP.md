@@ -222,30 +222,30 @@ Ordem fixa: o livro-caixa (F1) fica sólido antes de sessão e notificação (F2
 **Intervenção humana necessária:** nenhuma para código. HUM-08 para o marco.
 
 **Inventário** (SHOP-03–04, INV-01–02)
-- [ ] Modal de compra: "Usar agora" ou "Guardar no inventário" (R4); "Usar agora" bloqueado com timer ativo (R5)
-- [ ] Recibo "Tá pago." com item, duração, valor, saldo restante e status
-- [ ] Lista do inventário (mais recente primeiro, data e valor pago)
-- [ ] Começar item guardado: inicia o timer e remove do inventário
+- [x] Modal de compra: "Usar agora" ou "Guardar no inventário" (R4); "Usar agora" bloqueado com timer ativo (R5)
+- [x] Recibo "Tá pago." com item, duração, valor, saldo restante e status
+- [x] Lista do inventário (mais recente primeiro, data e valor pago)
+- [x] Começar item guardado: inicia o timer e remove do inventário
 
 **Timer** (TMR-01–05)
-- [ ] `state/session` com `id`, `endsAt`, `status`, `remainingMs`, `originDevice`
-- [ ] Contagem calculada por `endsAt − agora`; sobrevive a fechar o app
-- [ ] Pausar (congela restante) e retomar (recalcula fim) (R7)
-- [ ] Encerrar antes: registra minutos reais, sem reembolso (R6); tempo conta no uso (R9)
-- [ ] Ao abrir depois do fim sem encerrar, fecha a sessão com duração completa
-- [ ] Mini timer visível nas outras abas, com toque levando ao Inventário
-- [ ] Sincronização: iniciado no Android aparece na web e vice-versa
+- [x] `state/session` com `id`, `endsAt`, `status`, `remainingMs`, `originDevice`
+- [x] Contagem calculada por `endsAt − agora`; sobrevive a fechar o app
+- [x] Pausar (congela restante) e retomar (recalcula fim) (R7)
+- [x] Encerrar antes: registra minutos reais, sem reembolso (R6); tempo conta no uso (R9)
+- [x] Ao abrir depois do fim sem encerrar, fecha a sessão com duração completa
+- [x] Mini timer visível nas outras abas, com toque levando ao Inventário
+- [x] Sincronização: iniciado no Android aparece na web e vice-versa
 
 **Avisos no Android** (NOTIF-01, 02)
-- [ ] `expo-notifications`: "Faltam 5 minutos" (só sessões > 5 min) e "Tempo esgotado"
-- [ ] Qualquer aparelho Android que receba a sessão (ao iniciar, ao abrir o app ou pelo listener) agenda os avisos, identificados pelo `id` da sessão para não duplicar
-- [ ] Cancelar e reagendar quando a sessão muda (pausar, retomar, encerrar, outro aparelho mexeu)
-- [ ] Canal de notificação Android e permissão `POST_NOTIFICATIONS` (Android 13+); alarme exato quando permitido
-- [ ] Testes do agendador (cálculo dos horários e reagendamento) em `packages/core`
+- [x] `expo-notifications`: "Faltam 5 minutos" (só sessões > 5 min) e "Tempo esgotado"
+- [x] Qualquer aparelho Android que receba a sessão (ao iniciar, ao abrir o app ou pelo listener) agenda os avisos, identificados pelo `id` da sessão para não duplicar
+- [x] Cancelar e reagendar quando a sessão muda (pausar, retomar, encerrar, outro aparelho mexeu)
+- [x] Canal de notificação Android e permissão `POST_NOTIFICATIONS` (Android 13+); alarme exato quando permitido
+- [x] Testes do agendador (cálculo dos horários e reagendamento) em `packages/core`
 
 **Avisos na web** (NOTIF-01, 03)
-- [ ] Com a aba aberta: alerta dentro da página + notificação do navegador (Notification API, com permissão), recalculados ao voltar para a aba
-- [ ] Aviso visível no timer da web: "O aviso só aparece com esta aba aberta"
+- [x] Com a aba aberta: alerta dentro da página + notificação do navegador (Notification API, com permissão), recalculados ao voltar para a aba
+- [x] Aviso visível no timer da web: "O aviso só aparece com esta aba aberta"
 
 **Critério de saída:** aviso chega no celular com o app fechado e na web com a aba aberta (HUM-08).
 
@@ -389,7 +389,7 @@ Atualizado pelo agente no início e no fim de cada fase.
 | --- | --- | --- | --- | --- |
 | F0 | em andamento (falta a validação humana) | 25/11/2026 | | c3a8c51, 2fd49ad |
 | F1 | código pronto (falta a validação humana)   | 25/11/2026 | | |
-| F2 | não iniciada | | | |
+| F2 | código pronto (falta a validação humana) | 25/11/2026 | | |
 | F3 | não iniciada | | | |
 | F4 | não iniciada | | | |
 | F5 | não iniciada | | | |
@@ -417,6 +417,15 @@ Atualizado pelo agente no início e no fim de cada fase.
 - F1 · A meta da semana só aparece com `weeklyGoal` > 0; a edição dela é a F3. O inventário é gravado, mas a lista é da F2.
 - F1 · As regras agora liberam coleção por coleção: `state/session` (F2) e `avatar` (F3) precisam de blocos próprios.
 - F1 · Id do aparelho guardado com `expo-file-system` no Android e `localStorage` na web.
+- F2 · Encerrar grava, em um lote, os minutos no lançamento `use`, o `leisureMin` no dia em que o uso **começou** e apaga `state/session`. Enquanto o timer roda, o lançamento `use` guarda a duração cheia.
+- F2 · As regras só aceitam os minutos de um `use` ao encerrar a sessão atual, não deixam começar outra sessão por cima nem apagar um item do inventário que já saiu. Assim um aparelho desatualizado não conta, não cobra e não usa nada duas vezes.
+- F2 · Tempo usado: minutos arredondados, sem as pausas, no mínimo 1.
+- F2 · Uma sessão vencida que veio só do cache espera 5 s pelo servidor antes de ser encerrada.
+- F2 · Aviso que vence em até 10 s não é cancelado, para o fim normal (inclusive em outro aparelho) não apagar o próprio "Tempo esgotado".
+- F2 · No Android os avisos usam `delivery: 'alarmClock'` com `USE_EXACT_ALARM`/`SCHEDULE_EXACT_ALARM` (o sistema mostra o ícone de alarme). Com o app aberto, o banner do sistema é trocado pelo alerta dentro do app.
+- F2 · As preferências `notif.end` e `notif.warn5` já são respeitadas; a tela para mudá-las é a F3.
+- F2 · O número do recibo são os 4 últimos caracteres do id da compra (não há contador).
+- F2 · A permissão de notificação é pedida ao começar um timer; o pedido com contexto no onboarding é a F3.
 
 **Pendências humanas em aberto**
 
@@ -425,3 +434,5 @@ Atualizado pelo agente no início e no fim de cada fase.
 - EAS: rodar `eas init` em `apps/app` antes do primeiro build na nuvem.
 - HUM-06: instalar o APK nos 2 celulares, abrir a web e entrar com cada conta.
 - HUM-07: usar a F1 por 1 semana. Antes, publicar (push na `main` ou deploy manual) e instalar um APK novo: a F1 foi testada na web contra o emulador, não em um Android.
+- HUM-08: nos 2 celulares, instalar um APK novo (há permissões novas de alarme), permitir notificações, tirar o app da otimização de bateria e testar o aviso com o app fechado. Os avisos do Android ainda não foram testados em aparelho.
+- F2: publicar regras e web juntas (push na `main` ou deploy manual). As regras novas são necessárias para o timer.

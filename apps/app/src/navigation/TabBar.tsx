@@ -3,6 +3,8 @@ import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { MiniTimer } from '@/timer/MiniTimer';
+
 import { useNavItems } from './useNavItems';
 
 /** Barra de abas do celular. */
@@ -12,6 +14,7 @@ export function TabBar(props: BottomTabBarProps) {
 
   return (
     <View style={[styles.wrapper, { paddingBottom: Math.max(insets.bottom, 12) }]}>
+      {items.some((item) => item.selected && item.route === 'inventory') ? null : <MiniTimer />}
       <View accessibilityRole="tablist" accessibilityLabel="Navegação principal" style={styles.bar}>
         {items.map((item) => {
           const color = item.selected ? colors.ink : colors.onInkMuted;
@@ -37,7 +40,7 @@ export function TabBar(props: BottomTabBarProps) {
 }
 
 const styles = StyleSheet.create({
-  wrapper: { backgroundColor: colors.paper, paddingHorizontal: 10, paddingTop: 6 },
+  wrapper: { backgroundColor: colors.paper, paddingHorizontal: 10, paddingTop: 6, gap: 8 },
   bar: {
     height: 70,
     flexDirection: 'row',

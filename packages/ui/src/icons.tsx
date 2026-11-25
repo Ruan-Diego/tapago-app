@@ -15,6 +15,15 @@ const PATHS: Record<IconName, string[]> = {
   profile: ['M4 20c1.5-4 4.5-6 8-6s6.5 2 8 6'],
 };
 
+/** Triângulo cheio de "começar". */
+export function PlayIcon({ color, size = 16 }: { color: string; size?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
+      <Path d="M7 4l13 8-13 8V4z" />
+    </Svg>
+  );
+}
+
 /** Ícones de traço da navegação, copiados do protótipo. */
 export function Icon({ name, color, size = 22 }: { name: IconName; color: string; size?: number }) {
   return (

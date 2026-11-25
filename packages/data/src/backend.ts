@@ -147,9 +147,9 @@ export const backend: Backend = {
     }
   },
 
-  watchUserDoc(uid, onChange, onError) {
+  watchDoc(path, onChange, onError) {
     return onSnapshot(
-      doc(db(), 'users', uid),
+      doc(db(), path),
       { includeMetadataChanges: true },
       (snapshot) =>
         onChange({

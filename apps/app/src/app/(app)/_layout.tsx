@@ -9,12 +9,15 @@ import { Sidebar } from '@/navigation/Sidebar';
 import { TabBar } from '@/navigation/TabBar';
 import { SECTIONS } from '@/navigation/sections';
 import { useSession } from '@/session/store';
+import { AlertBanner } from '@/timer/AlertBanner';
+import { useTimerController } from '@/timer/useTimerController';
 
 export default function AppLayout() {
   const { width } = useWindowDimensions();
   const wide = width >= SIDEBAR_BREAKPOINT;
   const uid = useSession((state) => state.user?.uid);
   useLedgerSubscription(uid, useToday());
+  useTimerController();
 
   return (
     <View style={{ flex: 1 }}>
@@ -35,6 +38,7 @@ export default function AppLayout() {
         ))}
       </Tabs>
       <ToastHost />
+      <AlertBanner />
     </View>
   );
 }

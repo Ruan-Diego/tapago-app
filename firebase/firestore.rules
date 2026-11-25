@@ -63,11 +63,38 @@ service cloud.firestore {
         && (!('reverses' in data) || validId(data.reverses));
     }
 
+    function sessionPath(uid) {
+      return /databases/$(database)/documents/users/$(uid)/state/session;
+    }
+
     /** A única mudança aceita em um lançamento: os minutos realmente usados de um `use`. */
     function isUseMinutesOnly() {
       return resource.data.type == 'use'
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['minutes'])
         && validMinutes(request.resource.data.minutes);
+    }
+
+    /**
+     * Os minutos só são gravados ao encerrar a sessão atual, no mesmo lote que a apaga. Assim, um
+     * aparelho desatualizado não encerra de novo (nem conta de novo no dia) um uso já fechado.
+     */
+    function closesCurrentSession(uid, entryId) {
+      return get(sessionPath(uid)).data.useEntryId == entryId
+        && !existsAfter(sessionPath(uid));
+    }
+
+    function validSession(data) {
+      return hasShape(data, ['id', 'status', 'itemName', 'totalMs', 'startedAt', 'endsAt',
+          'remainingMs', 'useEntryId', 'originDevice'], [])
+        && validId(data.id)
+        && data.status in ['running', 'paused']
+        && validName(data.itemName)
+        && data.totalMs is int && data.totalMs > 0 && data.totalMs <= 86400000
+        && data.startedAt is timestamp
+        && data.endsAt is timestamp
+        && data.remainingMs is int && data.remainingMs >= 0 && data.remainingMs <= data.totalMs
+        && validId(data.useEntryId)
+        && validId(data.originDevice);
     }
 
     function validInventoryItem(data) {
@@ -129,15 +156,33 @@ service cloud.firestore {
       match /entries/{id} {
         allow read: if isOwner(uid);
         allow create: if isOwner(uid) && validEntry(request.resource.data);
-        allow update: if isOwner(uid) && isUseMinutesOnly();
+        allow update: if isOwner(uid) && isUseMinutesOnly() && closesCurrentSession(uid, id);
         allow delete: if false;
       }
 
-      // Apagado quando o uso começa (F2).
+      // Apagado quando o uso começa. Apagar um item que já saiu derruba o lote inteiro, então o
+      // mesmo item não é usado duas vezes.
       match /inventory/{id} {
-        allow read, delete: if isOwner(uid);
+        allow read: if isOwner(uid);
         allow create: if isOwner(uid) && validInventoryItem(request.resource.data);
         allow update: if false;
+        allow delete: if isOwner(uid) && resource != null;
+      }
+
+      // Um timer por vez (R5): o documento é único, e começar outro por cima conta como mudar a
+      // sessão, o que as regras recusam.
+      match /state/session {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid)
+          && validSession(request.resource.data)
+          && request.resource.data.status == 'running'
+          && getAfter(/databases/$(database)/documents/users/$(uid)/entries/$(request.resource.data.useEntryId)).data.type == 'use';
+        // Pausar e retomar.
+        allow update: if isOwner(uid)
+          && validSession(request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'endsAt', 'remainingMs']);
+        allow delete: if isOwner(uid) && resource != null;
       }
 
       match /daily/{day} {

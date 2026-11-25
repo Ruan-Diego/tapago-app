@@ -1,6 +1,8 @@
-import { addDays, dayKey, formatDuration, formatMoney, type Entry } from '@tapago/core';
+import { formatDuration, formatMoney, type Entry } from '@tapago/core';
 import { colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
 import { StyleSheet, Text, View } from 'react-native';
+
+import { whenLabel } from './whenLabel';
 
 type VisibleType = Exclude<Entry['type'], 'use'>;
 
@@ -10,14 +12,6 @@ const KINDS: Record<VisibleType, { sign: string; prefix: string; label: string }
   purchase: { sign: '−', prefix: '−', label: 'compra' },
   reversal: { sign: '↺', prefix: '', label: 'estorno' },
 };
-
-function whenLabel(at: Date, today: string, timeZone: string): string {
-  const time = at.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone });
-  const day = dayKey(at, timeZone);
-  if (day === today) return `hoje ${time}`;
-  if (day === addDays(today, -1)) return `ontem ${time}`;
-  return `${day.slice(8)}/${day.slice(5, 7)} ${time}`;
-}
 
 interface EntryRowProps {
   entry: Entry;

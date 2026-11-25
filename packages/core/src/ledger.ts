@@ -57,7 +57,7 @@ export const inventoryItemSchema = z.object({
   purchasedAt: z.date(),
 });
 
-/** Documento `users/{uid}/state/session` (usado a partir da F2). */
+/** Documento `users/{uid}/state/session`: no máximo um por conta (R5). */
 export const sessionSchema = z.object({
   id: z.string().min(1),
   status: z.enum(['running', 'paused']),

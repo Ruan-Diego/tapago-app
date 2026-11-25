@@ -1,5 +1,18 @@
-import { addDays, type Activity, type Daily, type ShopItem } from '@tapago/core';
-import { activitiesRepository, dailyRepository, shopRepository } from '@tapago/data';
+import {
+  addDays,
+  type Activity,
+  type Daily,
+  type InventoryItem,
+  type ShopItem,
+} from '@tapago/core';
+import {
+  activitiesRepository,
+  dailyRepository,
+  inventoryRepository,
+  shopRepository,
+  timerRepository,
+  type TimerSnapshot,
+} from '@tapago/data';
 import { useEffect } from 'react';
 import { create } from 'zustand';
 
@@ -10,12 +23,21 @@ interface LedgerState {
   /** `null` enquanto carrega. */
   activities: Activity[] | null;
   shopItems: ShopItem[] | null;
+  inventory: InventoryItem[] | null;
+  timer: TimerSnapshot | null;
   /** Agregados do período atual e do anterior. */
   dailies: Daily[] | null;
   error: boolean;
 }
 
-const EMPTY: LedgerState = { activities: null, shopItems: null, dailies: null, error: false };
+const EMPTY: LedgerState = {
+  activities: null,
+  shopItems: null,
+  inventory: null,
+  timer: null,
+  dailies: null,
+  error: false,
+};
 
 export const useLedger = create<LedgerState>(() => EMPTY);
 
@@ -41,9 +63,17 @@ export function useLedgerSubscription(uid: string | undefined, today: string) {
       (shopItems) => useLedger.setState({ shopItems }),
       fail,
     );
+    const stopInventory = inventoryRepository.watch(
+      uid,
+      (inventory) => useLedger.setState({ inventory }),
+      fail,
+    );
+    const stopTimer = timerRepository.watch(uid, (timer) => useLedger.setState({ timer }), fail);
     return () => {
       stopActivities();
       stopShop();
+      stopInventory();
+      stopTimer();
       useLedger.setState(EMPTY);
     };
   }, [uid]);

@@ -163,11 +163,8 @@ describe('livro-caixa', () => {
     await assertFails(updateDoc(doc(db, 'users/ana/entries/use1'), { minutes: 1, name: 'x' }));
   });
 
-  it('em um uso, muda só os minutos, dentro da faixa', async () => {
-    const db = as('ana');
-    await assertSucceeds(updateDoc(doc(db, 'users/ana/entries/use1'), { minutes: 7 }));
-    await assertFails(updateDoc(doc(db, 'users/ana/entries/use1'), { minutes: 0 }));
-    await assertFails(updateDoc(doc(db, 'users/ana/entries/use1'), { minutes: 1441 }));
+  it('não muda os minutos de um uso fora do encerramento da sessão', async () => {
+    await assertFails(updateDoc(doc(as('ana'), 'users/ana/entries/use1'), { minutes: 7 }));
   });
 
   it.each([

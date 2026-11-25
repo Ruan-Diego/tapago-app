@@ -2,6 +2,7 @@ import { newUserProfile, userProfileSchema, type UserProfile } from '@tapago/cor
 
 import { backend } from './backend';
 import type { AuthUser, Unsubscribe } from './types';
+import { paths } from './writes';
 
 /**
  * Observa `users/{uid}` em tempo real e cria o documento no primeiro login.
@@ -16,8 +17,8 @@ export function watchProfile(
 ): Unsubscribe {
   let creating = false;
 
-  return backend.watchUserDoc(
-    user.uid,
+  return backend.watchDoc(
+    paths.user(user.uid),
     ({ data, exists, fromCache }) => {
       if (exists) {
         const parsed = userProfileSchema.safeParse(data);

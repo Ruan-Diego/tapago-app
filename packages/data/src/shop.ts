@@ -1,16 +1,38 @@
 import { purchaseCheck, shopItemSchema, type ShopItem, type ShopItemValues } from '@tapago/core';
 
 import { backend } from './backend';
+import type { WriteOp } from './documents';
 import { parseDocs } from './parse';
+import { newSessionIds } from './timer';
 import type { Unsubscribe } from './types';
 import {
   archiveOp,
   createShopItemOp,
   paths,
+  purchaseAndUseOps,
   purchaseOps,
   updateShopItemOp,
   type ActionContext,
 } from './writes';
+
+export interface Purchase {
+  /** Lançamento da compra: identifica o recibo. */
+  entryId: string;
+  write: Promise<void>;
+}
+
+function purchase(
+  { uid }: ActionContext,
+  item: ShopItem,
+  balance: number,
+  ops: (entryId: string) => WriteOp[],
+): Purchase {
+  const entryId = backend.newId(paths.entries(uid));
+  const write = purchaseCheck(balance, item.value).allowed
+    ? backend.commit(ops(entryId))
+    : Promise.reject(new Error('Saldo insuficiente.'));
+  return { entryId, write };
+}
 
 export const shopRepository = {
   watch(
@@ -38,17 +60,20 @@ export const shopRepository = {
     return backend.commit([archiveOp(paths.shopItems(uid), id)]);
   },
 
-  /** Compra direta para o inventário (SHOP-02). Sem saldo, não grava nada (R3). */
-  buy(context: ActionContext, item: ShopItem, balance: number): Promise<void> {
-    if (!purchaseCheck(balance, item.value).allowed) {
-      return Promise.reject(new Error('Saldo insuficiente.'));
-    }
-    const { uid } = context;
-    return backend.commit(
+  /** Comprar e guardar no inventário (SHOP-02, 03). Sem saldo, não grava nada (R3). */
+  buyAndKeep(context: ActionContext, item: ShopItem, balance: number): Purchase {
+    return purchase(context, item, balance, (entryId) =>
       purchaseOps(context, item, {
-        entryId: backend.newId(paths.entries(uid)),
-        inventoryId: backend.newId(paths.inventory(uid)),
+        entryId,
+        inventoryId: backend.newId(paths.inventory(context.uid)),
       }),
+    );
+  },
+
+  /** Comprar e usar agora: já começa o timer (R4). */
+  buyAndUse(context: ActionContext, item: ShopItem, balance: number): Purchase {
+    return purchase(context, item, balance, (entryId) =>
+      purchaseAndUseOps(context, item, { entryId, ...newSessionIds(context.uid) }),
     );
   },
 };

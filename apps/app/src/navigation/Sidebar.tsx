@@ -5,6 +5,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Avatar } from '@/profile/Avatar';
 import { useDisplayName } from '@/profile/useDisplayName';
 import { useSession } from '@/session/store';
+import { MiniTimer } from '@/timer/MiniTimer';
 
 import { useNavItems } from './useNavItems';
 
@@ -45,6 +46,7 @@ export function Sidebar(props: BottomTabBarProps) {
           );
         })}
       </View>
+      {items.some((item) => item.selected && item.route === 'inventory') ? null : <MiniTimer />}
       <View style={styles.footer}>
         <Avatar size={40} />
         <View style={styles.identity}>

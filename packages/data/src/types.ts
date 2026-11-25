@@ -11,8 +11,8 @@ export interface AuthUser {
 
 export type Unsubscribe = () => void;
 
-/** Retrato cru do documento `users/{uid}`. */
-export interface UserDocSnapshot {
+/** Retrato cru de um documento. */
+export interface DocSnapshot {
   data: unknown;
   exists: boolean;
   /** `true` enquanto o servidor ainda não confirmou o que veio do cache local. */
@@ -34,9 +34,9 @@ export interface Backend {
   hasPendingWrites(timeoutMs: number): Promise<boolean>;
   /** Encerra a sessão e apaga o cache local do Firestore. */
   signOut(): Promise<void>;
-  watchUserDoc(
-    uid: string,
-    onChange: (snapshot: UserDocSnapshot) => void,
+  watchDoc(
+    path: string,
+    onChange: (snapshot: DocSnapshot) => void,
     onError: (error: Error) => void,
   ): Unsubscribe;
   /** Cria `users/{uid}` em uma transação, sem nunca sobrescrever um documento existente. */

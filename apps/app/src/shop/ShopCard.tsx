@@ -1,10 +1,8 @@
-import { formatDuration, formatMoney, purchaseCheck, type ShopItem } from '@tapago/core';
+import { formatMoney, purchaseCheck, type ShopItem } from '@tapago/core';
 import { colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
-import { useEffect, useRef, useState } from 'react';
 import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
-/** Evita que um toque duplo compre duas vezes antes de o saldo atualizar. */
-const COOLDOWN_MS = 1000;
+import { BigDuration } from './BigDuration';
 
 interface ShopCardProps {
   item: ShopItem;
@@ -15,27 +13,9 @@ interface ShopCardProps {
   style?: StyleProp<ViewStyle>;
 }
 
-/** "2 h", "45 min" ou "1h 30min", com o número em destaque. */
-function bigDuration(minutes: number): [string, string] {
-  if (minutes < 60) return [String(minutes), 'min'];
-  if (minutes % 60 === 0) return [String(minutes / 60), 'h'];
-  return [formatDuration(minutes).replace('min', ''), 'min'];
-}
-
 export function ShopCard({ item, balance, onBuy, onEdit, style }: ShopCardProps) {
-  const [cooling, setCooling] = useState(false);
-  const timer = useRef<ReturnType<typeof setTimeout>>(undefined);
-  useEffect(() => () => clearTimeout(timer.current), []);
-
   const { allowed, missing } = purchaseCheck(balance ?? 0, item.value);
   const canBuy = balance !== undefined && allowed;
-  const [number, unit] = bigDuration(item.minutes);
-
-  function buy() {
-    setCooling(true);
-    timer.current = setTimeout(() => setCooling(false), COOLDOWN_MS);
-    onBuy(item);
-  }
 
   return (
     <View style={[styles.card, style]}>
@@ -45,10 +25,7 @@ export function ShopCard({ item, balance, onBuy, onEdit, style }: ShopCardProps)
         onPress={() => onEdit(item)}
         style={styles.body}
       >
-        <View style={styles.duration}>
-          <Text style={styles.number}>{number}</Text>
-          <Text style={styles.unit}>{unit}</Text>
-        </View>
+        <BigDuration minutes={item.minutes} />
         <Text style={styles.name}>{item.name}</Text>
       </Pressable>
       <Pressable
@@ -58,13 +35,13 @@ export function ShopCard({ item, balance, onBuy, onEdit, style }: ShopCardProps)
             ? `Comprar ${item.name} por ${formatMoney(item.value)}`
             : `${item.name}: faltam ${formatMoney(missing)}`
         }
-        accessibilityState={{ disabled: !canBuy || cooling }}
-        disabled={!canBuy || cooling}
-        onPress={buy}
+        accessibilityState={{ disabled: !canBuy }}
+        disabled={!canBuy}
+        onPress={() => onBuy(item)}
         style={({ pressed }) => [
           styles.button,
           !canBuy && styles.blocked,
-          (pressed || cooling) && styles.pressed,
+          pressed && styles.pressed,
         ]}
       >
         {canBuy ? (
@@ -96,9 +73,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.white,
   },
   body: { flexGrow: 1, gap: spacing.md },
-  duration: { flexDirection: 'row', alignItems: 'baseline', gap: 3 },
-  number: { fontFamily: fonts.displayBold, fontSize: 42, letterSpacing: -2, color: colors.ink },
-  unit: { fontFamily: fonts.display, fontSize: 16, color: colors.graphite },
+
   name: { fontFamily: fonts.bodySemiBold, fontSize: fontSizes.label, color: colors.ink },
   button: {
     minHeight: 48,

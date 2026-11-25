@@ -14,6 +14,8 @@ const config: ExpoConfig = {
     package: 'com.tapago.app',
     // O arquivo fica fora do git. No CI/EAS dá para apontar outro caminho pela variável.
     googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? './google-services.json',
+    // Alarme exato para o aviso do timer: a primeira vale no Android 12, a segunda no 13+.
+    permissions: ['android.permission.SCHEDULE_EXACT_ALARM', 'android.permission.USE_EXACT_ALARM'],
   },
   web: {
     bundler: 'metro',

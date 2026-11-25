@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { useLedger } from './store';
 import { useToast } from './toast';
 
 const DURATION_MS = 3000;
@@ -13,6 +14,8 @@ export function ToastHost() {
   const { width } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const wide = width >= SIDEBAR_BREAKPOINT;
+  // O mini timer fica entre o recado e a barra de abas.
+  const hasTimer = useLedger((state) => Boolean(state.timer?.session));
 
   useEffect(() => {
     if (!toast) return;
@@ -26,7 +29,10 @@ export function ToastHost() {
     <View
       accessibilityLiveRegion="polite"
       role="status"
-      style={[styles.toast, wide ? styles.wide : { bottom: 94 + Math.max(insets.bottom, 12) }]}
+      style={[
+        styles.toast,
+        wide ? styles.wide : { bottom: (hasTimer ? 154 : 94) + Math.max(insets.bottom, 12) },
+      ]}
     >
       {toast.amount ? <Text style={styles.amount}>{toast.amount}</Text> : null}
       <Text numberOfLines={2} style={styles.text}>

@@ -1,5 +1,6 @@
 import { activeInOrder, formatMoney, type ShopItem } from '@tapago/core';
 import { PillButton, SIDEBAR_BREAKPOINT, colors, fonts, fontSizes } from '@tapago/ui';
+import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
@@ -8,6 +9,9 @@ import { useLedger } from '@/ledger/store';
 import { Screen } from '@/navigation/Screen';
 import { PageHeading } from '@/navigation/PageHeading';
 import { useSession } from '@/session/store';
+import { PurchaseSheet } from '@/shop/PurchaseSheet';
+import { ReceiptModal } from '@/shop/ReceiptModal';
+import type { Receipt } from '@/shop/receipt';
 import { ShopCard } from '@/shop/ShopCard';
 import { ShopItemSheet } from '@/shop/ShopItemSheet';
 
@@ -19,13 +23,15 @@ export default function Shop() {
   /** `'new'` ao criar; o item ao editar. */
   const [editing, setEditing] = useState<ShopItem | 'new' | null>(null);
   const items = activeInOrder(shopItems ?? []);
+  const [buying, setBuying] = useState<ShopItem | null>(null);
+  const [receipt, setReceipt] = useState<Receipt | null>(null);
 
   return (
     <Screen>
       <PageHeading eyebrow="Loja" title={'Gaste o que\nvocê ganhou.'}>
         {balance === undefined
           ? 'Compre o seu lazer com o saldo.'
-          : `Você tem ${formatMoney(balance)}. O que comprar fica guardado no inventário.`}
+          : `Você tem ${formatMoney(balance)}. Ao comprar, escolha usar agora ou guardar.`}
       </PageHeading>
       <View style={styles.header}>
         <Text accessibilityRole="header" style={styles.title}>
@@ -46,7 +52,7 @@ export default function Shop() {
               key={item.id}
               item={item}
               balance={balance}
-              onBuy={buyItem}
+              onBuy={setBuying}
               onEdit={setEditing}
               style={wide ? styles.cellWide : styles.cell}
             />
@@ -58,6 +64,26 @@ export default function Shop() {
           uid={uid}
           item={editing === 'new' ? undefined : editing}
           onClose={() => setEditing(null)}
+        />
+      ) : null}
+      {buying ? (
+        <PurchaseSheet
+          item={buying}
+          onClose={() => setBuying(null)}
+          onChoose={(useNow) => {
+            setReceipt(buyItem(buying, useNow));
+            setBuying(null);
+          }}
+        />
+      ) : null}
+      {receipt ? (
+        <ReceiptModal
+          receipt={receipt}
+          onClose={() => setReceipt(null)}
+          onSeeTimer={() => {
+            setReceipt(null);
+            router.navigate('/inventory');
+          }}
         />
       ) : null}
     </Screen>
