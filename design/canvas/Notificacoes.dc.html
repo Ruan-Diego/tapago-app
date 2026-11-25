@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Tá pago — Notificações no celular</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #1C1C1A; color: #FFFFFF; font-family: Inter, system-ui, sans-serif; padding: 72px 14px 24px; display: flex; flex-direction: column; gap: 10px">
+  <div style="text-align: center; margin-bottom: 36px">
+    <div style="font-size: 17px; font-weight: 500; color: #D5D5CF">Quarta-feira, 25 de novembro</div>
+    <div style="font-family: 'Space Grotesk', sans-serif; font-size: 92px; font-weight: 600; letter-spacing: -0.04em; line-height: 1">21:35</div>
+  </div>
+
+  <div style="background: rgba(255,255,255,0.14); border-radius: 22px; padding: 14px; display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; align-items: center; gap: 10px">
+      <div style="width: 38px; height: 38px; border-radius: 10px; background: #111111; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px">tá<span style="color: {{accent}}">.</span></div>
+      <div style="flex: 1"><div style="font-size: 14px; font-weight: 600">Jogar 1 hora</div><div style="font-size: 12px; color: #D5D5CF">Termina às 21:40</div></div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 26px; font-weight: 600; color: {{accent}}">04:58</div>
+    </div>
+    <div style="height: 6px; background: rgba(255,255,255,0.18); border-radius: 999px; overflow: hidden"><div style="width: 92%; height: 100%; background: {{accent}}; border-radius: 999px"></div></div>
+    <div style="display: flex; gap: 8px">
+      <span style="flex: 1; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.16); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600">Pausar</span>
+      <span style="flex: 1; height: 36px; border-radius: 10px; background: rgba(255,255,255,0.16); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600">Encerrar</span>
+    </div>
+  </div>
+  <div style="font-size: 11px; color: #BDBDB6; padding: 0 6px 8px">Atividade ao vivo: o timer fica visível na tela de bloqueio.</div>
+
+  <div style="background: rgba(255,255,255,0.92); color: #111111; border-radius: 20px; padding: 12px 14px; display: flex; gap: 12px">
+    <div style="width: 38px; height: 38px; border-radius: 10px; background: #111111; flex: none; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; color: #FFFFFF">tá<span style="color: {{accent}}">.</span></div>
+    <div style="flex: 1"><div style="display: flex; justify-content: space-between; font-size: 12px; color: #55554F"><span>Tá pago</span><span>agora</span></div><div style="font-size: 15px; font-weight: 600; margin-top: 2px">Faltam 5 minutos</div><div style="font-size: 13px; color: #3A3A36">Jogar 1 hora termina às 21:40. Vai salvando aí.</div></div>
+  </div>
+  <div style="background: rgba(255,255,255,0.92); color: #111111; border-radius: 20px; padding: 12px 14px; display: flex; gap: 12px">
+    <div style="width: 38px; height: 38px; border-radius: 10px; background: #111111; flex: none; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; color: #FFFFFF">tá<span style="color: {{accent}}">.</span></div>
+    <div style="flex: 1"><div style="display: flex; justify-content: space-between; font-size: 12px; color: #55554F"><span>Tá pago</span><span>1h atrás</span></div><div style="font-size: 15px; font-weight: 600; margin-top: 2px">Tempo esgotado</div><div style="font-size: 13px; color: #3A3A36">Acabou: Episódio de série longo. Bora voltar pras atividades?</div></div>
+  </div>
+  <div style="background: rgba(255,255,255,0.92); color: #111111; border-radius: 20px; padding: 12px 14px; display: flex; gap: 12px">
+    <div style="width: 38px; height: 38px; border-radius: 10px; background: #111111; flex: none; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; color: #FFFFFF">tá<span style="color: {{accent}}">.</span></div>
+    <div style="flex: 1"><div style="display: flex; justify-content: space-between; font-size: 12px; color: #55554F"><span>Tá pago</span><span>dom.</span></div><div style="font-size: 15px; font-weight: 600; margin-top: 2px">Resumo da semana</div><div style="font-size: 13px; color: #3A3A36">+R$ 168 ganhos, −R$ 26 em deslizes, 6h de lazer.</div></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3A","options":["#D4FF3A","#FF7A3D","#5CE1FF","#FF8AD8"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() { return { accent: this.props.accent ?? '#D4FF3A' }; }
+}
+</script>
+</body>
+</html>

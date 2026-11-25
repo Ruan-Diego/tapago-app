@@ -1,0 +1,5 @@
+# Segredos e config local do Firebase
+.env
+.env.*
+!.env.example
+google-services.json

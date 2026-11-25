@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Tá pago — Marca</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 760px; height: 900px; box-sizing: border-box; padding: 56px; background: #F4F4F1; color: #111111; font-family: Inter, system-ui, sans-serif; display: flex; flex-direction: column; gap: 36px">
+
+  <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #6B6B66">
+    <span>Marca</span><span>v0.1 · protótipo</span>
+  </div>
+
+  <div>
+    <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 148px; line-height: 0.9; letter-spacing: -0.06em">Tá pago<span style="background: {{accent}}; padding: 0 6px; margin-left: 4px">.</span></div>
+    <p style="margin: 20px 0 0; font-size: 20px; line-height: 1.4; max-width: 540px; color: #3A3A36">Faça o que é bom, evite o que é ruim, compre o seu lazer. Sem culpa — já foi pago.</p>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 12px; padding: 28px; background: #FFFFFF; border: 1px solid #E3E3DE; border-radius: 24px">
+    <div style="align-self: flex-start; background: #E9E9E4; border-radius: 20px 20px 20px 6px; padding: 14px 18px; font-size: 18px">Por que você tá jogando agora?</div>
+    <div style="align-self: flex-end; background: #111111; color: #FFFFFF; border-radius: 20px 20px 6px 20px; padding: 14px 20px; font-family: 'Space Grotesk', sans-serif; font-size: 26px; font-weight: 700; letter-spacing: -0.03em">Tá pago<span style="color: {{accent}}">.</span></div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; flex: 1">
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #6B6B66">Ícone</div>
+      <div style="width: 140px; height: 140px; border-radius: 34px; background: #111111; display: flex; align-items: center; justify-content: center">
+        <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 64px; letter-spacing: -0.06em; color: #FFFFFF">tá<span style="color: {{accent}}">.</span></span>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #6B6B66">Cores</div>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px">
+        <div style="display: flex; align-items: center; gap: 10px"><span style="width: 28px; height: 28px; border-radius: 8px; background: #111111"></span>Tinta · #111111</div>
+        <div style="display: flex; align-items: center; gap: 10px"><span style="width: 28px; height: 28px; border-radius: 8px; background: #F4F4F1; border: 1px solid #D5D5CF; box-sizing: border-box"></span>Papel · #F4F4F1</div>
+        <div style="display: flex; align-items: center; gap: 10px"><span style="width: 28px; height: 28px; border-radius: 8px; background: #6B6B66"></span>Grafite · #6B6B66</div>
+        <div style="display: flex; align-items: center; gap: 10px"><span style="width: 28px; height: 28px; border-radius: 8px; background: #B5B5AE"></span>Lazer · #B5B5AE</div>
+        <div style="display: flex; align-items: center; gap: 10px"><span style="width: 28px; height: 28px; border-radius: 8px; background: {{accent}}"></span>Destaque · dinheiro</div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 12px">
+      <div style="font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: #6B6B66">Tipografia</div>
+      <div style="font-family: 'Space Grotesk', sans-serif; font-size: 30px; font-weight: 700; letter-spacing: -0.04em; line-height: 1">R$ 142</div>
+      <div style="font-size: 12px; color: #6B6B66">Space Grotesk — números e títulos</div>
+      <div style="font-size: 15px">Passear com o cachorro</div>
+      <div style="font-size: 12px; color: #6B6B66">Inter — interface</div>
+      <div style="font-family: 'JetBrains Mono', monospace; font-size: 13px">RECIBO Nº 0042</div>
+      <div style="font-size: 12px; color: #6B6B66">JetBrains Mono — recibos</div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#D4FF3A","options":["#D4FF3A","#FF7A3D","#5CE1FF","#FF8AD8"]},"$preview":{"width":760,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() { return { accent: this.props.accent ?? '#D4FF3A' }; }
+}
+</script>
+</body>
+</html>

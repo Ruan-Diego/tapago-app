@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Tá pago — Onboarding</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600;700&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: {{rootW}}; height: {{rootH}}; min-height: {{rootMinH}}; display: flex; flex-wrap: wrap; background: #111111; color: #111111; font-family: Inter, system-ui, sans-serif; box-sizing: border-box; overflow: hidden">
+
+  <sc-if value="{{isWeb}}" hint-placeholder-val="{{false}}">
+    <div style="flex: 1 1 420px; min-height: 360px; padding: 56px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; gap: 40px; color: #FFFFFF">
+      <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 26px; letter-spacing: -0.03em">Tá pago<span style="color: {{accent}}">.</span></div>
+      <div>
+        <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 84px; line-height: 0.92; letter-spacing: -0.055em">Primeiro o que<br>precisa ser feito.<br><span style="color: {{accent}}">Depois, tá pago.</span></div>
+        <p style="margin: 28px 0 0; font-size: 18px; line-height: 1.5; color: #BDBDB6; max-width: 460px">Atividade boa vira dinheiro. Atividade ruim tira dinheiro. Lazer custa dinheiro. Você nunca mais precisa negociar com você mesmo.</p>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; max-width: 420px">
+        <div style="align-self: flex-start; background: #2A2A27; border-radius: 18px 18px 18px 6px; padding: 12px 16px; font-size: 15px; color: #E6E6E1">Por que você tá jogando agora?</div>
+        <div style="align-self: flex-end; background: {{accent}}; color: #111111; border-radius: 18px 18px 6px 18px; padding: 12px 18px; font-family: 'Space Grotesk', sans-serif; font-size: 20px; font-weight: 700">Tá pago.</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <div style="flex: 1 1 390px; display: flex; justify-content: center; background: {{colBg}}; min-height: {{colH}}">
+    <div style="width: 100%; max-width: {{colMax}}; height: {{colH}}; display: flex; flex-direction: column; box-sizing: border-box">
+
+      <sc-if value="{{showTop}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 16px 20px 8px; flex: none">
+          <button onClick="{{back}}" aria-label="Voltar" style="width: 44px; height: 44px; border-radius: 50%; border: 1px solid #D5D5CF; background: #FFFFFF; color: #111111; display: flex; align-items: center; justify-content: center; cursor: pointer; flex: none">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" style="stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M15 5l-7 7 7 7"></path></svg>
+          </button>
+          <div style="flex: 1; display: flex; gap: 4px">
+            <sc-for list="{{progress}}" as="pg" hint-placeholder-count="5">
+              <div style="flex: 1; height: 4px; border-radius: 999px; background: {{pg.bg}}"></div>
+            </sc-for>
+          </div>
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6B6B66; width: 30px; text-align: right">{{stepLabel}}</span>
+        </div>
+      </sc-if>
+
+      <div style="flex: 1; overflow-y: auto; padding: 8px 20px 20px; box-sizing: border-box">
+
+        <sc-if value="{{s0}}" hint-placeholder-val="{{true}}">
+          <div style="min-height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 28px; color: #FFFFFF; padding-top: 40px">
+            <div style="width: 84px; height: 84px; border-radius: 22px; background: #FFFFFF; display: flex; align-items: center; justify-content: center">
+              <span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 38px; letter-spacing: -0.06em; color: #111111">tá<span style="background: {{accent}}">.</span></span>
+            </div>
+            <div style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 76px; line-height: 0.92; letter-spacing: -0.055em">Tá pago<span style="color: {{accent}}">.</span></div>
+            <p style="margin: 0; font-size: 18px; line-height: 1.5; color: #D5D5CF">Um app pra trocar esforço por lazer. Faça o que é bom, evite o que é ruim, compre seu tempo livre — sem culpa.</p>
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <div style="align-self: flex-start; background: #2A2A27; border-radius: 18px 18px 18px 6px; padding: 10px 14px; font-size: 14px; color: #E6E6E1">Por que você tá jogando agora?</div>
+              <div style="align-self: flex-end; background: {{accent}}; color: #111111; border-radius: 18px 18px 6px 18px; padding: 10px 16px; font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700">Tá pago.</div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{s1}}" hint-placeholder-val="{{false}}">
+          <h1 style="margin: 12px 0 6px; font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.02">Como funciona</h1>
+          <p style="margin: 0 0 20px; font-size: 15px; color: #6B6B66">Três passos. Você define todas as regras.</p>
+          <div style="display: flex; flex-direction: column; gap: 12px">
+            <div style="background: #FFFFFF; border: 1px solid #E3E3DE; border-radius: 18px; padding: 16px">
+              <div style="display: flex; gap: 10px; align-items: baseline"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6B6B66">01</span><span style="font-weight: 600; font-size: 16px">Cadastre atividades e dê um preço</span></div>
+              <div style="margin-top: 12px; display: flex; align-items: center; justify-content: space-between; border: 1px solid #E3E3DE; border-radius: 12px; padding: 8px 8px 8px 14px; font-size: 14px">
+                <span>Lavar a pia</span><span style="background: #111111; color: #FFFFFF; border: 1.5px solid #111111; border-radius: 10px; padding: 6px 12px; font-family: 'Space Grotesk', sans-serif; font-weight: 600">+R$ 10</span>
+              </div>
+              <div style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between; border: 1px dashed #A3A39C; border-radius: 12px; padding: 8px 8px 8px 14px; font-size: 14px; background: #FAFAF8">
+                <span>Reels demais</span><span style="background: #FFFFFF; color: #111111; border: 1.5px solid #111111; border-radius: 10px; padding: 6px 12px; font-family: 'Space Grotesk', sans-serif; font-weight: 600">−R$ 8</span>
+              </div>
+              <p style="margin: 10px 0 0; font-size: 13px; color: #6B6B66; line-height: 1.45">As boas dão dinheiro. As ruins — Reels demais, gritar com alguém — tiram.</p>
+            </div>
+            <div style="background: #FFFFFF; border: 1px solid #E3E3DE; border-radius: 18px; padding: 16px">
+              <div style="display: flex; gap: 10px; align-items: baseline"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6B6B66">02</span><span style="font-weight: 600; font-size: 16px">Fez? Toque e o saldo muda na hora</span></div>
+              <div style="margin-top: 12px; display: flex; align-items: center; gap: 12px; font-family: 'Space Grotesk', sans-serif; font-weight: 700">
+                <span style="font-size: 28px; color: #6B6B66">R$ 0</span>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111111" aria-hidden="true" style="stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+                <span style="font-size: 28px; background: {{accent}}; padding: 0 6px">R$ 10</span>
+              </div>
+            </div>
+            <div style="background: #FFFFFF; border: 1px solid #E3E3DE; border-radius: 18px; padding: 16px">
+              <div style="display: flex; gap: 10px; align-items: baseline"><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #6B6B66">03</span><span style="font-weight: 600; font-size: 16px">Compre seu lazer na loja</span></div>
+              <div style="margin-top: 12px; border: 1px dashed #A3A39C; border-radius: 6px; padding: 12px 14px; font-family: 'JetBrains Mono', monospace; font-size: 12px; display: flex; justify-content: space-between; align-items: center">
+                <span>Jogar 1 hora · R$ 18</span><span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px; background: {{accent}}; padding: 0 4px">Tá pago.</span>
+              </div>
+              <p style="margin: 10px 0 0; font-size: 13px; color: #6B6B66; line-height: 1.45">Use na hora — o timer começa e te avisamos quando acabar — ou guarde no inventário pra depois.</p>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{s2}}" hint-placeholder-val="{{false}}">
+          <h1 style="margin: 12px 0 6px; font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.02">Como você<br>se chama?</h1>
+          <p style="margin: 0 0 28px; font-size: 15px; color: #6B6B66">É só pra deixar o app com a sua cara.</p>
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 14px">
+            <div style="width: 128px; height: 128px; border-radius: 50%; overflow: hidden; background: #111111; color: {{accent}}; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 48px">
+              <sc-if value="{{hasPhoto}}" hint-placeholder-val="{{false}}"><img src="{{photo}}" alt="Sua foto" style="width: 100%; height: 100%; object-fit: cover"></sc-if>
+              <sc-if value="{{noPhoto}}" hint-placeholder-val="{{true}}"><span>{{initials}}</span></sc-if>
+            </div>
+            <label style="position: relative; height: 44px; padding: 0 18px; border-radius: 999px; border: 1px solid #111111; display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; cursor: pointer">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true" style="stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"></path><circle cx="12" cy="13" r="3.5"></circle></svg>
+              {{photoBtn}}
+              <input type="file" accept="image/*" onChange="{{pickPhoto}}" style="position: absolute; width: 1px; height: 1px; opacity: 0">
+            </label>
+          </div>
+          <label style="display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; margin-top: 28px">Seu nome
+            <input value="{{name}}" onChange="{{setName}}" placeholder="Ex.: Rafael" style="height: 52px; border: 1px solid #C9C9C2; border-radius: 12px; padding: 0 14px; font-size: 17px; font-family: inherit; background: #FFFFFF; color: #111111; font-weight: 400; box-sizing: border-box">
+          </label>
+        </sc-if>
+
+        <sc-if value="{{s3}}" hint-placeholder-val="{{false}}">
+          <h1 style="margin: 12px 0 6px; font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.02">Suas<br>atividades</h1>
+          <p style="margin: 0 0 18px; font-size: 15px; color: #6B6B66">As boas dão dinheiro. As ruins tiram. Marque as suas e ajuste os valores — dá pra mudar depois.</p>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin: 2px 0 2px">+ Ganham dinheiro</div>
+            <sc-for list="{{posPresets}}" as="p" hint-placeholder-count="5">
+              <div style="background: #FFFFFF; border: 1px solid {{p.border}}; border-radius: 14px; padding: 6px 6px 6px 6px; display: flex; align-items: center; gap: 8px">
+                <button onClick="{{p.toggle}}" role="checkbox" aria-checked="{{p.checked}}" aria-label="{{p.aria}}" style="width: 44px; height: 44px; flex: none; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer">
+                  <span style="width: 22px; height: 22px; border-radius: 7px; border: 2px solid #111111; background: {{p.boxBg}}; display: flex; align-items: center; justify-content: center; box-sizing: border-box">
+                    <sc-if value="{{p.on}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" aria-hidden="true" style="stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round"><path d="M5 12l5 5 9-10"></path></svg></sc-if>
+                  </span>
+                </button>
+                <div style="flex: 1; min-width: 0">
+                  <div style="font-size: 14px; font-weight: 600">{{p.name}}</div>
+                  <div style="font-size: 12px; color: #6B6B66">≈ {{p.dur}}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 2px; flex: none">
+                  <button onClick="{{p.minus}}" aria-label="{{p.minusAria}}" style="width: 36px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #111111; cursor: pointer">−</button>
+                  <span style="min-width: 52px; text-align: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px">{{p.price}}</span>
+                  <button onClick="{{p.plus}}" aria-label="{{p.plusAria}}" style="width: 36px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #111111; cursor: pointer">+</button>
+                </div>
+              </div>
+            </sc-for>
+            <div style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin: 18px 0 0">− Custam dinheiro</div>
+            <div style="font-size: 13px; color: #6B6B66; margin-bottom: 2px">Hábitos que você quer largar. Toda vez que acontecer, você registra e perde.</div>
+            <sc-for list="{{negPresets}}" as="p" hint-placeholder-count="4">
+              <div style="background: #FAFAF8; border: 1px dashed {{p.border}}; border-radius: 14px; padding: 6px 6px 6px 6px; display: flex; align-items: center; gap: 8px">
+                <button onClick="{{p.toggle}}" role="checkbox" aria-checked="{{p.checked}}" aria-label="{{p.aria}}" style="width: 44px; height: 44px; flex: none; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer">
+                  <span style="width: 22px; height: 22px; border-radius: 7px; border: 2px solid #111111; background: {{p.boxBg}}; display: flex; align-items: center; justify-content: center; box-sizing: border-box">
+                    <sc-if value="{{p.on}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" aria-hidden="true" style="stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round"><path d="M5 12l5 5 9-10"></path></svg></sc-if>
+                  </span>
+                </button>
+                <div style="flex: 1; min-width: 0">
+                  <div style="font-size: 14px; font-weight: 600">{{p.name}}</div>
+                  <div style="font-size: 12px; color: #6B6B66">tempo perdido ≈ {{p.dur}}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 2px; flex: none">
+                  <button onClick="{{p.minus}}" aria-label="{{p.minusAria}}" style="width: 36px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #111111; cursor: pointer">−</button>
+                  <span style="min-width: 52px; text-align: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px">{{p.price}}</span>
+                  <button onClick="{{p.plus}}" aria-label="{{p.plusAria}}" style="width: 36px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #111111; cursor: pointer">+</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{s4}}" hint-placeholder-val="{{false}}">
+          <h1 style="margin: 12px 0 6px; font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.02">Sua loja<br>de lazer</h1>
+          <p style="margin: 0 0 18px; font-size: 15px; color: #6B6B66">Quanto custa cada momento de lazer? Quanto mais caro, mais esforço ele exige.</p>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <sc-for list="{{shopPresets}}" as="p" hint-placeholder-count="7">
+              <div style="background: #FFFFFF; border: 1px solid {{p.border}}; border-radius: 14px; padding: 6px; display: flex; align-items: center; gap: 8px">
+                <button onClick="{{p.toggle}}" role="checkbox" aria-checked="{{p.checked}}" aria-label="{{p.aria}}" style="width: 44px; height: 44px; flex: none; border: 0; background: transparent; display: flex; align-items: center; justify-content: center; cursor: pointer">
+                  <span style="width: 22px; height: 22px; border-radius: 7px; border: 2px solid #111111; background: {{p.boxBg}}; display: flex; align-items: center; justify-content: center; box-sizing: border-box">
+                    <sc-if value="{{p.on}}" hint-placeholder-val="{{false}}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" aria-hidden="true" style="stroke-width: 3.5; stroke-linecap: round; stroke-linejoin: round"><path d="M5 12l5 5 9-10"></path></svg></sc-if>
+                  </span>
+                </button>
+                <div style="flex: 1; min-width: 0">
+                  <div style="font-size: 14px; font-weight: 600">{{p.name}}</div>
+                  <div style="font-size: 12px; color: #6B6B66">dura {{p.dur}}</div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 2px; flex: none">
+                  <button onClick="{{p.minus}}" aria-label="{{p.minusAria}}" style="width: 36px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #111111; cursor: pointer">−</button>
+                  <span style="min-width: 52px; text-align: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px">{{p.price}}</span>
+                  <button onClick="{{p.plus}}" aria-label="{{p.plusAria}}" style="width: 36px; height: 44px; border: 0; background: transparent; font-size: 20px; color: #111111; cursor: pointer">+</button>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{showAdd}}" hint-placeholder-val="{{false}}">
+          <div style="margin-top: 12px; background: #FFFFFF; border: 1px dashed #A3A39C; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 10px">
+            <div style="font-size: 13px; font-weight: 600">{{addTitle}}</div>
+            <sc-if value="{{s3}}" hint-placeholder-val="{{false}}">
+              <div role="radiogroup" aria-label="Tipo" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px">
+                <button role="radio" aria-checked="{{dPosChecked}}" onClick="{{setDraftPos}}" style="height: 44px; border-radius: 10px; border: 1.5px solid #111111; background: {{dPosBg}}; color: {{dPosFg}}; font-family: inherit; font-weight: 600; font-size: 14px; cursor: pointer">+ Ganha</button>
+                <button role="radio" aria-checked="{{dNegChecked}}" onClick="{{setDraftNeg}}" style="height: 44px; border-radius: 10px; border: 1.5px solid #111111; background: {{dNegBg}}; color: {{dNegFg}}; font-family: inherit; font-weight: 600; font-size: 14px; cursor: pointer">− Perde</button>
+              </div>
+            </sc-if>
+            <div style="display: flex; gap: 8px">
+              <input value="{{draftName}}" onChange="{{setDraftName}}" aria-label="Nome" placeholder="{{addPh}}" style="flex: 1; min-width: 0; height: 44px; border: 1px solid #C9C9C2; border-radius: 10px; padding: 0 12px; font-size: 15px; font-family: inherit; box-sizing: border-box">
+              <input type="number" min="1" value="{{draftValue}}" onChange="{{setDraftValue}}" aria-label="Valor em reais" placeholder="R$" style="width: 72px; height: 44px; border: 1px solid #C9C9C2; border-radius: 10px; padding: 0 10px; font-size: 15px; font-family: inherit; box-sizing: border-box">
+              <button onClick="{{addCustom}}" style="height: 44px; padding: 0 14px; border-radius: 10px; border: 0; background: #111111; color: #FFFFFF; font-family: inherit; font-weight: 600; cursor: pointer">Adicionar</button>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{s5}}" hint-placeholder-val="{{false}}">
+          <h1 style="margin: 12px 0 6px; font-family: 'Space Grotesk', sans-serif; font-size: 34px; font-weight: 700; letter-spacing: -0.04em; line-height: 1.02">A gente avisa<br>quando acabar.</h1>
+          <p style="margin: 0 0 24px; font-size: 15px; color: #6B6B66; line-height: 1.5">Comprou 1 hora de jogo? O timer roda e o celular avisa 5 minutos antes e quando o tempo acabar. Ninguém precisa ficar de olho no relógio.</p>
+          <div style="background: #E9E9E4; border-radius: 24px; padding: 18px; display: flex; flex-direction: column; gap: 10px">
+            <div style="background: #FFFFFF; border-radius: 16px; padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; box-shadow: 0 6px 18px rgba(0,0,0,0.08)">
+              <div style="width: 36px; height: 36px; border-radius: 9px; background: #111111; flex: none; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; color: #FFFFFF">tá<span style="color: {{accent}}">.</span></div>
+              <div style="flex: 1"><div style="display: flex; justify-content: space-between; font-size: 12px; color: #6B6B66"><span>Tá pago</span><span>agora</span></div><div style="font-size: 14px; font-weight: 600; margin-top: 2px">Faltam 5 minutos</div><div style="font-size: 13px; color: #3A3A36">Jogar 1 hora termina às 21:40.</div></div>
+            </div>
+            <div style="background: #FFFFFF; border-radius: 16px; padding: 12px 14px; display: flex; gap: 12px; align-items: flex-start; box-shadow: 0 6px 18px rgba(0,0,0,0.08)">
+              <div style="width: 36px; height: 36px; border-radius: 9px; background: #111111; flex: none; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 15px; color: #FFFFFF">tá<span style="color: {{accent}}">.</span></div>
+              <div style="flex: 1"><div style="display: flex; justify-content: space-between; font-size: 12px; color: #6B6B66"><span>Tá pago</span><span>agora</span></div><div style="font-size: 14px; font-weight: 600; margin-top: 2px">Tempo esgotado</div><div style="font-size: 13px; color: #3A3A36">Acabou: Jogar 1 hora. Bora voltar pras atividades?</div></div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{s6}}" hint-placeholder-val="{{false}}">
+          <div style="min-height: 100%; display: flex; flex-direction: column; justify-content: center; gap: 20px">
+            <div style="width: 88px; height: 88px; border-radius: 50%; overflow: hidden; background: #111111; color: {{accent}}; display: flex; align-items: center; justify-content: center; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 34px">
+              <sc-if value="{{hasPhoto}}" hint-placeholder-val="{{false}}"><img src="{{photo}}" alt="Sua foto" style="width: 100%; height: 100%; object-fit: cover"></sc-if>
+              <sc-if value="{{noPhoto}}" hint-placeholder-val="{{true}}"><span>{{initials}}</span></sc-if>
+            </div>
+            <h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 44px; font-weight: 700; letter-spacing: -0.045em; line-height: 0.98">Tudo pronto,<br>{{firstName}}.</h1>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px">
+              <span style="background: #FFFFFF; border: 1px solid #E3E3DE; border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 600">{{choreCountLabel}}</span>
+              <span style="background: #FFFFFF; border: 1px solid #E3E3DE; border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 600">{{shopCountLabel}}</span>
+              <span style="background: #FFFFFF; border: 1px solid #E3E3DE; border-radius: 999px; padding: 8px 14px; font-size: 14px; font-weight: 600">{{notifLabel}}</span>
+            </div>
+            <div style="background: #111111; color: #FFFFFF; border-radius: 18px; padding: 18px">
+              <div style="font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #BDBDB6">Seu primeiro objetivo</div>
+              <div style="font-size: 17px; line-height: 1.45; margin-top: 6px">Ganhe <strong style="color: {{accent}}">{{goalPrice}}</strong> pra comprar <strong>{{goalName}}</strong>.</div>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+
+      <div style="padding: 12px 20px 28px; display: flex; flex-direction: column; gap: 8px; flex: none">
+        <sc-if value="{{showSecondaryTop}}" hint-placeholder-val="{{false}}">
+          <button onClick="{{toggleAdd}}" style="height: 44px; border-radius: 12px; border: 1px solid #111111; background: transparent; color: #111111; font-family: inherit; font-weight: 600; font-size: 14px; cursor: pointer">{{toggleAddLabel}}</button>
+        </sc-if>
+        <sc-if value="{{finishAsLink}}" hint-placeholder-val="{{false}}">
+          <a href="Main.dc.html" style="height: 56px; border-radius: 16px; background: #111111; color: #FFFFFF; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; text-decoration: none">Entrar no app</a>
+        </sc-if>
+        <sc-if value="{{showPrimary}}" hint-placeholder-val="{{true}}">
+          <button onClick="{{next}}" style="height: 56px; border-radius: 16px; border: 0; background: {{btnBg}}; color: {{btnFg}}; font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 17px; cursor: pointer">{{nextLabel}}</button>
+        </sc-if>
+        <sc-if value="{{s0}}" hint-placeholder-val="{{true}}">
+          <span style="text-align: center; font-size: 13px; color: #BDBDB6; padding: 4px 0">Leva 1 minuto pra configurar</span>
+        </sc-if>
+        <sc-if value="{{showSkip}}" hint-placeholder-val="{{false}}">
+          <button onClick="{{skip}}" style="height: 44px; border: 0; background: transparent; color: {{skipFg}}; font-family: inherit; font-weight: 600; font-size: 14px; cursor: pointer">{{skipLabel}}</button>
+        </sc-if>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"startStep":{"editor":"int","default":0,"min":0,"max":6},"layout":{"editor":"enum","default":"mobile","options":["mobile","web"]},"accent":{"editor":"color","default":"#D4FF3A","options":["#D4FF3A","#FF7A3D","#5CE1FF","#FF8AD8"]},"onFinish":{"editor":null},"$preview":{"width":390,"height":844}}'>
+var CHORE_PRESETS = [
+  { name: 'Passear com o cachorro', value: 5, minutes: 30, on: true },
+  { name: 'Lavar a louça', value: 10, minutes: 20, on: true },
+  { name: 'Limpar o banheiro', value: 20, minutes: 45, on: true },
+  { name: 'Arrumar a cama', value: 3, minutes: 5, on: true },
+  { name: 'Estudar 1 hora', value: 15, minutes: 60, on: false },
+  { name: 'Treinar', value: 12, minutes: 50, on: false },
+  { name: 'Tirar o lixo', value: 4, minutes: 5, on: false },
+  { name: 'Lavar roupa', value: 12, minutes: 30, on: false },
+  { name: 'Scrollar demais no Reels', value: 8, minutes: 40, on: true, neg: true },
+  { name: 'YouTube por tempo demais', value: 10, minutes: 60, on: true, neg: true },
+  { name: 'Gritar com alguém', value: 15, minutes: 5, on: false, neg: true },
+  { name: 'Perder o controle', value: 20, minutes: 30, on: false, neg: true },
+  { name: 'Dormir depois da 1h', value: 6, minutes: 60, on: false, neg: true }
+];
+var SHOP_PRESETS = [
+  { name: 'Jogar 30 minutos', value: 10, minutes: 30, on: true },
+  { name: 'Jogar 1 hora', value: 18, minutes: 60, on: true },
+  { name: 'Jogar 2 horas', value: 32, minutes: 120, on: true },
+  { name: 'Assistir um filme', value: 25, minutes: 120, on: true },
+  { name: 'Episódio de série longo', value: 12, minutes: 60, on: true },
+  { name: 'Redes sociais', value: 6, minutes: 20, on: false },
+  { name: 'Sair com os amigos', value: 40, minutes: 180, on: false }
+];
+function brl(v) { return 'R$ ' + Math.round(v).toLocaleString('pt-BR'); }
+function dur(m) { m = Math.round(m); var h = Math.floor(m / 60), r = m % 60; if (!h) return r + 'min'; if (!r) return h + 'h'; return h + 'h ' + r + 'min'; }
+function initialsOf(n) { var p = (n || '').trim().split(/\s+/).filter(Boolean); if (!p.length) return '?'; return (p[0][0] + (p.length > 1 ? p[p.length - 1][0] : '')).toUpperCase(); }
+
+class Component extends DCLogic {
+  constructor(...args) {
+    super(...args);
+    var st = (this.props && this.props.startStep) || 0;
+    this.state = {
+      step: st, name: st >= 3 ? 'Rafael' : '', photo: null, notif: true, adding: false, draftName: '', draftValue: '', draftNeg: false,
+      chores: CHORE_PRESETS.map(function (p) { return Object.assign({}, p); }),
+      shop: SHOP_PRESETS.map(function (p) { return Object.assign({}, p); })
+    };
+  }
+  componentDidUpdate(prev) {
+    if (prev && prev.startStep !== this.props.startStep && this.props.startStep != null) this.setState({ step: this.props.startStep });
+  }
+  go(n) { this.setState({ step: Math.max(0, Math.min(6, n)), adding: false, draftName: '', draftValue: '', draftNeg: false }); }
+  listKey() { return this.state.step === 3 ? 'chores' : 'shop'; }
+  bump(key, i, d) { var arr = this.state[key].slice(); var p = Object.assign({}, arr[i]); p.value = Math.max(1, p.value + d); p.on = true; arr[i] = p; var o = {}; o[key] = arr; this.setState(o); }
+  toggle(key, i) { var arr = this.state[key].slice(); var p = Object.assign({}, arr[i]); p.on = !p.on; arr[i] = p; var o = {}; o[key] = arr; this.setState(o); }
+  addCustom() {
+    var S = this.state, name = S.draftName.trim(), v = Number(S.draftValue); if (!name || !(v > 0)) return;
+    var key = this.listKey(), o = {}; o[key] = S[key].concat([{ name: name, value: v, minutes: 30, on: true, neg: key === 'chores' && S.draftNeg }]);
+    o.adding = false; o.draftName = ''; o.draftValue = ''; o.draftNeg = false; this.setState(o);
+  }
+  finish() {
+    var S = this.state;
+    var data = { name: S.name.trim() || 'Você', photo: S.photo, notif: S.notif, chores: S.chores.filter(function (p) { return p.on; }), shop: S.shop.filter(function (p) { return p.on; }) };
+    if (typeof this.props.onFinish === 'function') this.props.onFinish(data);
+  }
+
+  renderVals() {
+    var S = this.state, self = this, step = S.step;
+    var accent = this.props.accent ?? '#D4FF3A';
+    var web = (this.props.layout ?? 'mobile') === 'web';
+    var hasFinish = typeof this.props.onFinish === 'function';
+    var selC = S.chores.filter(function (p) { return p.on; }), selS = S.shop.filter(function (p) { return p.on; });
+
+    function presets(key, isShop) {
+      return S[key].map(function (p, i) {
+        var stepV = isShop ? 2 : 1, verb = p.neg ? 'perda' : 'valor';
+        return {
+          neg: !!p.neg, name: p.name, dur: dur(p.minutes), price: (p.neg ? '−' : (isShop ? '' : '+')) + brl(p.value), on: p.on, checked: p.on ? 'true' : 'false',
+          border: p.on ? '#111111' : '#E3E3DE', boxBg: p.on ? '#111111' : '#FFFFFF',
+          aria: (p.on ? 'Remover ' : 'Incluir ') + p.name,
+          minusAria: 'Diminuir ' + verb + ' de ' + p.name, plusAria: 'Aumentar ' + verb + ' de ' + p.name,
+          toggle: function () { self.toggle(key, i); },
+          minus: function () { self.bump(key, i, -stepV); }, plus: function () { self.bump(key, i, stepV); }
+        };
+      });
+    }
+
+    var canNext = true, nextLabel = 'Continuar';
+    if (step === 0) nextLabel = 'Começar';
+    if (step === 2) { canNext = !!S.name.trim(); }
+    if (step === 3) { canNext = selC.some(function (p) { return !p.neg; }); nextLabel = 'Continuar · ' + selC.length + (selC.length === 1 ? ' atividade' : ' atividades'); }
+    if (step === 4) { canNext = selS.length > 0; nextLabel = 'Continuar · ' + selS.length + (selS.length === 1 ? ' item' : ' itens'); }
+    if (step === 5) nextLabel = 'Ativar notificações';
+    if (step === 6) nextLabel = 'Entrar no app';
+
+    var cheapest = selS.slice().sort(function (a, b) { return a.value - b.value; })[0];
+    var progress = [1, 2, 3, 4, 5].map(function (n) { return { bg: n <= step ? '#111111' : '#D9D9D3' }; });
+
+    return {
+      accent: accent, isWeb: web,
+      rootW: web ? '100%' : '390px', rootH: web ? 'auto' : '844px', rootMinH: web ? '900px' : '844px',
+      colMax: web ? '480px' : '390px', colH: web ? '900px' : '844px', colBg: step === 0 ? '#111111' : '#F4F4F1',
+      showTop: step > 0 && step < 6, progress: progress, stepLabel: step + '/5',
+      back: function () { self.go(step - 1); },
+      s0: step === 0, s1: step === 1, s2: step === 2, s3: step === 3, s4: step === 4, s5: step === 5, s6: step === 6,
+      name: S.name, setName: function (e) { self.setState({ name: e.target.value }); },
+      photo: S.photo || '', hasPhoto: !!S.photo, noPhoto: !S.photo, initials: initialsOf(S.name),
+      photoBtn: S.photo ? 'Trocar foto' : 'Escolher foto',
+      pickPhoto: function (e) { var f = e.target.files && e.target.files[0]; if (f) self.setState({ photo: URL.createObjectURL(f) }); },
+      posPresets: presets('chores', false).filter(function (x) { return !x.neg; }), negPresets: presets('chores', false).filter(function (x) { return x.neg; }), shopPresets: presets('shop', true),
+      dPosChecked: S.draftNeg ? 'false' : 'true', dNegChecked: S.draftNeg ? 'true' : 'false',
+      dPosBg: S.draftNeg ? '#FFFFFF' : '#111111', dPosFg: S.draftNeg ? '#111111' : '#FFFFFF', dNegBg: S.draftNeg ? '#111111' : '#FFFFFF', dNegFg: S.draftNeg ? '#FFFFFF' : '#111111',
+      setDraftPos: function () { self.setState({ draftNeg: false }); }, setDraftNeg: function () { self.setState({ draftNeg: true }); },
+      showAdd: (step === 3 || step === 4) && S.adding,
+      addTitle: step === 3 ? 'Nova atividade' : 'Novo lazer', addPh: step === 3 ? (S.draftNeg ? 'Ex.: Roer unha' : 'Ex.: Regar as plantas') : 'Ex.: Ler mangá 1 hora',
+      draftName: S.draftName, draftValue: S.draftValue,
+      setDraftName: function (e) { self.setState({ draftName: e.target.value }); },
+      setDraftValue: function (e) { self.setState({ draftValue: e.target.value }); },
+      addCustom: function () { self.addCustom(); },
+      showSecondaryTop: step === 3 || step === 4,
+      toggleAdd: function () { self.setState({ adding: !S.adding }); },
+      toggleAddLabel: S.adding ? 'Cancelar' : (step === 3 ? '+ Adicionar outra atividade' : '+ Adicionar outro lazer'),
+      firstName: (S.name.trim().split(/\s+/)[0]) || 'você',
+      choreCountLabel: (function () { var np = selC.filter(function (p) { return !p.neg; }).length, nn = selC.length - np; return np + ' boas · ' + nn + ' ruins'; })(),
+      shopCountLabel: selS.length + (selS.length === 1 ? ' item na loja' : ' itens na loja'),
+      notifLabel: S.notif ? 'Notificações ativadas' : 'Notificações desligadas',
+      goalPrice: cheapest ? brl(cheapest.value) : brl(0), goalName: cheapest ? cheapest.name.toLowerCase() : 'seu primeiro lazer',
+      showPrimary: !(step === 6 && !hasFinish), finishAsLink: step === 6 && !hasFinish,
+      btnBg: step === 0 ? accent : (canNext ? '#111111' : '#D9D9D3'), btnFg: step === 0 ? '#111111' : (canNext ? '#FFFFFF' : '#55554F'),
+      nextLabel: nextLabel,
+      next: function () {
+        if (!canNext) return;
+        if (step === 5) { self.setState({ notif: true }); self.go(6); return; }
+        if (step === 6) { self.finish(); return; }
+        self.go(step + 1);
+      },
+      showSkip: step === 5,
+      skipLabel: step === 0 ? 'Leva 1 minuto' : 'Agora não',
+      skipFg: step === 0 ? '#BDBDB6' : '#3A3A36',
+      skip: function () { if (step === 5) { self.setState({ notif: false }); self.go(6); } }
+    };
+  }
+}
+</script>
+</body>
+</html>
