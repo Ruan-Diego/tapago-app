@@ -1,4 +1,4 @@
-import { colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
+import { Appear, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
 import { useEffect } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -21,38 +21,33 @@ export function AlertBanner() {
   if (!alert) return null;
 
   return (
-    <View
-      accessibilityLiveRegion="assertive"
-      role="alert"
-      style={[styles.banner, { top: insets.top + spacing.md }]}
-    >
-      <View style={styles.mark}>
-        <Text style={styles.markText}>
-          tá<Text style={styles.markDot}>.</Text>
-        </Text>
+    <Appear from="above" style={[styles.region, { top: insets.top + spacing.md }]}>
+      <View accessibilityLiveRegion="assertive" role="alert" style={styles.banner}>
+        <View style={styles.mark}>
+          <Text style={styles.markText}>
+            tá<Text style={styles.markDot}>.</Text>
+          </Text>
+        </View>
+        <View style={styles.texts}>
+          <Text style={styles.title}>{alert.title}</Text>
+          <Text style={styles.body}>{alert.body}</Text>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Dispensar aviso"
+          onPress={() => useAlertBanner.setState({ alert: null })}
+          style={styles.close}
+        >
+          <Text style={styles.closeText}>✕</Text>
+        </Pressable>
       </View>
-      <View style={styles.texts}>
-        <Text style={styles.title}>{alert.title}</Text>
-        <Text style={styles.body}>{alert.body}</Text>
-      </View>
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel="Dispensar aviso"
-        onPress={() => useAlertBanner.setState({ alert: null })}
-        style={styles.close}
-      >
-        <Text style={styles.closeText}>✕</Text>
-      </Pressable>
-    </View>
+    </Appear>
   );
 }
 
 const styles = StyleSheet.create({
+  region: { position: 'absolute', alignSelf: 'center', width: '94%', maxWidth: 420 },
   banner: {
-    position: 'absolute',
-    alignSelf: 'center',
-    width: '94%',
-    maxWidth: 420,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,

@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 
+import { PressableScale } from './PressableScale';
 import { MIN_TOUCH, colors, fonts, fontSizes, radii, spacing } from './tokens';
 
 export interface PillButtonProps {
@@ -12,14 +13,14 @@ export interface PillButtonProps {
 /** Botão pequeno de contorno, usado ao lado dos títulos ("+ Nova"). */
 export function PillButton({ label, onPress, accessibilityLabel }: PillButtonProps) {
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
       onPress={onPress}
-      style={({ pressed }) => [styles.pill, pressed && styles.pressed]}
+      style={styles.pill}
     >
       <Text style={styles.label}>{label}</Text>
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -33,6 +34,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  pressed: { opacity: 0.7 },
   label: { fontFamily: fonts.bodySemiBold, fontSize: fontSizes.label, color: colors.ink },
 });

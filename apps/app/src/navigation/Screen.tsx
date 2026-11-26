@@ -1,6 +1,7 @@
 import {
+  BlurTarget,
+  CountingMoney,
   Logo,
-  Money,
   SIDEBAR_BREAKPOINT,
   colors,
   fonts,
@@ -8,12 +9,15 @@ import {
   radii,
   spacing,
 } from '@tapago/ui';
-import type { ReactNode } from 'react';
+import { useIsFocused } from 'expo-router';
+import { useEffect, useRef, type ReactNode } from 'react';
 import { ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useLedger } from '@/ledger/store';
 import { useSession } from '@/session/store';
+
+import { useDock } from './dock';
 
 /** Moldura das abas: no celular, cabeçalho com o saldo; na web larga, título grande. */
 export function Screen({ title, children }: { title?: string; children: ReactNode }) {
@@ -22,6 +26,13 @@ export function Screen({ title, children }: { title?: string; children: ReactNod
   const balance = useSession((state) => state.profile?.balance);
   const profileError = useSession((state) => state.profileError);
   const ledgerError = useLedger((state) => state.error);
+  const dock = useDock((state) => state.height);
+  // A barra de vidro desfoca a tela que está na frente (só o Android precisa saber qual é).
+  const focused = useIsFocused();
+  const target = useRef<View>(null);
+  useEffect(() => {
+    if (focused) useDock.setState({ target });
+  }, [focused]);
 
   return (
     <SafeAreaView edges={['top']} style={styles.safe}>
@@ -33,32 +44,41 @@ export function Screen({ title, children }: { title?: string; children: ReactNod
             {balance === undefined ? (
               <Text style={styles.pillValue}>—</Text>
             ) : (
-              <Money accessibilityLabel="Saldo" cents={balance} style={styles.pillValue} />
+              <CountingMoney accessibilityLabel="Saldo" cents={balance} style={styles.pillValue} />
             )}
           </View>
         </View>
       )}
-      <ScrollView contentContainerStyle={[styles.scroll, wide && styles.scrollWide]}>
-        <View style={styles.content}>
-          {title ? (
-            <Text accessibilityRole="header" style={[styles.title, wide && styles.titleWide]}>
-              {title}
-            </Text>
-          ) : null}
-          {profileError || ledgerError ? (
-            <Text accessibilityRole="alert" style={styles.error}>
-              Não foi possível carregar a sua conta. Confira a conexão e abra o app de novo.
-            </Text>
-          ) : null}
-          {children}
-        </View>
-      </ScrollView>
+      <BlurTarget ref={target} style={styles.target}>
+        <ScrollView
+          contentContainerStyle={[
+            styles.scroll,
+            wide ? styles.scrollWide : { paddingBottom: dock + spacing.xl },
+          ]}
+        >
+          <View style={styles.content}>
+            {title ? (
+              <Text accessibilityRole="header" style={[styles.title, wide && styles.titleWide]}>
+                {title}
+              </Text>
+            ) : null}
+            {profileError || ledgerError ? (
+              <Text accessibilityRole="alert" style={styles.error}>
+                Não foi possível carregar a sua conta. Confira a conexão e abra o app de novo.
+              </Text>
+            ) : null}
+            {children}
+          </View>
+        </ScrollView>
+      </BlurTarget>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
+  // O fundo precisa estar dentro do alvo para o desfoque ter o que ler.
+  target: { flex: 1, backgroundColor: colors.paper },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

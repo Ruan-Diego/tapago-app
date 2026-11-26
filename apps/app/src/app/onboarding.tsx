@@ -11,6 +11,7 @@ import {
 } from '@tapago/core';
 import { profileRepository } from '@tapago/data';
 import {
+  Appear,
   Button,
   Logo,
   MIN_TOUCH,
@@ -249,47 +250,50 @@ export default function Onboarding() {
             contentContainerStyle={[styles.scroll, wide && welcome && styles.scrollWelcome]}
             keyboardShouldPersistTaps="handled"
           >
-            {welcome ? (
-              <View style={[styles.welcome, wide && styles.welcomeWide]}>
-                {/* Na web larga a conversa já está no painel ao lado. */}
-                <Welcome chat={!wide} />
-              </View>
-            ) : step === 1 ? (
-              <HowItWorks />
-            ) : step === NAME ? (
-              <NameStep name={name} photo={photo} onName={setName} onPhoto={setPhoto} />
-            ) : step === ACTIVITIES ? (
-              <ActivitiesStep
-                presets={visibleActivities}
-                taken={[...activityList, ...existingActivities].map((item) => item.name)}
-                onChange={(preset) => setActivityList((list) => replace(list, preset))}
-                onAdd={(preset) => setActivityList((list) => [...list, preset])}
-              />
-            ) : step === SHOP ? (
-              <ShopStep
-                presets={visibleShop}
-                taken={[...shopList, ...existingShop].map((item) => item.name)}
-                onChange={(preset) => setShopList((list) => replace(list, preset))}
-                onAdd={(preset) => setShopList((list) => [...list, preset])}
-              />
-            ) : step === NOTIFICATIONS ? (
-              <NotificationsStep />
-            ) : (
-              <DoneStep
-                name={name}
-                photo={photo}
-                chips={[
-                  `${positives} ${positives === 1 ? 'boa' : 'boas'} · ${plural(
-                    chosenActivities.length - positives,
-                    'ruim',
-                    'ruins',
-                  )}`,
-                  `${plural(chosenShop.length, 'item', 'itens')} na loja`,
-                  alerts.granted ? 'Notificações ativadas' : 'Notificações desligadas',
-                ]}
-                goal={cheapest([...chosenShop, ...existingShop])}
-              />
-            )}
+            {/* Cada passo entra de baixo; a chave do `ScrollView` refaz a entrada. */}
+            <Appear style={welcome && styles.grow}>
+              {welcome ? (
+                <View style={[styles.welcome, wide && styles.welcomeWide]}>
+                  {/* Na web larga a conversa já está no painel ao lado. */}
+                  <Welcome chat={!wide} />
+                </View>
+              ) : step === 1 ? (
+                <HowItWorks />
+              ) : step === NAME ? (
+                <NameStep name={name} photo={photo} onName={setName} onPhoto={setPhoto} />
+              ) : step === ACTIVITIES ? (
+                <ActivitiesStep
+                  presets={visibleActivities}
+                  taken={[...activityList, ...existingActivities].map((item) => item.name)}
+                  onChange={(preset) => setActivityList((list) => replace(list, preset))}
+                  onAdd={(preset) => setActivityList((list) => [...list, preset])}
+                />
+              ) : step === SHOP ? (
+                <ShopStep
+                  presets={visibleShop}
+                  taken={[...shopList, ...existingShop].map((item) => item.name)}
+                  onChange={(preset) => setShopList((list) => replace(list, preset))}
+                  onAdd={(preset) => setShopList((list) => [...list, preset])}
+                />
+              ) : step === NOTIFICATIONS ? (
+                <NotificationsStep />
+              ) : (
+                <DoneStep
+                  name={name}
+                  photo={photo}
+                  chips={[
+                    `${positives} ${positives === 1 ? 'boa' : 'boas'} · ${plural(
+                      chosenActivities.length - positives,
+                      'ruim',
+                      'ruins',
+                    )}`,
+                    `${plural(chosenShop.length, 'item', 'itens')} na loja`,
+                    alerts.granted ? 'Notificações ativadas' : 'Notificações desligadas',
+                  ]}
+                  goal={cheapest([...chosenShop, ...existingShop])}
+                />
+              )}
+            </Appear>
           </ScrollView>
 
           <View style={styles.footer}>
@@ -334,6 +338,7 @@ export default function Onboarding() {
 }
 
 const styles = StyleSheet.create({
+  grow: { flexGrow: 1 },
   root: { flex: 1, flexDirection: 'row', backgroundColor: colors.paper },
   loading: {
     flex: 1,

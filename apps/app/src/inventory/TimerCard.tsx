@@ -1,5 +1,5 @@
 import { MINUTE_MS, formatClock, formatDuration, remainingMs, type Session } from '@tapago/core';
-import { colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
+import { PressableScale, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
@@ -54,20 +54,20 @@ export function TimerCard({ session, timeZone }: { session: Session; timeZone: s
       </View>
       <Text style={styles.name}>{session.itemName}</Text>
       <View style={styles.actions}>
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           onPress={running ? pauseTimer : resumeTimer}
-          style={({ pressed }) => [styles.button, styles.primary, pressed && styles.pressed]}
+          style={[styles.button, styles.primary]}
         >
           <Text style={styles.primaryText}>{running ? 'Pausar' : 'Retomar'}</Text>
-        </Pressable>
-        <Pressable
+        </PressableScale>
+        <PressableScale
           accessibilityRole="button"
           onPress={endTimer}
-          style={({ pressed }) => [styles.button, styles.outline, pressed && styles.pressed]}
+          style={[styles.button, styles.outline]}
         >
           <Text style={styles.outlineText}>Encerrar</Text>
-        </Pressable>
+        </PressableScale>
       </View>
       {ALERT_NOTICE ? <Text style={styles.notice}>{ALERT_NOTICE}</Text> : null}
       {permission === 'default' ? (
@@ -119,7 +119,6 @@ const styles = StyleSheet.create({
   },
   primary: { backgroundColor: colors.accent },
   outline: { borderWidth: 1, borderColor: colors.graphite },
-  pressed: { opacity: 0.8 },
   primaryText: { fontFamily: fonts.displayBold, fontSize: 16, color: colors.ink },
   outlineText: { fontFamily: fonts.displayBold, fontSize: 16, color: colors.white },
   notice: {

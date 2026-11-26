@@ -1,6 +1,6 @@
 import { formatMoney, type InventoryItem } from '@tapago/core';
-import { PlayIcon, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { PlayIcon, PressableScale, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { whenLabel } from '@/history/whenLabel';
 import { BigDuration } from '@/shop/BigDuration';
@@ -28,15 +28,15 @@ export function InventoryRow({ item, today, timeZone, canStart, onStart }: Inven
         </Text>
       </View>
       {canStart ? (
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel={`Começar ${item.name}`}
           onPress={() => onStart(item)}
-          style={({ pressed }) => [styles.button, pressed && styles.pressed]}
+          style={styles.button}
         >
           <PlayIcon color={colors.accent} size={14} />
           <Text style={styles.buttonText}>Começar</Text>
-        </Pressable>
+        </PressableScale>
       ) : (
         <Text style={styles.blocked}>Termine o timer atual</Text>
       )}
@@ -73,7 +73,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     backgroundColor: colors.ink,
   },
-  pressed: { opacity: 0.8 },
   buttonText: { fontFamily: fonts.display, fontSize: 15, color: colors.white },
   blocked: {
     maxWidth: 90,

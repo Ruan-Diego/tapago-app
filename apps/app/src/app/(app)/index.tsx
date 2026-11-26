@@ -9,9 +9,11 @@ import {
 } from '@tapago/core';
 import {
   Button,
+  Appear,
   Card,
-  Money,
+  CountingMoney,
   PillButton,
+  ProgressBar,
   SIDEBAR_BREAKPOINT,
   colors,
   fonts,
@@ -89,13 +91,7 @@ export default function Activities() {
             {formatMoney(week.earned)} de {formatMoney(week.goal)}
           </Text>
         </View>
-        <View
-          accessibilityRole="progressbar"
-          accessibilityValue={{ min: 0, max: 100, now: week.percent }}
-          style={styles.track}
-        >
-          <View style={[styles.fill, { width: `${week.percent}%` }]} />
-        </View>
+        <ProgressBar label="Meta da semana" value={week.percent} max={100} style={styles.track} />
       </Card>
     ) : null;
 
@@ -122,7 +118,7 @@ export default function Activities() {
             <View style={[styles.stat, styles.balanceCard]}>
               <Text style={[styles.caption, styles.captionOnInk]}>Saldo disponível</Text>
               {profile ? (
-                <Money cents={profile.balance} style={[styles.statValue, styles.onInk]} />
+                <CountingMoney cents={profile.balance} style={[styles.statValue, styles.onInk]} />
               ) : (
                 <Text style={[styles.statValue, styles.onInk]}>—</Text>
               )}
@@ -147,7 +143,7 @@ export default function Activities() {
           <View>
             <Text style={styles.caption}>Saldo disponível</Text>
             {profile ? (
-              <Money cents={profile.balance} style={styles.balance} />
+              <CountingMoney cents={profile.balance} style={styles.balance} />
             ) : (
               <Text style={styles.balance}>—</Text>
             )}
@@ -196,18 +192,19 @@ export default function Activities() {
                     <Text style={styles.hint}>{section.hint}</Text>
                   </View>
                   {items.map((activity, index) => (
-                    <ActivityCard
-                      key={activity.id}
-                      activity={activity}
-                      number={`${section.kind === 'negative' ? '−' : ''}${String(index + 1).padStart(2, '0')}`}
-                      today={today}
-                      todayCount={todayTotals.counts[activity.id] ?? 0}
-                      // Sem o agregado do dia, não dá para saber se o hábito completou.
-                      disabled={!profile || dailies === null}
-                      onRegister={registerActivity}
-                      onEdit={edit}
-                      onResetPenalty={reset}
-                    />
+                    <Appear key={activity.id}>
+                      <ActivityCard
+                        activity={activity}
+                        number={`${section.kind === 'negative' ? '−' : ''}${String(index + 1).padStart(2, '0')}`}
+                        today={today}
+                        todayCount={todayTotals.counts[activity.id] ?? 0}
+                        // Sem o agregado do dia, não dá para saber se o hábito completou.
+                        disabled={!profile || dailies === null}
+                        onRegister={registerActivity}
+                        onEdit={edit}
+                        onResetPenalty={reset}
+                      />
+                    </Appear>
                   ))}
                   {items.length === 0 ? <Text style={styles.hint}>{section.empty}</Text> : null}
                 </View>
@@ -265,14 +262,7 @@ const styles = StyleSheet.create({
   goalHeader: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.sm },
   goalTitle: { fontFamily: fonts.bodySemiBold, fontSize: fontSizes.small, color: colors.ink },
   goalValue: { fontFamily: fonts.body, fontSize: fontSizes.small, color: colors.slate },
-  track: {
-    height: 8,
-    marginTop: 10,
-    borderRadius: radii.pill,
-    backgroundColor: colors.track,
-    overflow: 'hidden',
-  },
-  fill: { height: '100%', borderRadius: radii.pill, backgroundColor: colors.ink },
+  track: { marginTop: 10 },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',

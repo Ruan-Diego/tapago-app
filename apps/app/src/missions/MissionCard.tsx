@@ -1,5 +1,5 @@
 import { formatMoney, type Activity, type Daily, type Mission } from '@tapago/core';
-import { colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
+import { Pop, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
 import { StyleSheet, Text, View } from 'react-native';
 
 interface MissionCardProps {
@@ -21,7 +21,7 @@ export function MissionCard({ mission, activities, counts }: MissionCardProps) {
   const done = items.filter((item) => item.done).length;
 
   return (
-    <View style={[styles.card, complete && styles.complete]}>
+    <Pop trigger={complete} style={[styles.card, complete && styles.complete]}>
       <View style={styles.header}>
         <Text accessibilityRole="header" style={[styles.title, complete && styles.onAccent]}>
           Missão do dia
@@ -37,13 +37,19 @@ export function MissionCard({ mission, activities, counts }: MissionCardProps) {
           accessibilityLabel={`${item.name}: ${item.done ? 'feita' : 'falta fazer'}`}
           style={styles.item}
         >
-          <View
-            style={[styles.check, item.done && styles.checkDone, complete && styles.checkComplete]}
-          >
-            {item.done ? (
-              <Text style={[styles.mark, complete && styles.markComplete]}>✓</Text>
-            ) : null}
-          </View>
+          <Pop trigger={item.done}>
+            <View
+              style={[
+                styles.check,
+                item.done && styles.checkDone,
+                complete && styles.checkComplete,
+              ]}
+            >
+              {item.done ? (
+                <Text style={[styles.mark, complete && styles.markComplete]}>✓</Text>
+              ) : null}
+            </View>
+          </Pop>
           <Text style={[styles.name, complete && styles.onAccent]}>{item.name}</Text>
         </View>
       ))}
@@ -52,7 +58,7 @@ export function MissionCard({ mission, activities, counts }: MissionCardProps) {
           ? 'Cumprida. Bônus pago.'
           : `${done} de ${items.length} · faça as duas hoje para ganhar o bônus`}
       </Text>
-    </View>
+    </Pop>
   );
 }
 

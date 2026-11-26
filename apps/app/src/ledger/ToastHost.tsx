@@ -1,9 +1,9 @@
-import { SIDEBAR_BREAKPOINT, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
+import { Appear, SIDEBAR_BREAKPOINT, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
 import { useEffect } from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { useLedger } from './store';
+import { useDock } from '@/navigation/dock';
+
 import { useToast } from './toast';
 
 const DURATION_MS = 3000;
@@ -12,10 +12,9 @@ const DURATION_MS = 3000;
 export function ToastHost() {
   const toast = useToast((state) => state.toast);
   const { width } = useWindowDimensions();
-  const insets = useSafeAreaInsets();
   const wide = width >= SIDEBAR_BREAKPOINT;
-  // O mini timer fica entre o recado e a barra de abas.
-  const hasTimer = useLedger((state) => Boolean(state.timer?.session));
+  // A barra de abas flutua, com o mini timer em cima dela quando há um.
+  const dock = useDock((state) => state.height);
 
   useEffect(() => {
     if (!toast) return;
@@ -23,30 +22,28 @@ export function ToastHost() {
     return () => clearTimeout(timer);
   }, [toast]);
 
-  if (!toast) return null;
-
+  // A região fica sempre na tela: o leitor anuncia o que entra nela.
   return (
     <View
       accessibilityLiveRegion="polite"
       role="status"
-      style={[
-        styles.toast,
-        wide ? styles.wide : { bottom: (hasTimer ? 154 : 94) + Math.max(insets.bottom, 12) },
-      ]}
+      style={[styles.region, wide ? styles.wide : { bottom: dock + spacing.sm }]}
     >
-      {toast.amount ? <Text style={styles.amount}>{toast.amount}</Text> : null}
-      <Text numberOfLines={2} style={styles.text}>
-        {toast.text}
-      </Text>
+      {toast ? (
+        <Appear key={toast.id} style={styles.toast}>
+          {toast.amount ? <Text style={styles.amount}>{toast.amount}</Text> : null}
+          <Text numberOfLines={2} style={styles.text}>
+            {toast.text}
+          </Text>
+        </Appear>
+      ) : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  region: { position: 'absolute', left: spacing.lg, right: spacing.lg, pointerEvents: 'none' },
   toast: {
-    position: 'absolute',
-    left: spacing.lg,
-    right: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
@@ -54,7 +51,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     paddingVertical: spacing.md,
     paddingHorizontal: 14,
-    pointerEvents: 'none',
   },
   wide: { left: 'auto', right: spacing.xxl, bottom: spacing.xxl, width: 380 },
   amount: {

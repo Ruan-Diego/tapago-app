@@ -6,12 +6,13 @@ import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono/400R
 import { JetBrainsMono_600SemiBold } from '@expo-google-fonts/jetbrains-mono/600SemiBold';
 import { SpaceGrotesk_600SemiBold } from '@expo-google-fonts/space-grotesk/600SemiBold';
 import { SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk/700Bold';
-import { colors } from '@tapago/ui';
+import { colors, useReducedMotion } from '@tapago/ui';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useLedgerSubscription } from '@/ledger/store';
@@ -31,6 +32,7 @@ export default function RootLayout() {
     SpaceGrotesk_600SemiBold,
     SpaceGrotesk_700Bold,
   });
+  const reducedMotion = useReducedMotion();
   const status = useSession((state) => state.status);
   const uid = useSession((state) => state.user?.uid);
   const needsOnboarding = useSession((state) => state.profile?.onboardingDone === false);
@@ -49,27 +51,33 @@ export default function RootLayout() {
   if (!ready) return null;
 
   return (
-    <SafeAreaProvider>
-      <StatusBar style="dark" />
-      <Stack
-        screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}
-      >
-        <Stack.Protected guard={status === 'signedIn' && !needsOnboarding}>
-          <Stack.Screen name="(app)" options={{ title: 'Tá pago' }} />
-        </Stack.Protected>
-        <Stack.Protected guard={status === 'signedIn' && needsOnboarding}>
-          <Stack.Screen name="onboarding" options={{ title: 'Começar · Tá pago' }} />
-        </Stack.Protected>
-        <Stack.Protected guard={status === 'signedOut'}>
-          {/* Sem layout de grupo: o primeiro daqui é para onde vai quem não entrou. */}
-          <Stack.Screen name="(auth)/sign-in" options={{ title: 'Entrar · Tá pago' }} />
-          <Stack.Screen name="(auth)/sign-up" options={{ title: 'Criar conta · Tá pago' }} />
-          <Stack.Screen
-            name="(auth)/forgot-password"
-            options={{ title: 'Esqueci a senha · Tá pago' }}
-          />
-        </Stack.Protected>
-      </Stack>
-    </SafeAreaProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
+        <StatusBar style="dark" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: colors.paper },
+            animation: reducedMotion ? 'fade' : 'fade_from_bottom',
+          }}
+        >
+          <Stack.Protected guard={status === 'signedIn' && !needsOnboarding}>
+            <Stack.Screen name="(app)" options={{ title: 'Tá pago' }} />
+          </Stack.Protected>
+          <Stack.Protected guard={status === 'signedIn' && needsOnboarding}>
+            <Stack.Screen name="onboarding" options={{ title: 'Começar · Tá pago' }} />
+          </Stack.Protected>
+          <Stack.Protected guard={status === 'signedOut'}>
+            {/* Sem layout de grupo: o primeiro daqui é para onde vai quem não entrou. */}
+            <Stack.Screen name="(auth)/sign-in" options={{ title: 'Entrar · Tá pago' }} />
+            <Stack.Screen name="(auth)/sign-up" options={{ title: 'Criar conta · Tá pago' }} />
+            <Stack.Screen
+              name="(auth)/forgot-password"
+              options={{ title: 'Esqueci a senha · Tá pago' }}
+            />
+          </Stack.Protected>
+        </Stack>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

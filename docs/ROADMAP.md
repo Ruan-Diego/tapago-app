@@ -397,6 +397,11 @@ Cerca de 12 semanas do zero ao uso diário, com o MVP em uso a partir da semana 
 | --- | --- |
 | https://collectui.com/ | Inspiração geral: minimalista e moderno |
 
+**O que foi tirado das referências** (sem os links do HUM-16, vale o estilo do iOS descrito nesta fase)
+
+- Collect UI: só a direção geral, minimalista e moderno. Nenhuma tela específica foi copiada.
+- iOS "Liquid Glass": barra flutuante e arredondada; vidro claro com desfoque, saturação, brilho na borda de cima e sombra suave; seleção em gota que estica no caminho e assenta com mola; botões que afundam ao toque; folha que sobe com mola e fecha arrastando.
+
 **Requisitos**
 
 | ID | Requisito | Critério de aceite |
@@ -408,27 +413,27 @@ Cerca de 12 semanas do zero ao uso diário, com o MVP em uso a partir da semana 
 | ANIM-05 | Acessível e rápido | Respeita "reduzir movimento"; registrar continua em < 100 ms |
 
 **Base** (`packages/ui`)
-- [ ] Antes de programar, resumir no registro de progresso o que será tirado de cada referência
-- [ ] Tokens de movimento (molas, durações, curvas) e de vidro (desfoque, opacidade, borda, brilho, sombra)
-- [ ] Componente de vidro com versão por plataforma: na web, `backdrop-filter` (distorção de lente só onde o navegador suportar); no Android, a melhor opção de desfoque compatível com o SDK. Onde não houver suporte (Android antigo, aparelho fraco), fundo translúcido sem desfoque
-- [ ] Animações com `react-native-reanimated` (já no projeto); biblioteca nova só se funcionar no Android e na web
+- [x] Antes de programar, resumir no registro de progresso o que será tirado de cada referência
+- [x] Tokens de movimento (molas, durações, curvas) e de vidro (desfoque, opacidade, borda, brilho, sombra)
+- [x] Componente de vidro com versão por plataforma: na web, `backdrop-filter` (distorção de lente só onde o navegador suportar); no Android, a melhor opção de desfoque compatível com o SDK. Onde não houver suporte (Android antigo, aparelho fraco), fundo translúcido sem desfoque (sem a distorção de lente: ver decisões)
+- [x] Animações com `react-native-reanimated` (já no projeto); biblioteca nova só se funcionar no Android e na web
 
 **Navegação** (ANIM-01–03)
-- [ ] `TabBar`: vidro, barra flutuante e indicador em gota, com arrastar entre abas
-- [ ] `Sidebar`: vidro, indicador em gota e estados de mouse e foco
-- [ ] Ajustar o espaçamento das telas para a barra flutuante não esconder conteúdo
+- [x] `TabBar`: vidro, barra flutuante e indicador em gota, com arrastar entre abas
+- [x] `Sidebar`: vidro, indicador em gota e estados de mouse e foco
+- [x] Ajustar o espaçamento das telas para a barra flutuante não esconder conteúdo
 
 **Resto do app** (ANIM-04)
-- [ ] `Tabs` com o mesmo indicador deslizante
-- [ ] Botões e cartões afundam ao toque e voltam com mola
-- [ ] `Sheet` sobe com mola e fecha arrastando para baixo
-- [ ] Saldo conta até o novo valor; lançamentos, itens e avisos entram e saem animados
-- [ ] Transições entre telas
-- [ ] Animar o que a F6 e a F7 criaram: progresso do hábito, sequência, bônus e missão cumprida
+- [x] `Tabs` com o mesmo indicador deslizante
+- [x] Botões e cartões afundam ao toque e voltam com mola
+- [x] `Sheet` sobe com mola e fecha arrastando para baixo
+- [x] Saldo conta até o novo valor; lançamentos, itens e avisos entram e saem animados
+- [x] Transições entre telas
+- [x] Animar o que a F6 e a F7 criaram: progresso do hábito, sequência, bônus e missão cumprida
 
 **Qualidade** (ANIM-05)
-- [ ] "Reduzir movimento" troca os efeitos por transições simples
-- [ ] Contraste ≥ 4,5:1 do texto sobre o vidro, com qualquer conteúdo atrás
+- [x] "Reduzir movimento" troca os efeitos por transições simples
+- [x] Contraste ≥ 4,5:1 do texto sobre o vidro, com qualquer conteúdo atrás
 - [ ] Animações não atrasam o toque nem a escrita; sem engasgos perceptíveis nos 2 celulares (meta: 60 quadros por segundo)
 - [ ] Conferir no Chrome, Safari e Edge
 
@@ -564,7 +569,7 @@ Atualizado pelo agente no início e no fim de cada fase.
 | F3 | código pronto (falta a validação humana) | 26/11/2026 | | |
 | F6 | código pronto (falta a validação humana) | 26/11/2026 | | |
 | F7 | código pronto (falta a validação humana) | 26/11/2026 | | |
-| F8 | não iniciada | | | |
+| F8 | código pronto (falta a validação humana) | 26/11/2026 | | |
 | F4 | não iniciada | | | |
 | F5 | não iniciada | | | |
 
@@ -625,6 +630,14 @@ Atualizado pelo agente no início e no fim de cada fase.
 - F7 · Missão já cumprida pelos registros é paga mesmo que uma das atividades seja arquivada depois. O bônus sai também quando os registros são anteriores ao sorteio ou vieram de outro aparelho.
 - F7 · O lançamento do bônus tem `refId` = data, nome "Missão do dia" e `activities` (cópia do documento). As regras exigem essa cópia idêntica e `completedAt` no mesmo lote, então um aparelho que sorteou outro par offline não paga.
 - F7 · As regras não conferem se as 2 atividades foram mesmo registradas; a conferência de valores e saldo é a F4.
+- F8 · Dependência nova: `expo-blur` (Android e web; na web o vidro é `backdrop-filter` direto). Exige um APK novo.
+- F8 · Vidro claro com véu branco de 74% (94% sem desfoque), o que garante 4,5:1 para tinta e ardósia mesmo com preto atrás (teste em `packages/ui`). A barra de abas deixou de ser escura. O grafite não é usado sobre o vidro.
+- F8 · Sem distorção de lente na web: com o desfoque que o contraste exige ela quase não aparece, e o suporte é só de um motor de navegador.
+- F8 · No Android o desfoque vale do 12 em diante; o conteúdo desfocado é o da tela em foco. Não há detecção de "aparelho fraco" além da versão.
+- F8 · A gota são duas bordas com molas diferentes. A barra do celular aceita arraste; o menu lateral aceita também setas, Home e End.
+- F8 · Na web as listas animam entrada e saída, mas não o reposicionamento (o reanimated estica o item e distorce o texto).
+- F8 · A folha fecha arrastando pelo topo (alça e título), para não disputar com a rolagem do formulário. Fechar depois de salvar continua imediato.
+- F8 · Na web larga há uma luz suave atrás do menu lateral, para o vidro ter o que mostrar.
 
 **Pendências humanas em aberto**
 
@@ -641,3 +654,6 @@ Atualizado pelo agente no início e no fim de cada fase.
 - HUM-14: instalar um APK novo nos 2 celulares antes de usar (a versão antiga não lê o lançamento de bônus, não aplica sequência nem escalada). Completar um hábito, deixar uma sequência subir e quebrar, escalar e zerar uma negativa.
 - F7: publicar regras e web juntas (com as regras antigas, a missão não é gravada). Foi testada na web contra o emulador, não em um Android.
 - HUM-15: instalar um APK novo nos 2 celulares e acompanhar as missões por alguns dias, cumprindo pelo menos uma.
+- HUM-16: os links das referências não chegaram antes da F8; se houver, enviar para os ajustes.
+- F8: conferida na web contra o emulador, só no navegador embutido (Chromium). O bundle Android compila, mas o APK não foi gerado nem testado em aparelho.
+- HUM-17: instalar um APK novo nos 2 celulares; testar o desfoque, o arraste da barra e da folha, a fluidez (60 quadros) e o "reduzir movimento"; conferir a web no Chrome, Safari e Edge; aprovar ou listar ajustes.

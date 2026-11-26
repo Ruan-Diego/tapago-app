@@ -1,4 +1,4 @@
-import { Button, colors, fonts, fontSizes, spacing } from '@tapago/ui';
+import { Appear, Button, colors, fonts, fontSizes, spacing } from '@tapago/ui';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import type { Receipt } from './receipt';
@@ -13,34 +13,36 @@ export function ReceiptModal({ receipt, onClose, onSeeTimer }: ReceiptModalProps
   return (
     <Modal transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
-        <View accessibilityLabel="Recibo" style={styles.paper}>
-          <ScrollView contentContainerStyle={styles.content}>
-            <View style={styles.row}>
-              <Text style={styles.head}>RECIBO Nº {receipt.number}</Text>
-              <Text style={styles.head}>{receipt.when}</Text>
-            </View>
-            <Text accessibilityRole="header" style={styles.title}>
-              <Text style={styles.highlight}> Tá pago. </Text>
-            </Text>
-            <View style={styles.divider} />
-            {receipt.rows.map(([label, value]) => (
-              <View key={label} style={styles.row}>
-                <Text style={styles.label}>{label}</Text>
-                <Text style={styles.value}>{value}</Text>
+        <Appear style={styles.slot}>
+          <View accessibilityLabel="Recibo" style={styles.paper}>
+            <ScrollView contentContainerStyle={styles.content}>
+              <View style={styles.row}>
+                <Text style={styles.head}>RECIBO Nº {receipt.number}</Text>
+                <Text style={styles.head}>{receipt.when}</Text>
               </View>
-            ))}
-            <View style={styles.divider} />
-            <Text style={styles.note}>
-              Se alguém perguntar por que você tá nessa agora, a resposta é simples: tá pago. Você
-              trabalhou por isso.
-            </Text>
-            <Button
-              label={receipt.running ? 'Ver timer' : 'Fechar'}
-              onPress={receipt.running ? onSeeTimer : onClose}
-              style={styles.button}
-            />
-          </ScrollView>
-        </View>
+              <Text accessibilityRole="header" style={styles.title}>
+                <Text style={styles.highlight}> Tá pago. </Text>
+              </Text>
+              <View style={styles.divider} />
+              {receipt.rows.map(([label, value]) => (
+                <View key={label} style={styles.row}>
+                  <Text style={styles.label}>{label}</Text>
+                  <Text style={styles.value}>{value}</Text>
+                </View>
+              ))}
+              <View style={styles.divider} />
+              <Text style={styles.note}>
+                Se alguém perguntar por que você tá nessa agora, a resposta é simples: tá pago. Você
+                trabalhou por isso.
+              </Text>
+              <Button
+                label={receipt.running ? 'Ver timer' : 'Fechar'}
+                onPress={receipt.running ? onSeeTimer : onClose}
+                style={styles.button}
+              />
+            </ScrollView>
+          </View>
+        </Appear>
       </View>
     </Modal>
   );
@@ -54,6 +56,7 @@ const styles = StyleSheet.create({
     padding: spacing.xxl,
     backgroundColor: 'rgba(17,17,17,0.6)',
   },
+  slot: { width: '100%', maxWidth: 380, maxHeight: '100%' },
   paper: {
     width: '100%',
     maxWidth: 380,

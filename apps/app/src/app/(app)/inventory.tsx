@@ -1,4 +1,4 @@
-import { SIDEBAR_BREAKPOINT, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
+import { Appear, SIDEBAR_BREAKPOINT, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { InventoryRow } from '@/inventory/InventoryRow';
@@ -25,7 +25,9 @@ export default function Inventory() {
       <View style={wide ? styles.columns : styles.stack}>
         <View style={wide && styles.column}>
           {session ? (
-            <TimerCard session={session} timeZone={timeZone} />
+            <Appear key={session.id}>
+              <TimerCard session={session} timeZone={timeZone} />
+            </Appear>
           ) : (
             <View style={styles.empty}>
               <Text style={styles.emptyTitle}>Nenhum timer rodando.</Text>
@@ -53,14 +55,15 @@ export default function Inventory() {
             </Text>
           ) : (
             inventory.map((item) => (
-              <InventoryRow
-                key={item.id}
-                item={item}
-                today={today}
-                timeZone={timeZone}
-                canStart={timer !== null && !session}
-                onStart={startFromInventory}
-              />
+              <Appear key={item.id}>
+                <InventoryRow
+                  item={item}
+                  today={today}
+                  timeZone={timeZone}
+                  canStart={timer !== null && !session}
+                  onStart={startFromInventory}
+                />
+              </Appear>
             ))
           )}
         </View>

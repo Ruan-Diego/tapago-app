@@ -1,4 +1,4 @@
-import { SIDEBAR_BREAKPOINT, colors } from '@tapago/ui';
+import { SIDEBAR_BREAKPOINT, colors, useReducedMotion } from '@tapago/ui';
 import { Tabs } from 'expo-router/js-tabs';
 import { ActivityIndicator, StyleSheet, View, useWindowDimensions } from 'react-native';
 
@@ -14,6 +14,7 @@ import { useTimerController } from '@/timer/useTimerController';
 export default function AppLayout() {
   const { width } = useWindowDimensions();
   const wide = width >= SIDEBAR_BREAKPOINT;
+  const reducedMotion = useReducedMotion();
   // Até o perfil chegar não dá para saber se falta o onboarding: as abas ficam cobertas.
   const loading = useSession((state) => state.profile === null && !state.profileError);
   useTimerController();
@@ -27,6 +28,8 @@ export default function AppLayout() {
           headerShown: false,
           tabBarPosition: wide ? 'left' : 'bottom',
           sceneStyle: { backgroundColor: colors.paper },
+          // A tela nova desliza de leve para o lado da aba escolhida (ANIM-04).
+          animation: reducedMotion ? 'fade' : 'shift',
         }}
       >
         {SECTIONS.map((section) => (

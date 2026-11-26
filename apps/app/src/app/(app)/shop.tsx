@@ -1,5 +1,5 @@
 import { activeInOrder, formatMoney, type ShopItem } from '@tapago/core';
-import { PillButton, SIDEBAR_BREAKPOINT, colors, fonts, fontSizes } from '@tapago/ui';
+import { Appear, PillButton, SIDEBAR_BREAKPOINT, colors, fonts, fontSizes } from '@tapago/ui';
 import { router } from 'expo-router';
 import { useState } from 'react';
 import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
@@ -48,14 +48,15 @@ export default function Shop() {
       ) : (
         <View style={styles.grid}>
           {items.map((item) => (
-            <ShopCard
-              key={item.id}
-              item={item}
-              balance={balance}
-              onBuy={setBuying}
-              onEdit={setEditing}
-              style={wide ? styles.cellWide : styles.cell}
-            />
+            <Appear key={item.id} style={wide ? styles.cellWide : styles.cell}>
+              <ShopCard
+                item={item}
+                balance={balance}
+                onBuy={setBuying}
+                onEdit={setEditing}
+                style={styles.fill}
+              />
+            </Appear>
           ))}
         </View>
       )}
@@ -98,4 +99,5 @@ const styles = StyleSheet.create({
   // Dois por linha no celular: a base abaixo de 50% deixa espaço para o intervalo.
   cell: { flexBasis: '47%', flexGrow: 1, maxWidth: '49%' },
   cellWide: { width: 240 },
+  fill: { flexGrow: 1 },
 });

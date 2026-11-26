@@ -1,6 +1,6 @@
 import { formatMoney, purchaseCheck, type ShopItem } from '@tapago/core';
-import { colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
-import { Pressable, StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { PressableScale, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
+import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
 
 import { BigDuration } from './BigDuration';
 
@@ -19,7 +19,7 @@ export function ShopCard({ item, balance, onBuy, onEdit, style }: ShopCardProps)
 
   return (
     <View style={[styles.card, style]}>
-      <Pressable
+      <PressableScale
         accessibilityRole="button"
         accessibilityLabel={`Editar ${item.name}`}
         onPress={() => onEdit(item)}
@@ -27,8 +27,8 @@ export function ShopCard({ item, balance, onBuy, onEdit, style }: ShopCardProps)
       >
         <BigDuration minutes={item.minutes} />
         <Text style={styles.name}>{item.name}</Text>
-      </Pressable>
-      <Pressable
+      </PressableScale>
+      <PressableScale
         accessibilityRole="button"
         accessibilityLabel={
           canBuy
@@ -38,11 +38,7 @@ export function ShopCard({ item, balance, onBuy, onEdit, style }: ShopCardProps)
         accessibilityState={{ disabled: !canBuy }}
         disabled={!canBuy}
         onPress={() => onBuy(item)}
-        style={({ pressed }) => [
-          styles.button,
-          !canBuy && styles.blocked,
-          pressed && styles.pressed,
-        ]}
+        style={[styles.button, !canBuy && styles.blocked]}
       >
         {canBuy ? (
           <>
@@ -57,7 +53,7 @@ export function ShopCard({ item, balance, onBuy, onEdit, style }: ShopCardProps)
             )}
           </>
         )}
-      </Pressable>
+      </PressableScale>
     </View>
   );
 }
@@ -89,7 +85,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink,
   },
   blocked: { backgroundColor: colors.track },
-  pressed: { opacity: 0.6 },
   buttonText: { fontFamily: fonts.display, fontSize: fontSizes.label, color: colors.white },
   blockedText: { color: colors.slate },
   missing: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.slate },

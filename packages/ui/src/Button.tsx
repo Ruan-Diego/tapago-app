@@ -1,18 +1,17 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import type { ReactNode } from 'react';
-import type { PressableProps, StyleProp, ViewStyle } from 'react-native';
 
+import { PressableScale, type PressableScaleProps } from './PressableScale';
 import { MIN_TOUCH, colors, fonts, radii, spacing } from './tokens';
 
 export type ButtonVariant = 'primary' | 'secondary' | 'outline';
 
-export interface ButtonProps extends Omit<PressableProps, 'children' | 'style'> {
+export interface ButtonProps extends Omit<PressableScaleProps, 'children'> {
   label: string;
   /** `primary`: tinta · `secondary`: branco com borda suave · `outline`: contorno de tinta. */
   variant?: ButtonVariant;
   loading?: boolean;
   icon?: ReactNode;
-  style?: StyleProp<ViewStyle>;
 }
 
 export function Button({
@@ -28,18 +27,12 @@ export function Button({
   const textColor = variant === 'primary' ? colors.white : colors.ink;
 
   return (
-    <Pressable
+    <PressableScale
       accessibilityRole="button"
       accessibilityLabel={label}
       accessibilityState={{ disabled: inactive, busy: loading }}
       disabled={inactive}
-      style={({ pressed }) => [
-        styles.base,
-        styles[variant],
-        pressed && styles.pressed,
-        inactive && styles.inactive,
-        style,
-      ]}
+      style={[styles.base, styles[variant], inactive && styles.inactive, style]}
       {...rest}
     >
       {loading ? (
@@ -50,7 +43,7 @@ export function Button({
           <Text style={[styles.label, { color: textColor }]}>{label}</Text>
         </View>
       )}
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -67,7 +60,6 @@ const styles = StyleSheet.create({
   primary: { backgroundColor: colors.ink, borderColor: colors.ink },
   secondary: { backgroundColor: colors.white, borderColor: colors.borderStrong },
   outline: { backgroundColor: 'transparent', borderColor: colors.ink },
-  pressed: { opacity: 0.8 },
   inactive: { opacity: 0.5 },
   content: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   label: { fontFamily: fonts.displayBold, fontSize: 16 },

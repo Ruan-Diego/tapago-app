@@ -6,9 +6,19 @@ import {
   nextCharge,
   type Activity,
 } from '@tapago/core';
-import { PillButton, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
+import {
+  PillButton,
+  Pop,
+  PressableScale,
+  ProgressBar,
+  colors,
+  fonts,
+  fontSizes,
+  radii,
+  spacing,
+} from '@tapago/ui';
 import { memo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
 import { plural } from '@/history/format';
 
@@ -60,7 +70,7 @@ export const ActivityCard = memo(function ActivityCard({
   return (
     <View style={[styles.card, negative && styles.negative, done && styles.done]}>
       <View style={styles.main}>
-        <Pressable
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel={`Editar ${activity.name}`}
           onPress={() => onEdit(activity)}
@@ -79,28 +89,34 @@ export const ActivityCard = memo(function ActivityCard({
               {formatDuration(activity.minutes)}
             </Text>
             {habit ? (
-              <Text style={[styles.chip, styles.chipMuted, habit.complete && styles.chipComplete]}>
-                {habitLabel}
-              </Text>
+              <Pop trigger={habit.complete}>
+                <Text
+                  style={[styles.chip, styles.chipMuted, habit.complete && styles.chipComplete]}
+                >
+                  {habitLabel}
+                </Text>
+              </Pop>
             ) : done ? (
-              <Text style={[styles.chip, negative && styles.chipMuted]}>{todayLabel}</Text>
+              <Pop trigger={todayCount}>
+                <Text style={[styles.chip, negative && styles.chipMuted]}>{todayLabel}</Text>
+              </Pop>
             ) : null}
             {streak > 0 ? (
-              <Text style={styles.streak}>{plural(streak, 'dia', 'dias')} de sequência</Text>
+              <Pop trigger={streak}>
+                <Text style={styles.streak}>{plural(streak, 'dia', 'dias')} de sequência</Text>
+              </Pop>
             ) : null}
           </View>
           {habit ? (
-            <View
-              accessibilityRole="progressbar"
-              accessibilityLabel="Hábito de hoje"
-              accessibilityValue={{ min: 0, max: habit.target, now: habit.done }}
+            <ProgressBar
+              label="Hábito de hoje"
+              value={habit.done}
+              max={habit.target}
               style={styles.track}
-            >
-              <View style={[styles.fill, { width: `${(habit.done / habit.target) * 100}%` }]} />
-            </View>
+            />
           ) : null}
-        </Pressable>
-        <Pressable
+        </PressableScale>
+        <PressableScale
           accessibilityRole="button"
           accessibilityLabel={
             negative
@@ -110,14 +126,10 @@ export const ActivityCard = memo(function ActivityCard({
           accessibilityState={{ disabled }}
           disabled={disabled}
           onPress={() => onRegister(activity)}
-          style={({ pressed }) => [
-            styles.button,
-            negative && styles.buttonNegative,
-            (pressed || disabled) && styles.pressed,
-          ]}
+          style={[styles.button, negative && styles.buttonNegative, disabled && styles.inactive]}
         >
           <Text style={[styles.amount, negative && styles.amountNegative]}>{amount}</Text>
-        </Pressable>
+        </PressableScale>
       </View>
       {negative && activity.penaltyCount > 0 ? (
         <View style={styles.penalty}>
@@ -179,14 +191,7 @@ const styles = StyleSheet.create({
   chipMuted: { backgroundColor: colors.track },
   chipComplete: { backgroundColor: colors.accent },
   streak: { fontFamily: fonts.bodySemiBold, fontSize: fontSizes.caption, color: colors.ink },
-  track: {
-    height: 6,
-    marginTop: spacing.sm,
-    borderRadius: radii.pill,
-    backgroundColor: colors.track,
-    overflow: 'hidden',
-  },
-  fill: { height: '100%', borderRadius: radii.pill, backgroundColor: colors.ink },
+  track: { height: 6, marginTop: spacing.sm },
   button: {
     minWidth: 84,
     height: 56,
@@ -199,7 +204,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   buttonNegative: { backgroundColor: colors.white },
-  pressed: { opacity: 0.6 },
+  inactive: { opacity: 0.6 },
   amount: { fontFamily: fonts.display, fontSize: 17, color: colors.white },
   amountNegative: { color: colors.ink },
   penalty: {

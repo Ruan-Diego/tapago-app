@@ -17,6 +17,7 @@ import {
   type RankingRow,
 } from '@tapago/core';
 import {
+  Appear,
   Button,
   Card,
   SIDEBAR_BREAKPOINT,
@@ -209,7 +210,9 @@ export default function History() {
           Atividade recente
         </Text>
         {visible.map((entry) => (
-          <EntryRow key={entry.id} entry={entry} today={today} timeZone={timeZone} />
+          <Appear key={entry.id}>
+            <EntryRow entry={entry} today={today} timeZone={timeZone} />
+          </Appear>
         ))}
         {!recent.loaded ? <Text style={styles.hint}>Carregando…</Text> : null}
         {recent.loaded && visible.length === 0 ? (
