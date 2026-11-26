@@ -14,10 +14,12 @@ import {
   type EntryData,
   type EntrySource,
   type InventoryItem,
+  type ProfileValues,
   type Session,
   type SessionChange,
   type ShopItem,
   type ShopItemValues,
+  type UserProfile,
 } from '@tapago/core';
 
 import { Increment, type DocData, type WriteOp } from './documents';
@@ -29,6 +31,8 @@ export const paths = {
   entries: (uid: string) => `users/${uid}/entries`,
   inventory: (uid: string) => `users/${uid}/inventory`,
   daily: (uid: string) => `users/${uid}/daily`,
+  /** Foto de perfil, fora do documento do usuário para não pesar nas leituras dele. */
+  avatar: (uid: string) => `users/${uid}/avatar/current`,
   /** Documento único: no máximo uma sessão por conta (R5). */
   session: (uid: string) => `users/${uid}/state/session`,
 };
@@ -234,6 +238,44 @@ export function updateShopItemOp(uid: string, id: string, values: ShopItemValues
     path: `${paths.shopItems(uid)}/${id}`,
     data: { name, value, minutes },
   };
+}
+
+/** O que o usuário muda no perfil. O saldo nunca entra aqui: ele só muda com lançamentos. */
+export type ProfilePatch = Partial<ProfileValues & Pick<UserProfile, 'notif' | 'onboardingDone'>>;
+
+export function updateProfileOp(uid: string, patch: ProfilePatch): WriteOp {
+  return { kind: 'update', path: paths.user(uid), data: { ...patch } };
+}
+
+export function avatarOp(uid: string, data: string, at: Date): WriteOp {
+  return { kind: 'set', path: paths.avatar(uid), data: { data, updatedAt: at } };
+}
+
+export interface OnboardingData {
+  /** Ausente quando a conta já estava configurada e só falta marcar o onboarding. */
+  profile?: { name: string; notif: UserProfile['notif'] };
+  activities?: readonly { id: string; values: ActivityValues }[];
+  shopItems?: readonly { id: string; values: ShopItemValues }[];
+  /** JPEG em base64. */
+  avatar?: string | null;
+}
+
+/**
+ * Tudo o que o onboarding escolheu, em um lote só: a conta nunca fica configurada pela metade.
+ * A ordem das listas é a ordem em que aparecem na tela.
+ */
+export function onboardingOps(uid: string, data: OnboardingData, at: Date): WriteOp[] {
+  const later = (index: number) => new Date(at.getTime() + index);
+  return [
+    updateProfileOp(uid, { ...data.profile, onboardingDone: true }),
+    ...(data.activities ?? []).map(({ id, values }, index) =>
+      createActivityOp(uid, id, values, later(index)),
+    ),
+    ...(data.shopItems ?? []).map(({ id, values }, index) =>
+      createShopItemOp(uid, id, values, later(index)),
+    ),
+    ...(data.avatar ? [avatarOp(uid, data.avatar, at)] : []),
+  ];
 }
 
 /** Arquivar em vez de apagar (R10). */

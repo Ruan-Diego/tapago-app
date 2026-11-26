@@ -23,6 +23,8 @@ export const colors = {
   /** Ruim: listrado escuro/claro das atividades negativas nos gráficos. */
   badDark: '#3A3A36',
   badLight: '#D9D9D3',
+  /** Mapa de constância: de nenhum a quatro ou mais registros no dia. */
+  heat: ['#E6E6E1', '#C9C9C2', '#9C9C95', '#5E5E59', '#111111'],
   /** Destaque: dinheiro, aba ativa, recibo "Tá pago.". */
   accent: '#D4FF3A',
   /** Mensagens de erro (contraste de 6,5:1 sobre branco). */

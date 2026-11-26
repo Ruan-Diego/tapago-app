@@ -1,10 +1,8 @@
 import { SIDEBAR_BREAKPOINT, colors } from '@tapago/ui';
 import { Tabs } from 'expo-router/js-tabs';
-import { View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { ToastHost } from '@/ledger/ToastHost';
-import { useLedgerSubscription } from '@/ledger/store';
-import { useToday } from '@/ledger/useToday';
 import { Sidebar } from '@/navigation/Sidebar';
 import { TabBar } from '@/navigation/TabBar';
 import { SECTIONS } from '@/navigation/sections';
@@ -15,8 +13,8 @@ import { useTimerController } from '@/timer/useTimerController';
 export default function AppLayout() {
   const { width } = useWindowDimensions();
   const wide = width >= SIDEBAR_BREAKPOINT;
-  const uid = useSession((state) => state.user?.uid);
-  useLedgerSubscription(uid, useToday());
+  // Até o perfil chegar não dá para saber se falta o onboarding: as abas ficam cobertas.
+  const loading = useSession((state) => state.profile === null && !state.profileError);
   useTimerController();
 
   return (
@@ -39,6 +37,24 @@ export default function AppLayout() {
       </Tabs>
       <ToastHost />
       <AlertBanner />
+      {loading ? (
+        <View style={styles.loading}>
+          <ActivityIndicator accessibilityLabel="Carregando a sua conta" color={colors.ink} />
+        </View>
+      ) : null}
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.paper,
+  },
+});

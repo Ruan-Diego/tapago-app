@@ -1,4 +1,5 @@
 import {
+  HISTORY_WINDOW_DAYS,
   addDays,
   type Activity,
   type Daily,
@@ -16,17 +17,16 @@ import {
 import { useEffect } from 'react';
 import { create } from 'zustand';
 
-/** Período dos cartões do Histórico. O filtro de 7/30/90 dias é da F3. */
-export const PERIOD_DAYS = 30;
-
 interface LedgerState {
   /** `null` enquanto carrega. */
   activities: Activity[] | null;
   shopItems: ShopItem[] | null;
   inventory: InventoryItem[] | null;
   timer: TimerSnapshot | null;
-  /** Agregados do período atual e do anterior. */
+  /** Agregados do maior período do Histórico e do anterior a ele. */
   dailies: Daily[] | null;
+  /** Todos os agregados, lidos uma vez quando o Histórico ou o Perfil abre. */
+  allDailies: Daily[] | null;
   error: boolean;
 }
 
@@ -36,6 +36,7 @@ const EMPTY: LedgerState = {
   inventory: null,
   timer: null,
   dailies: null,
+  allDailies: null,
   error: false,
 };
 
@@ -46,6 +47,25 @@ function fail(error: Error) {
   useLedger.setState({ error: true });
 }
 
+/** A conta dos listeners ligados: uma resposta atrasada de outra conta é descartada. */
+let currentUid: string | null = null;
+let loadingAllFor: string | null = null;
+
+/** Lê uma vez por sessão os agregados antigos. Se falhar, a próxima abertura tenta de novo. */
+export function loadAllDailies(uid: string) {
+  if (loadingAllFor === uid || useLedger.getState().allDailies !== null) return;
+  loadingAllFor = uid;
+  dailyRepository
+    .getAll(uid)
+    .then((allDailies) => {
+      if (currentUid === uid) useLedger.setState({ allDailies });
+    })
+    .catch((error: unknown) => console.warn('Falha ao ler todo o histórico.', error))
+    .finally(() => {
+      if (loadingAllFor === uid) loadingAllFor = null;
+    });
+}
+
 /**
  * Listeners compartilhados pelas abas, um por coleção e por conta, para não gastar leituras da
  * cota do Spark. Os agregados são religados só quando o dia vira.
@@ -53,6 +73,7 @@ function fail(error: Error) {
 export function useLedgerSubscription(uid: string | undefined, today: string) {
   useEffect(() => {
     if (!uid) return;
+    currentUid = uid;
     const stopActivities = activitiesRepository.watch(
       uid,
       (activities) => useLedger.setState({ activities }),
@@ -74,6 +95,7 @@ export function useLedgerSubscription(uid: string | undefined, today: string) {
       stopShop();
       stopInventory();
       stopTimer();
+      currentUid = null;
       useLedger.setState(EMPTY);
     };
   }, [uid]);
@@ -82,7 +104,7 @@ export function useLedgerSubscription(uid: string | undefined, today: string) {
     if (!uid) return;
     return dailyRepository.watchSince(
       uid,
-      addDays(today, 1 - 2 * PERIOD_DAYS),
+      addDays(today, 1 - HISTORY_WINDOW_DAYS),
       (dailies) => useLedger.setState({ dailies }),
       fail,
     );

@@ -14,6 +14,8 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { useLedgerSubscription } from '@/ledger/store';
+import { useToday } from '@/ledger/useToday';
 import { startSession, useSession } from '@/session/store';
 
 void SplashScreen.preventAutoHideAsync();
@@ -30,6 +32,10 @@ export default function RootLayout() {
     SpaceGrotesk_700Bold,
   });
   const status = useSession((state) => state.status);
+  const uid = useSession((state) => state.user?.uid);
+  const needsOnboarding = useSession((state) => state.profile?.onboardingDone === false);
+  // Aqui na raiz: o onboarding e as abas usam os mesmos listeners.
+  useLedgerSubscription(uid, useToday());
 
   useEffect(() => startSession(), []);
 
@@ -48,8 +54,11 @@ export default function RootLayout() {
       <Stack
         screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper } }}
       >
-        <Stack.Protected guard={status === 'signedIn'}>
+        <Stack.Protected guard={status === 'signedIn' && !needsOnboarding}>
           <Stack.Screen name="(app)" options={{ title: 'Tá pago' }} />
+        </Stack.Protected>
+        <Stack.Protected guard={status === 'signedIn' && needsOnboarding}>
+          <Stack.Screen name="onboarding" options={{ title: 'Começar · Tá pago' }} />
         </Stack.Protected>
         <Stack.Protected guard={status === 'signedOut'}>
           {/* Sem layout de grupo: o primeiro daqui é para onde vai quem não entrou. */}

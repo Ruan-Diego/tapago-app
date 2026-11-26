@@ -25,6 +25,8 @@ const config: ExpoConfig = {
     'expo-router',
     'expo-font',
     'expo-notifications',
+    // Só a galeria, pela escolha de fotos do sistema: sem câmera nem microfone.
+    ['expo-image-picker', { cameraPermission: false, microphonePermission: false }],
     ['expo-splash-screen', { backgroundColor: '#F4F4F1' }],
     // O Firebase Android atual é compilado com Kotlin 2.4; o padrão do Expo (2.2) não o lê.
     ['expo-build-properties', { android: { kotlinVersion: '2.3.21' } }],

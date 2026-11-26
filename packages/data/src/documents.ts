@@ -17,7 +17,7 @@ export interface QuerySpec {
   path: string;
   orderBy: { field: string; direction: 'asc' | 'desc' };
   /** Filtro `>=` no mesmo campo da ordenação. */
-  from?: string;
+  from?: string | Date;
   /** Continua depois deste valor do campo ordenado (paginação). */
   after?: Date;
   limit?: number;

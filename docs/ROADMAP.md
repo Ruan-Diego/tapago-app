@@ -267,27 +267,27 @@ Cerca de 12 semanas do zero ao uso diário, com o MVP em uso a partir da semana 
 **Intervenção humana necessária:** nenhuma para código. HUM-09 para o marco.
 
 **Onboarding** (ONB-01–05)
-- [ ] Boas-vindas + "como funciona" (2 telas)
-- [ ] Nome (obrigatório) e foto (opcional)
-- [ ] Presets de atividades + e −, valor ajustável com −/+; ≥ 1 positiva para seguir
-- [ ] Montar a loja com presets; ≥ 1 item para seguir
-- [ ] Permissão de notificação com contexto; "Agora não" não bloqueia
-- [ ] Tela final "Pronto" e `onboardingDone = true`
+- [x] Boas-vindas + "como funciona" (2 telas)
+- [x] Nome (obrigatório) e foto (opcional)
+- [x] Presets de atividades + e −, valor ajustável com −/+; ≥ 1 positiva para seguir
+- [x] Montar a loja com presets; ≥ 1 item para seguir
+- [x] Permissão de notificação com contexto; "Agora não" não bloqueia
+- [x] Tela final "Pronto" e `onboardingDone = true`
 
 **Perfil** (PROF-01–02)
-- [ ] Nome e frase
-- [ ] Foto sem Storage: recortada em círculo, reduzida para ~256 px (JPEG, ≤ 150 KB) e salva em `users/{uid}/avatar/current`; sem foto, usa a da conta Google ou as iniciais
-- [ ] Regra: `avatar` só para o dono, com limite de tamanho
-- [ ] Meta semanal e preferências de notificação, válidas em todos os aparelhos
+- [x] Nome e frase
+- [x] Foto sem Storage: recortada em círculo, reduzida para ~256 px (JPEG, ≤ 150 KB) e salva em `users/{uid}/avatar/current`; sem foto, usa a da conta Google ou as iniciais
+- [x] Regra: `avatar` só para o dono, com limite de tamanho
+- [x] Meta semanal e preferências de notificação, válidas em todos os aparelhos
 
 **Histórico completo** (HIST-01, 03–07)
-- [ ] Filtro 7/30/90 dias aplicado a todos os blocos
-- [ ] Divisão do tempo bom × lazer × ruim, com a frase "para cada 1 h de lazer…"
-- [ ] Gráfico de saldo diário (Victory + react-native-svg)
-- [ ] Horas por semana (8 semanas, 3 barras)
-- [ ] Mapa de constância (13 semanas): sequência, recorde, dias limpos
-- [ ] Rankings: tempo por atividade, por lazer, onde perdeu
-- [ ] Painel do histórico em tela grande na web
+- [x] Filtro 7/30/90 dias aplicado a todos os blocos
+- [x] Divisão do tempo bom × lazer × ruim, com a frase "para cada 1 h de lazer…"
+- [x] Gráfico de saldo diário (react-native-svg)
+- [x] Horas por semana (8 semanas, 3 barras)
+- [x] Mapa de constância (13 semanas): sequência, recorde, dias limpos
+- [x] Rankings: tempo por atividade, por lazer, onde perdeu
+- [x] Painel do histórico em tela grande na web
 
 **Critério de saída:** a Pessoa 2 configura sozinha em 2 min (HUM-09).
 
@@ -561,7 +561,7 @@ Atualizado pelo agente no início e no fim de cada fase.
 | F0 | em andamento (falta a validação humana) | 25/11/2026 | | c3a8c51, 2fd49ad |
 | F1 | código pronto (falta a validação humana)   | 25/11/2026 | | |
 | F2 | código pronto (falta a validação humana) | 25/11/2026 | | |
-| F3 | não iniciada | | | |
+| F3 | código pronto (falta a validação humana) | 26/11/2026 | | |
 | F6 | não iniciada | | | |
 | F7 | não iniciada | | | |
 | F8 | não iniciada | | | |
@@ -601,6 +601,16 @@ Atualizado pelo agente no início e no fim de cada fase.
 - F2 · O número do recibo são os 4 últimos caracteres do id da compra (não há contador).
 - F2 · A permissão de notificação é pedida ao começar um timer; o pedido com contexto no onboarding é a F3.
 
+- F3 · Gráficos desenhados direto com `react-native-svg`, sem Victory: uma dependência a menos e o mesmo desenho do protótipo no Android e na web.
+- F3 · Dependências novas: `expo-image-picker` e `expo-image-manipulator` (sem permissão de câmera ou microfone). Exigem um APK novo. No Android o usuário ajusta o recorte; na web vale o quadrado central.
+- F3 · O onboarding aparece quando `onboardingDone` é falso e grava tudo em um lote no fim. Conta que já tem uma atividade positiva e um item na loja é marcada como feita, sem passar pelas telas.
+- F3 · "Agora não" desliga os avisos de fim e de 5 minutos (como no protótipo); com os dois desligados, começar um timer não pede permissão.
+- F3 · O listener de `daily` passou de 60 para 180 dias (90 dias mais o período anterior). Totais e recorde leem todos os `daily` uma vez por sessão, ao abrir o Histórico ou o Perfil.
+- F3 · Os rankings leem os lançamentos do período com um listener próprio, que só aumenta a janela (30 → 90 dias) quando o filtro pede. É a leitura mais cara do app: conferir na F4 contra a cota.
+- F3 · O saldo diário é reconstruído de trás para frente, a partir do saldo atual.
+- F3 · O filtro vale para cartões, divisão do tempo, saldo, dias limpos e rankings. As 8 semanas, o mapa de 13 semanas, a sequência, o recorde e a atividade recente têm janela própria. A sequência e o recorde contam dias com atividade positiva (R12).
+- F3 · "Resumo semanal" já é salvo no Perfil; o aviso é da F5. "Refazer configuração" também.
+
 **Pendências humanas em aberto**
 
 - Web publicada em https://tapago-51ecc.web.app (regras e Hosting publicados em 25/11/2026).
@@ -610,3 +620,5 @@ Atualizado pelo agente no início e no fim de cada fase.
 - HUM-07: usar a F1 por 1 semana. Antes, publicar (push na `main` ou deploy manual) e instalar um APK novo: a F1 foi testada na web contra o emulador, não em um Android.
 - HUM-08: nos 2 celulares, instalar um APK novo (há permissões novas de alarme), permitir notificações, tirar o app da otimização de bateria e testar o aviso com o app fechado. Os avisos do Android ainda não foram testados em aparelho.
 - F2: publicar regras e web juntas (push na `main` ou deploy manual). As regras novas são necessárias para o timer.
+- F3: publicar regras e web juntas (sem o bloco `avatar`, um onboarding com foto é recusado inteiro) e instalar um APK novo nos 2 celulares. Foi testada na web contra o emulador, não em um Android.
+- HUM-09: a Pessoa 2 faz o onboarding sozinha, cronometrando. Se a conta dela já tiver atividades e loja, o onboarding não aparece: usar uma conta nova.

@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { LIMITS } from './limits';
+
 export const userProfileSchema = z.object({
   name: z.string().max(60),
   bio: z.string().max(140),
@@ -10,6 +12,13 @@ export const userProfileSchema = z.object({
   timezone: z.string().min(1),
   notif: z.object({ end: z.boolean(), warn5: z.boolean(), weekly: z.boolean() }),
   onboardingDone: z.boolean(),
+  /** Gravado pelo servidor na criação; usado em "No Tá pago desde…". */
+  createdAt: z.date().optional().catch(undefined),
+});
+
+/** Documento users/{uid}/avatar/current: a foto fica fora do perfil para não pesar nele. */
+export const avatarSchema = z.object({
+  data: z.string().min(1).max(LIMITS.avatarMaxChars),
 });
 
 /** Documento `users/{uid}`. O `createdAt` é gravado pela camada de dados. */

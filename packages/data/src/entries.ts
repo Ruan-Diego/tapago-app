@@ -45,6 +45,23 @@ export const entriesRepository = {
     );
   },
 
+  /**
+   * Todos os lançamentos desde `from`, em tempo real, para os rankings do período. O listener é
+   * um só enquanto o Histórico está aberto: depois da primeira leitura, só as mudanças custam.
+   */
+  watchSince(
+    uid: string,
+    from: Date,
+    onChange: (entries: Entry[]) => void,
+    onError: (error: Error) => void,
+  ): Unsubscribe {
+    return backend.watchQuery(
+      { path: paths.entries(uid), orderBy: { field: 'at', direction: 'desc' }, from },
+      ({ docs }) => onChange(parseDocs(entrySchema, docs)),
+      onError,
+    );
+  },
+
   /** Lançamentos anteriores a `before`, lidos uma vez. */
   async getOlder(uid: string, before: Date, limit: number): Promise<EntryPage> {
     return toPage(await backend.getQuery(newestFirst(uid, limit, before)), limit);

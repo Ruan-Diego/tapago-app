@@ -1,8 +1,72 @@
-import { newUserProfile, userProfileSchema, type UserProfile } from '@tapago/core';
+import {
+  avatarSchema,
+  newUserProfile,
+  userProfileSchema,
+  type ActivityValues,
+  type ShopItemValues,
+  type UserProfile,
+} from '@tapago/core';
 
 import { backend } from './backend';
+import { decodeData, type DocData } from './documents';
 import type { AuthUser, Unsubscribe } from './types';
-import { paths } from './writes';
+import {
+  avatarOp,
+  onboardingOps,
+  paths,
+  updateProfileOp,
+  type OnboardingData,
+  type ProfilePatch,
+} from './writes';
+
+export interface OnboardingChoices extends Pick<OnboardingData, 'profile' | 'avatar'> {
+  activities?: readonly ActivityValues[];
+  shopItems?: readonly ShopItemValues[];
+}
+
+/** Escritas otimistas, como nos outros repositórios. */
+export const profileRepository = {
+  update(uid: string, patch: ProfilePatch): Promise<void> {
+    return backend.commit([updateProfileOp(uid, patch)]);
+  },
+
+  saveAvatar(uid: string, data: string): Promise<void> {
+    return backend.commit([avatarOp(uid, data, new Date())]);
+  },
+
+  /** A foto em base64, ou `null` enquanto não houver. */
+  watchAvatar(
+    uid: string,
+    onChange: (data: string | null) => void,
+    onError: (error: Error) => void,
+  ): Unsubscribe {
+    return backend.watchDoc(
+      paths.avatar(uid),
+      ({ data }) => {
+        const parsed = avatarSchema.safeParse(data);
+        onChange(parsed.success ? parsed.data.data : null);
+      },
+      onError,
+    );
+  },
+
+  completeOnboarding(uid: string, choices: OnboardingChoices = {}): Promise<void> {
+    const withId = <Values>(path: string, list: readonly Values[] = []) =>
+      list.map((values) => ({ id: backend.newId(path), values }));
+    return backend.commit(
+      onboardingOps(
+        uid,
+        {
+          profile: choices.profile,
+          avatar: choices.avatar,
+          activities: withId(paths.activities(uid), choices.activities),
+          shopItems: withId(paths.shopItems(uid), choices.shopItems),
+        },
+        new Date(),
+      ),
+    );
+  },
+};
 
 /**
  * Observa `users/{uid}` em tempo real e cria o documento no primeiro login.
@@ -21,7 +85,7 @@ export function watchProfile(
     paths.user(user.uid),
     ({ data, exists, fromCache }) => {
       if (exists) {
-        const parsed = userProfileSchema.safeParse(data);
+        const parsed = userProfileSchema.safeParse(data && decodeData(data as DocData));
         if (parsed.success) onProfile(parsed.data);
         else onError(parsed.error);
         return;

@@ -190,7 +190,7 @@ Os dois apps dependem dos mesmos pacotes. Só o acesso ao Firebase muda por plat
 | Backend | Nenhum código de servidor; só Auth, Firestore, regras e Hosting no plano Spark | Grátis e sem cartão |
 | Estado | Listeners do Firestore + Zustand | O Firestore já entrega dados em tempo real e escrita otimista |
 | Formulários e validação | React Hook Form + Zod | Os mesmos esquemas validam formulários e documentos |
-| Gráficos | Victory sobre react-native-svg | Mesmo componente no Android e na web |
+| Gráficos | Desenho próprio com react-native-svg | Mesmo componente no Android e na web; uma linha e algumas barras não pedem biblioteca de gráficos |
 | Notificações | `expo-notifications` (locais no Android) + Notification API do navegador (web, aba aberta) | Funciona offline e sem servidor (ver Timer e notificações) |
 | Monorepo | pnpm workspaces + Turborepo | Cache de build e tarefas por pacote |
 | Testes | Vitest (core), Emulator Suite + `@firebase/rules-unit-testing` (regras) | As regras são o backend; telas testadas à mão pelos 2 usuários |

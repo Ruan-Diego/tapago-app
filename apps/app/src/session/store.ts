@@ -1,5 +1,5 @@
 import type { UserProfile } from '@tapago/core';
-import { authRepository, watchProfile, type AuthUser } from '@tapago/data';
+import { authRepository, profileRepository, watchProfile, type AuthUser } from '@tapago/data';
 import { create } from 'zustand';
 
 interface SessionState {
@@ -7,6 +7,8 @@ interface SessionState {
   user: AuthUser | null;
   profile: UserProfile | null;
   profileError: boolean;
+  /** Foto própria em base64; `null` sem foto. */
+  avatar: string | null;
 }
 
 export const useSession = create<SessionState>(() => ({
@@ -14,6 +16,7 @@ export const useSession = create<SessionState>(() => ({
   user: null,
   profile: null,
   profileError: false,
+  avatar: null,
 }));
 
 /**
@@ -22,6 +25,7 @@ export const useSession = create<SessionState>(() => ({
  */
 export function startSession(): () => void {
   let stopProfile: (() => void) | undefined;
+  let stopAvatar: (() => void) | undefined;
   let currentUid: string | null = null;
 
   const stopAuth = authRepository.onChange((user) => {
@@ -31,6 +35,8 @@ export function startSession(): () => void {
     }
     stopProfile?.();
     stopProfile = undefined;
+    stopAvatar?.();
+    stopAvatar = undefined;
     currentUid = user?.uid ?? null;
 
     useSession.setState({
@@ -38,8 +44,16 @@ export function startSession(): () => void {
       user,
       profile: null,
       profileError: false,
+      avatar: null,
     });
     if (!user) return;
+
+    stopAvatar = profileRepository.watchAvatar(
+      user.uid,
+      (avatar) => useSession.setState({ avatar }),
+      // Sem a foto o app segue com as iniciais.
+      (error) => console.warn('Falha ao ler a foto.', error),
+    );
 
     stopProfile = watchProfile(
       user,
@@ -53,6 +67,7 @@ export function startSession(): () => void {
 
   return () => {
     stopProfile?.();
+    stopAvatar?.();
     stopAuth();
   };
 }

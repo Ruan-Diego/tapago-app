@@ -58,6 +58,9 @@ export function registerActivity(activity: Activity) {
 
 /** Pedido no toque de começar, quando dá para explicar para que serve. */
 function askForAlerts() {
+  // Com os dois avisos desligados no Perfil, não há o que pedir.
+  const notif = useSession.getState().profile?.notif;
+  if (notif && !notif.end && !notif.warn5) return;
   requestAlertPermission().catch((error: unknown) => {
     console.warn('Não foi possível pedir a permissão de notificação.', error);
   });

@@ -63,8 +63,30 @@ export const activityFormSchema = z.object({
 
 export const shopItemFormSchema = z.object({ name, value, minutes });
 
+const weeklyGoal = z.string().transform((text, context) => {
+  // Vazio ou zero: sem meta.
+  const cents = text.trim() === '' ? 0 : parseReais(text);
+  if (cents === null || cents > LIMITS.weeklyGoalMax) {
+    context.addIssue({
+      code: 'custom',
+      message: `Use um valor até ${formatMoney(LIMITS.weeklyGoalMax)}, ou 0 para ficar sem meta.`,
+    });
+    return z.NEVER;
+  }
+  return cents;
+});
+
+/** Nome, frase e meta semanal (PROF-01, PROF-02). */
+export const profileFormSchema = z.object({
+  name,
+  bio: z.string().trim().max(LIMITS.descriptionMax, `Use até ${LIMITS.descriptionMax} caracteres.`),
+  weeklyGoal,
+});
+
 /** O que os campos guardam (texto) e o que sai validado (centavos e minutos). */
 export type ActivityFormInput = z.input<typeof activityFormSchema>;
 export type ActivityValues = z.output<typeof activityFormSchema>;
 export type ShopItemFormInput = z.input<typeof shopItemFormSchema>;
 export type ShopItemValues = z.output<typeof shopItemFormSchema>;
+export type ProfileFormInput = z.input<typeof profileFormSchema>;
+export type ProfileValues = z.output<typeof profileFormSchema>;

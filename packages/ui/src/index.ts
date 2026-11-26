@@ -5,6 +5,8 @@ export * from './Logo';
 export * from './Money';
 export * from './PillButton';
 export * from './Sheet';
+export * from './Stripes';
+export * from './ToggleRow';
 export * from './Tabs';
 export * from './TextField';
 export * from './tokens';

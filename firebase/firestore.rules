@@ -126,9 +126,28 @@ service cloud.firestore {
         && data.get('counts', {}) is map;
     }
 
+    function validNotif(notif) {
+      return hasShape(notif, ['end', 'warn5', 'weekly'], [])
+        && notif.end is bool
+        && notif.warn5 is bool
+        && notif.weekly is bool;
+    }
+
     function validUser(data) {
       return data.name is string && data.name.size() <= 60
-        && data.balance is int;
+        && data.balance is int
+        && data.get('bio', '') is string && data.get('bio', '').size() <= 140
+        && data.get('weeklyGoal', 0) is int
+        && data.get('weeklyGoal', 0) >= 0 && data.get('weeklyGoal', 0) <= 10000000
+        && data.get('onboardingDone', false) is bool
+        && (!('notif' in data) || validNotif(data.notif));
+    }
+
+    // Foto de perfil em base64 (menos de 150 KB), sem Storage.
+    function validAvatar(data) {
+      return hasShape(data, ['data', 'updatedAt'], [])
+        && data.data is string && data.data.size() >= 1 && data.data.size() <= 200000
+        && data.updatedAt is timestamp;
     }
 
     // Cada usuário só lê e escreve nos próprios dados. Todo o resto é negado: um caminho novo
@@ -183,6 +202,13 @@ service cloud.firestore {
           && request.resource.data.diff(resource.data).affectedKeys()
               .hasOnly(['status', 'endsAt', 'remainingMs']);
         allow delete: if isOwner(uid) && resource != null;
+      }
+
+      match /avatar/{id} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid) && id == 'current'
+          && validAvatar(request.resource.data);
+        allow delete: if false;
       }
 
       match /daily/{day} {
