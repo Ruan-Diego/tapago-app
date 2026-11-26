@@ -7,6 +7,9 @@ export const LIMITS = {
   valueMax: 1_000_000,
   minutesMin: 1,
   minutesMax: 1440,
+  /** Meta de registros por dia de um hábito (R13). */
+  habitTargetMin: 1,
+  habitTargetMax: 20,
   /** Meta semanal em centavos; 0 é "sem meta". */
   weeklyGoalMax: 10_000_000,
   /** Foto em base64: 200 mil caracteres são menos de 150 KB de JPEG (PROF-01). */

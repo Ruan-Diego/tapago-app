@@ -50,16 +50,73 @@ const minutes = z.string().transform((text, context) => {
   return number;
 });
 
-export const activityFormSchema = z.object({
-  kind: activityKindSchema,
-  name,
-  description: z
-    .string()
-    .trim()
-    .max(LIMITS.descriptionMax, `Use até ${LIMITS.descriptionMax} caracteres.`),
-  value,
-  minutes,
-});
+/** Aumento por dia de sequência sugerido ao criar uma atividade positiva (SEQ-01). */
+export const DEFAULT_STREAK_STEP = 1000;
+
+/** Vazio conta como zero. */
+function parseStreakStep(text: string): number | null {
+  const cents = text.trim() === '' ? 0 : parseReais(text);
+  return cents === null || cents > LIMITS.valueMax ? null : cents;
+}
+
+function parseHabitTarget(text: string): number | null {
+  const target = /^\d+$/.test(text.trim()) ? Number(text.trim()) : 0;
+  return target < LIMITS.habitTargetMin || target > LIMITS.habitTargetMax ? null : target;
+}
+
+function parseHabitBonus(text: string): number | null {
+  const cents = parseReais(text);
+  return cents === null || cents < LIMITS.valueMin || cents > LIMITS.valueMax ? null : cents;
+}
+
+export const activityFormSchema = z
+  .object({
+    kind: activityKindSchema,
+    name,
+    description: z
+      .string()
+      .trim()
+      .max(LIMITS.descriptionMax, `Use até ${LIMITS.descriptionMax} caracteres.`),
+    value,
+    minutes,
+    streakStep: z.string(),
+    isHabit: z.boolean(),
+    habitTarget: z.string(),
+    habitBonus: z.string(),
+  })
+  .superRefine(
+    (input, context) => {
+      // Negativa não tem aumento nem hábito: o que ficou nesses campos é ignorado.
+      if (input.kind !== 'positive') return;
+      const invalid = (path: string, message: string) =>
+        context.addIssue({ code: 'custom', path: [path], message });
+      if (parseStreakStep(input.streakStep) === null) {
+        invalid('streakStep', `Use um valor de R$ 0 a ${formatMoney(LIMITS.valueMax)}.`);
+      }
+      if (!input.isHabit) return;
+      if (parseHabitTarget(input.habitTarget) === null) {
+        invalid('habitTarget', `Use de ${LIMITS.habitTargetMin} a ${LIMITS.habitTargetMax} vezes.`);
+      }
+      if (parseHabitBonus(input.habitBonus) === null) {
+        invalid(
+          'habitBonus',
+          `Use um valor entre ${formatMoney(LIMITS.valueMin)} e ${formatMoney(LIMITS.valueMax)}.`,
+        );
+      }
+    },
+    // Os erros destes campos aparecem junto com os dos outros, e não em uma segunda tentativa.
+    { when: () => true },
+  )
+  .transform(({ streakStep, isHabit, habitTarget, habitBonus, ...rest }) => {
+    const positive = rest.kind === 'positive';
+    const target = parseHabitTarget(habitTarget);
+    const bonus = parseHabitBonus(habitBonus);
+    return {
+      ...rest,
+      streakStep: positive ? (parseStreakStep(streakStep) ?? 0) : 0,
+      habit: positive && isHabit && target !== null && bonus !== null ? { target, bonus } : null,
+    };
+  });
 
 export const shopItemFormSchema = z.object({ name, value, minutes });
 

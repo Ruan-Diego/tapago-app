@@ -1,8 +1,15 @@
 import { activityFormSchema, type Activity, type ShopItem } from '@tapago/core';
 import { describe, expect, it } from 'vitest';
 
-import { Increment, decodeData, encodeData } from './documents';
-import { createActivityOp, purchaseOps, registerActivityOps, updateActivityOp } from './writes';
+import { DeleteField, Increment, decodeData, encodeData } from './documents';
+import {
+  createActivityOp,
+  habitBonusOps,
+  purchaseOps,
+  registerActivityOps,
+  resetPenaltyOp,
+  updateActivityOp,
+} from './writes';
 
 const at = new Date('2026-11-26T01:00:00Z');
 const context = { uid: 'ana', at, deviceId: 'web-1', timeZone: 'America/Sao_Paulo' };
@@ -15,17 +22,27 @@ const activity: Activity = {
   order: 1,
   archived: false,
   createdAt: at,
+  streakStep: 0,
+  penaltyCount: 0,
 };
 const item: ShopItem = { ...base, id: 's1', order: 1, archived: false, createdAt: at };
 const inc = (amount: number) => new Increment(amount);
 
 describe('registrar atividade', () => {
-  it('grava lançamento, saldo e agregado do dia em um só lote', () => {
+  it('grava lançamento, saldo, agregado do dia e sequência em um só lote', () => {
     expect(registerActivityOps(context, activity, 'e1')).toEqual([
       {
         kind: 'set',
         path: 'users/ana/entries/e1',
-        data: { ...base, type: 'earn', refId: 'a1', at, deviceId: 'web-1' },
+        data: {
+          ...base,
+          type: 'earn',
+          refId: 'a1',
+          at,
+          deviceId: 'web-1',
+          base: 1000,
+          level: 1,
+        },
       },
       { kind: 'update', path: 'users/ana', data: { balance: inc(1000) } },
       {
@@ -40,7 +57,43 @@ describe('registrar atividade', () => {
           counts: { a1: inc(1) },
         },
       },
+      {
+        kind: 'update',
+        path: 'users/ana/activities/a1',
+        data: { streak: { days: 1, lastDay: '2026-11-25' } },
+      },
     ]);
+  });
+
+  it('paga o valor da sequência e guarda o que o explica (R14)', () => {
+    const [entry, user, , update] = registerActivityOps(
+      context,
+      { ...activity, streakStep: 100, streak: { days: 2, lastDay: '2026-11-24' } },
+      'e1',
+    );
+    expect(entry).toMatchObject({ data: { value: 1200, base: 1000, level: 3 } });
+    expect(user).toMatchObject({ data: { balance: inc(1200) } });
+    expect(update).toMatchObject({ data: { streak: { days: 3, lastDay: '2026-11-25' } } });
+  });
+
+  it('cobra a negativa escalada e soma na contagem (R15)', () => {
+    const [entry, user, daily, update] = registerActivityOps(
+      context,
+      { ...activity, kind: 'negative', penaltyCount: 2 },
+      'e1',
+    );
+    expect(entry).toMatchObject({ data: { type: 'loss', value: 3000, base: 1000, level: 3 } });
+    expect(user).toMatchObject({ data: { balance: inc(-3000) } });
+    expect(daily).toMatchObject({ data: { lost: inc(3000) } });
+    expect(update).toMatchObject({ data: { penaltyCount: inc(1) } });
+  });
+
+  it('zera o custo sem tocar no histórico (SEQ-04)', () => {
+    expect(resetPenaltyOp('ana', 'a1')).toEqual({
+      kind: 'update',
+      path: 'users/ana/activities/a1',
+      data: { penaltyCount: 0 },
+    });
   });
 
   it('desconta do saldo na atividade negativa', () => {
@@ -52,6 +105,46 @@ describe('registrar atividade', () => {
     expect(entry).toMatchObject({ data: { type: 'loss', value: 1000 } });
     expect(user).toMatchObject({ data: { balance: inc(-1000) } });
     expect(daily).toMatchObject({ data: { lost: inc(1000), negMin: inc(15), negCount: inc(1) } });
+  });
+});
+
+describe('bônus do hábito', () => {
+  const habit = { ...activity, habit: { target: 3, bonus: 5000 } };
+
+  it('é um lote próprio, com id fixo por atividade e dia (R13)', () => {
+    expect(habitBonusOps(context, habit)).toEqual([
+      {
+        kind: 'set',
+        path: 'users/ana/entries/habit_a1_2026-11-25',
+        data: {
+          type: 'bonus',
+          source: 'habit',
+          refId: 'a1',
+          name: 'Louça',
+          value: 5000,
+          minutes: 0,
+          target: 3,
+          at: new Date(at.getTime() + 1),
+          deviceId: 'web-1',
+        },
+      },
+      { kind: 'update', path: 'users/ana', data: { balance: inc(5000) } },
+      {
+        kind: 'merge',
+        path: 'users/ana/daily/2026-11-25',
+        data: { date: '2026-11-25', earned: inc(5000), bonuses: { a1: inc(1) } },
+      },
+    ]);
+  });
+
+  it('não passa para o dia seguinte no último instante', () => {
+    // 23:59:59.999 em São Paulo.
+    const last = new Date('2026-11-26T02:59:59.999Z');
+    const [entry] = habitBonusOps({ ...context, at: last }, habit);
+    expect(entry).toMatchObject({
+      path: 'users/ana/entries/habit_a1_2026-11-25',
+      data: { at: last },
+    });
   });
 });
 
@@ -78,7 +171,12 @@ describe('atividades', () => {
     description: '',
     value: '8',
     minutes: '30',
+    streakStep: '10',
+    isHabit: false,
+    habitTarget: '',
+    habitBonus: '',
   });
+  const positive = { ...values, kind: 'positive' as const, streakStep: 1000 };
 
   it('nasce ativa e no fim da lista', () => {
     expect(createActivityOp('ana', 'a2', values, at)).toMatchObject({
@@ -91,12 +189,37 @@ describe('atividades', () => {
     expect(op).toMatchObject({ kind: 'update', path: 'users/ana/activities/a2' });
     expect(op).not.toHaveProperty('data.kind');
   });
+
+  it('não grava aumento nem hábito na negativa', () => {
+    for (const op of [
+      createActivityOp('ana', 'a2', values, at),
+      updateActivityOp('ana', 'a2', values),
+    ]) {
+      expect(op).not.toHaveProperty('data.streakStep');
+      expect(op).not.toHaveProperty('data.habit');
+    }
+  });
+
+  it('grava o hábito e o apaga quando é desmarcado (HAB-01)', () => {
+    const habit = { target: 3, bonus: 5000 };
+    expect(createActivityOp('ana', 'a2', { ...positive, habit }, at)).toMatchObject({
+      data: { habit, streakStep: 1000 },
+    });
+    expect(createActivityOp('ana', 'a2', positive, at)).not.toHaveProperty('data.habit');
+    expect(updateActivityOp('ana', 'a2', positive)).toMatchObject({
+      data: { habit: new DeleteField(), streakStep: 1000 },
+    });
+    expect(updateActivityOp('ana', 'a2', positive)).not.toHaveProperty('data.streak');
+  });
 });
 
 describe('tradução para o SDK', () => {
   it('troca os incrementos, inclusive os aninhados, e preserva datas', () => {
-    const encoded = encodeData({ at, a: inc(2), counts: { x: inc(1) } }, (n) => `+${n}`);
-    expect(encoded).toEqual({ at, a: '+2', counts: { x: '+1' } });
+    const encoded = encodeData(
+      { at, a: inc(2), counts: { x: inc(1) }, habit: new DeleteField() },
+      { increment: (n) => `+${n}`, deleteField: () => 'apagar' },
+    );
+    expect(encoded).toEqual({ at, a: '+2', counts: { x: '+1' }, habit: 'apagar' });
   });
 
   it('converte timestamps em datas', () => {

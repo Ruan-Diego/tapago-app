@@ -8,11 +8,16 @@ import {
   dayKey,
   entryFrom,
   entryTypeFor,
+  habitBonusEntry,
+  habitBonusId,
   newSession,
+  nextCharge,
+  nextStreak,
   type Activity,
   type ActivityValues,
   type EntryData,
   type EntrySource,
+  type Habit,
   type InventoryItem,
   type ProfileValues,
   type Session,
@@ -22,7 +27,7 @@ import {
   type UserProfile,
 } from '@tapago/core';
 
-import { Increment, type DocData, type WriteOp } from './documents';
+import { DeleteField, Increment, type DocData, type WriteOp } from './documents';
 
 export const paths = {
   user: (uid: string) => `users/${uid}`,
@@ -58,23 +63,74 @@ function dailyOp(
     if (amount) data[field] = new Increment(amount);
   }
   if (countRef) data.counts = { [countRef]: new Increment(1) };
+  if (entry.type === 'bonus') data.bonuses = { [entry.refId]: new Increment(1) };
   return { kind: 'merge', path: `${paths.daily(uid)}/${date}`, data };
 }
 
-/** Registrar atividade: lançamento + saldo + agregado do dia. */
+/**
+ * Registrar atividade: lançamento + saldo + agregado do dia + sequência da positiva ou contagem
+ * da negativa. O valor é o calculado agora (R14, R15), e o lançamento guarda o que o explica.
+ */
 export function registerActivityOps(
   context: ActionContext,
   activity: Activity,
   entryId: string,
 ): WriteOp[] {
-  const { uid, at, deviceId } = context;
-  const entry = entryFrom(entryTypeFor(activity.kind), activity, at, deviceId);
-  const signed = activity.kind === 'positive' ? activity.value : -activity.value;
+  const { uid, at, deviceId, timeZone } = context;
+  const today = dayKey(at, timeZone);
+  const { value, level } = nextCharge(activity, today);
+  const positive = activity.kind === 'positive';
+  const entry: EntryData = {
+    ...entryFrom(entryTypeFor(activity.kind), { ...activity, value }, at, deviceId),
+    base: activity.value,
+    level,
+  };
   return [
     { kind: 'set', path: `${paths.entries(uid)}/${entryId}`, data: { ...entry } },
-    { kind: 'update', path: paths.user(uid), data: { balance: new Increment(signed) } },
+    {
+      kind: 'update',
+      path: paths.user(uid),
+      data: { balance: new Increment(positive ? value : -value) },
+    },
     dailyOp(context, entry, activity.id),
+    {
+      kind: 'update',
+      path: `${paths.activities(uid)}/${activity.id}`,
+      data: positive
+        ? { streak: nextStreak(activity.streak, today) }
+        : { penaltyCount: new Increment(1) },
+    },
   ];
+}
+
+/**
+ * O bônus do hábito, em um lote próprio e com id fixo: se outro aparelho já pagou o dia, o
+ * servidor recusa só este lote, e o registro fica.
+ */
+export function habitBonusOps(
+  context: ActionContext,
+  activity: Activity & { habit: Habit },
+): WriteOp[] {
+  const { uid, at, deviceId, timeZone } = context;
+  const date = dayKey(at, timeZone);
+  // 1 ms depois do registro, para aparecer logo acima dele no histórico, sem trocar de dia.
+  const after = new Date(at.getTime() + 1);
+  const bonusAt = dayKey(after, timeZone) === date ? after : at;
+  const entry = habitBonusEntry(activity, bonusAt, deviceId);
+  return [
+    {
+      kind: 'set',
+      path: `${paths.entries(uid)}/${habitBonusId(activity.id, date)}`,
+      data: { ...entry },
+    },
+    { kind: 'update', path: paths.user(uid), data: { balance: new Increment(entry.value) } },
+    dailyOp({ ...context, at: bonusAt }, entry),
+  ];
+}
+
+/** Zerar o custo de uma negativa: o próximo registro volta ao valor inicial (SEQ-04). */
+export function resetPenaltyOp(uid: string, id: string): WriteOp {
+  return { kind: 'update', path: `${paths.activities(uid)}/${id}`, data: { penaltyCount: 0 } };
 }
 
 /** Comprar e guardar: lançamento + saldo + agregado do dia + item no inventário. */
@@ -200,21 +256,37 @@ export function createActivityOp(
   values: ActivityValues,
   at: Date,
 ): WriteOp {
-  return {
-    kind: 'set',
-    path: `${paths.activities(uid)}/${id}`,
-    data: { ...values, order: at.getTime(), archived: false, createdAt: at },
+  const { kind, name, description, value, minutes, streakStep, habit } = values;
+  const data: DocData = {
+    kind,
+    name,
+    description,
+    value,
+    minutes,
+    order: at.getTime(),
+    archived: false,
+    createdAt: at,
   };
+  // Negativa não tem aumento nem hábito.
+  if (kind === 'positive') {
+    data.streakStep = streakStep;
+    if (habit) data.habit = habit;
+  }
+  return { kind: 'set', path: `${paths.activities(uid)}/${id}`, data };
 }
 
-/** O tipo (+/−) é escolhido na criação e não muda depois. */
+/**
+ * O tipo (+/−) é escolhido na criação e não muda depois. A sequência e a contagem da negativa
+ * não são do formulário: só o registro e o zeramento mexem nelas.
+ */
 export function updateActivityOp(uid: string, id: string, values: ActivityValues): WriteOp {
-  const { name, description, value, minutes } = values;
-  return {
-    kind: 'update',
-    path: `${paths.activities(uid)}/${id}`,
-    data: { name, description, value, minutes },
-  };
+  const { kind, name, description, value, minutes, streakStep, habit } = values;
+  const data: DocData = { name, description, value, minutes };
+  if (kind === 'positive') {
+    data.streakStep = streakStep;
+    data.habit = habit ?? new DeleteField();
+  }
+  return { kind: 'update', path: `${paths.activities(uid)}/${id}`, data };
 }
 
 export function createShopItemOp(

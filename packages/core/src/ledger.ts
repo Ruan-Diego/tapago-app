@@ -5,9 +5,19 @@ import { LIMITS } from './limits';
 const name = z.string().min(1).max(LIMITS.nameMax);
 const value = z.number().int().min(LIMITS.valueMin).max(LIMITS.valueMax);
 const minutes = z.number().int().min(LIMITS.minutesMin).max(LIMITS.minutesMax);
+const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
+const habitTarget = z.number().int().min(LIMITS.habitTargetMin).max(LIMITS.habitTargetMax);
 
 export const activityKindSchema = z.enum(['positive', 'negative']);
 export type ActivityKind = z.infer<typeof activityKindSchema>;
+
+/** Hábito diário (R13): meta de registros no dia e bônus ao completar. */
+export const habitSchema = z.object({ target: habitTarget, bonus: value });
+export type Habit = z.infer<typeof habitSchema>;
+
+/** Sequência de uma positiva (R14): dias seguidos terminando em `lastDay`. */
+export const streakSchema = z.object({ days: z.number().int().min(1), lastDay: day });
+export type Streak = z.infer<typeof streakSchema>;
 
 /** Documento `users/{uid}/activities/{id}`. */
 export const activitySchema = z.object({
@@ -19,6 +29,14 @@ export const activitySchema = z.object({
   order: z.number(),
   archived: z.boolean(),
   createdAt: z.date(),
+  /** Só positivas. */
+  habit: habitSchema.optional(),
+  /** Só positivas: quanto o valor sobe a cada dia de sequência. */
+  streakStep: z.number().int().min(0).max(LIMITS.valueMax).default(0),
+  /** Só positivas; ausente antes do primeiro registro. */
+  streak: streakSchema.optional(),
+  /** Só negativas: registros desde o último zeramento (R15). */
+  penaltyCount: z.number().int().min(0).default(0),
 });
 
 /** Documento `users/{uid}/shopItems/{id}`. */
@@ -31,21 +49,41 @@ export const shopItemSchema = z.object({
   createdAt: z.date(),
 });
 
-export const entryTypeSchema = z.enum(['earn', 'loss', 'purchase', 'use', 'reversal']);
+export const entryTypeSchema = z.enum(['earn', 'loss', 'purchase', 'use', 'reversal', 'bonus']);
 export type EntryType = z.infer<typeof entryTypeSchema>;
 
+export const bonusSourceSchema = z.enum(['habit', 'mission']);
+export type BonusSource = z.infer<typeof bonusSourceSchema>;
+
 /** Documento `users/{uid}/entries/{id}`: o livro-caixa, que só recebe inclusões. */
-export const entrySchema = z.object({
-  type: entryTypeSchema,
-  refId: z.string().min(1),
-  name,
-  value,
-  minutes,
-  at: z.date(),
-  deviceId: z.string().min(1),
-  /** Só em estornos (R8): o lançamento desfeito. */
-  reverses: z.string().min(1).optional(),
-});
+export const entrySchema = z
+  .object({
+    type: entryTypeSchema,
+    refId: z.string().min(1),
+    name,
+    value,
+    /** Zero só no bônus, que não conta como tempo. */
+    minutes: z.number().int().min(0).max(LIMITS.minutesMax),
+    at: z.date(),
+    deviceId: z.string().min(1),
+    /** Só em estornos (R8): o lançamento desfeito. */
+    reverses: z.string().min(1).optional(),
+    /** Só em `earn` e `loss`: o valor inicial e o nível que explicam o valor (R14, R15). */
+    base: value.optional(),
+    level: z.number().int().min(1).optional(),
+    /** Só em bônus: de onde veio. */
+    source: bonusSourceSchema.optional(),
+    /** Só no bônus de hábito: a meta que foi cumprida. */
+    target: habitTarget.optional(),
+  })
+  .refine((entry) => (entry.type === 'bonus') === (entry.minutes === 0), {
+    path: ['minutes'],
+    message: 'Só o bônus não tem tempo.',
+  })
+  .refine((entry) => (entry.type === 'bonus') === (entry.source !== undefined), {
+    path: ['source'],
+    message: 'Só o bônus tem origem.',
+  });
 
 /** Documento `users/{uid}/inventory/{id}`. */
 export const inventoryItemSchema = z.object({
@@ -74,7 +112,7 @@ const total = z.number().int().default(0);
 
 /** Documento `users/{uid}/daily/{AAAA-MM-DD}`: agregado que alimenta o Histórico. */
 export const dailySchema = z.object({
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: day,
   earned: total,
   lost: total,
   spent: total,
@@ -86,6 +124,8 @@ export const dailySchema = z.object({
   buyCount: total,
   /** Registros do dia por atividade (`refId` → quantidade). */
   counts: z.record(z.string(), z.number().int()).default({}),
+  /** Bônus de hábito pagos no dia, por atividade (`refId` → quantidade). */
+  bonuses: z.record(z.string(), z.number().int()).default({}),
 });
 
 export type Activity = z.infer<typeof activitySchema> & { id: string };
@@ -97,7 +137,7 @@ export type Session = z.infer<typeof sessionSchema>;
 export type Daily = z.infer<typeof dailySchema>;
 
 /** Campos somáveis do agregado diário. */
-export type DailyTotals = Omit<Daily, 'date' | 'counts'>;
+export type DailyTotals = Omit<Daily, 'date' | 'counts' | 'bonuses'>;
 
 export const DAILY_FIELDS = [
   'earned',
@@ -120,7 +160,7 @@ export interface EntrySource {
 
 /** O lançamento guarda uma cópia do nome e do valor: mudar o preço não altera o passado (R2). */
 export function entryFrom(
-  type: Exclude<EntryType, 'reversal'>,
+  type: Exclude<EntryType, 'reversal' | 'bonus'>,
   source: EntrySource,
   at: Date,
   deviceId: string,
@@ -131,6 +171,25 @@ export function entryFrom(
     name: source.name,
     value: source.value,
     minutes: source.minutes,
+    at,
+    deviceId,
+  };
+}
+
+/** O bônus do hábito: lançamento próprio, sem tempo e sem contar como registro (R13). */
+export function habitBonusEntry(
+  activity: { id: string; name: string; habit: Habit },
+  at: Date,
+  deviceId: string,
+): EntryData {
+  return {
+    type: 'bonus',
+    source: 'habit',
+    refId: activity.id,
+    name: activity.name,
+    value: activity.habit.bonus,
+    minutes: 0,
+    target: activity.habit.target,
     at,
     deviceId,
   };
@@ -147,6 +206,7 @@ export function entryTypeFor(kind: ActivityKind): 'earn' | 'loss' {
 export function signedValue(entry: EntryData, reversed?: EntryData): number {
   switch (entry.type) {
     case 'earn':
+    case 'bonus':
       return entry.value;
     case 'loss':
     case 'purchase':
@@ -179,6 +239,9 @@ export function dailyDelta(entry: EntryData, reversed?: EntryData): Partial<Dail
       return { earned: entry.value, posMin: entry.minutes, posCount: 1 };
     case 'loss':
       return { lost: entry.value, negMin: entry.minutes, negCount: 1 };
+    case 'bonus':
+      // Soma nos ganhos e na meta semanal, sem contar como registro nem como tempo.
+      return { earned: entry.value };
     case 'purchase':
       // Item guardado não entra nas horas de lazer (R9).
       return { spent: entry.value, buyCount: 1 };

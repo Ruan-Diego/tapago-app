@@ -17,7 +17,7 @@ import {
 const at = new Date('2026-11-25T12:00:00Z');
 const source = { id: 'a1', name: 'Lavar a louça', value: 1000, minutes: 15 };
 
-function entry(id: string, type: Exclude<EntryType, 'reversal'>, value = 1000): Entry {
+function entry(id: string, type: Exclude<EntryType, 'reversal' | 'bonus'>, value = 1000): Entry {
   return { id, ...entryFrom(type, { ...source, value }, at, 'web') };
 }
 

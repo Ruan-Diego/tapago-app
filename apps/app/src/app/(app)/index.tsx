@@ -23,7 +23,7 @@ import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { ActivityCard } from '@/activities/ActivityCard';
 import { ActivitySheet } from '@/activities/ActivitySheet';
-import { registerActivity } from '@/ledger/actions';
+import { registerActivity, resetPenalty } from '@/ledger/actions';
 import { useLedger } from '@/ledger/store';
 import { useToday } from '@/ledger/useToday';
 import { Screen } from '@/navigation/Screen';
@@ -69,6 +69,7 @@ export default function Activities() {
   const net = todayTotals.earned - todayTotals.lost;
   const openNew = () => setEditing('new');
   const edit = useCallback((activity: Activity) => setEditing(activity), []);
+  const reset = useCallback((activity: Activity) => void resetPenalty(activity), []);
 
   const goal =
     week.goal > 0 ? (
@@ -188,10 +189,13 @@ export default function Activities() {
                       key={activity.id}
                       activity={activity}
                       number={`${section.kind === 'negative' ? '−' : ''}${String(index + 1).padStart(2, '0')}`}
+                      today={today}
                       todayCount={todayTotals.counts[activity.id] ?? 0}
-                      disabled={!profile}
+                      // Sem o agregado do dia, não dá para saber se o hábito completou.
+                      disabled={!profile || dailies === null}
                       onRegister={registerActivity}
                       onEdit={edit}
+                      onResetPenalty={reset}
                     />
                   ))}
                   {items.length === 0 ? <Text style={styles.hint}>{section.empty}</Text> : null}

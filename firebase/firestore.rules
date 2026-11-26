@@ -24,9 +24,38 @@ service cloud.firestore {
       return data.keys().hasAll(required) && data.keys().hasOnly(required.concat(optional));
     }
 
+    function validHabitTarget(target) {
+      return target is int && target >= 1 && target <= 20;
+    }
+    function validDay(day) {
+      return day is string && day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$');
+    }
+
+    function validHabit(habit) {
+      return hasShape(habit, ['target', 'bonus'], [])
+        && validHabitTarget(habit.target)
+        && validValue(habit.bonus);
+    }
+
+    function validStreak(streak) {
+      return hasShape(streak, ['days', 'lastDay'], [])
+        && streak.days is int && streak.days >= 1
+        && validDay(streak.lastDay);
+    }
+
+    // Hábito, aumento e sequência são só das positivas; a contagem, só das negativas.
     function validActivity(data) {
       return hasShape(data,
-          ['name', 'description', 'kind', 'value', 'minutes', 'order', 'archived', 'createdAt'], [])
+          ['name', 'description', 'kind', 'value', 'minutes', 'order', 'archived', 'createdAt'],
+          ['habit', 'streakStep', 'streak', 'penaltyCount'])
+        && (data.kind == 'positive' || !data.keys().hasAny(['habit', 'streakStep', 'streak']))
+        && (data.kind == 'negative' || !('penaltyCount' in data))
+        && (!('habit' in data) || validHabit(data.habit))
+        && (!('streak' in data) || validStreak(data.streak))
+        && data.get('streakStep', 0) is int
+        && data.get('streakStep', 0) >= 0 && data.get('streakStep', 0) <= 1000000
+        && data.get('penaltyCount', 0) is int
+        && data.get('penaltyCount', 0) >= 0
         && validName(data.name)
         && data.description is string && data.description.size() <= 140
         && data.kind in ['positive', 'negative']
@@ -50,8 +79,16 @@ service cloud.firestore {
     // A F4 acrescenta a conferência do saldo (`getAfter`) e do valor referenciado.
     function validEntry(data) {
       return hasShape(data,
-          ['type', 'refId', 'name', 'value', 'minutes', 'at', 'deviceId'], ['reverses'])
+          ['type', 'refId', 'name', 'value', 'minutes', 'at', 'deviceId'],
+          ['reverses', 'base', 'level'])
         && data.type in ['earn', 'loss', 'purchase', 'use', 'reversal']
+        // O valor inicial e o nível explicam um ganho ou uma perda (R14, R15). São opcionais
+        // porque a versão anterior do app não os grava.
+        && (!data.keys().hasAny(['base', 'level'])
+          || (data.type in ['earn', 'loss']
+            && data.keys().hasAll(['base', 'level'])
+            && validValue(data.base)
+            && data.level is int && data.level >= 1))
         && validId(data.refId)
         && validName(data.name)
         && validValue(data.value)
@@ -61,6 +98,28 @@ service cloud.firestore {
         // Só o estorno aponta para outro lançamento.
         && (data.type == 'reversal') == ('reverses' in data)
         && (!('reverses' in data) || validId(data.reverses));
+    }
+
+    /**
+     * O bônus de hábito (R13): sem tempo e com o id `habit_{atividade}_{AAAA-MM-DD}`. Gravar o
+     * mesmo id de novo conta como mudar um lançamento, o que as regras recusam: o bônus sai uma
+     * vez por dia. A F7 libera o bônus de missão.
+     */
+    function validBonus(data, id) {
+      let prefix = 'habit_' + data.refId + '_';
+      return hasShape(data, ['type', 'refId', 'name', 'value', 'minutes', 'at', 'deviceId',
+          'source', 'target'], [])
+        && data.source == 'habit'
+        && validId(data.refId)
+        && validName(data.name)
+        && validValue(data.value)
+        && data.minutes is int && data.minutes == 0
+        && data.at is timestamp
+        && validId(data.deviceId)
+        && validHabitTarget(data.target)
+        && id.size() == prefix.size() + 10
+        && id[0:prefix.size()] == prefix
+        && validDay(id[prefix.size():id.size()]);
     }
 
     function sessionPath(uid) {
@@ -111,8 +170,8 @@ service cloud.firestore {
     // Cada escrita traz só os campos que mudaram; os outros podem nem existir.
     function validDaily(data, day) {
       return hasShape(data, ['date'], ['earned', 'lost', 'spent', 'posMin', 'negMin',
-          'leisureMin', 'posCount', 'negCount', 'buyCount', 'counts'])
-        && day.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$')
+          'leisureMin', 'posCount', 'negCount', 'buyCount', 'counts', 'bonuses'])
+        && validDay(day)
         && data.date == day
         && data.get('earned', 0) is int
         && data.get('lost', 0) is int
@@ -123,7 +182,8 @@ service cloud.firestore {
         && data.get('posCount', 0) is int
         && data.get('negCount', 0) is int
         && data.get('buyCount', 0) is int
-        && data.get('counts', {}) is map;
+        && data.get('counts', {}) is map
+        && data.get('bonuses', {}) is map;
     }
 
     function validNotif(notif) {
@@ -174,7 +234,10 @@ service cloud.firestore {
       // Livro-caixa: só inclusão.
       match /entries/{id} {
         allow read: if isOwner(uid);
-        allow create: if isOwner(uid) && validEntry(request.resource.data);
+        allow create: if isOwner(uid)
+          && (request.resource.data.type == 'bonus'
+            ? validBonus(request.resource.data, id)
+            : validEntry(request.resource.data));
         allow update: if isOwner(uid) && isUseMinutesOnly() && closesCurrentSession(uid, id);
         allow delete: if false;
       }

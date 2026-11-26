@@ -3,6 +3,7 @@ export * from './auth';
 export * from './days';
 export * from './duration';
 export * from './forms';
+export * from './habits';
 export * from './history';
 export * from './ledger';
 export * from './limits';

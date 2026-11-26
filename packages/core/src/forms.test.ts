@@ -31,6 +31,10 @@ describe('formulários', () => {
     description: '',
     value: '10',
     minutes: '15',
+    streakStep: '10',
+    isHabit: false,
+    habitTarget: '',
+    habitBonus: '',
   };
 
   it('devolve centavos e minutos', () => {
@@ -40,7 +44,61 @@ describe('formulários', () => {
       description: '',
       value: 1000,
       minutes: 15,
+      streakStep: 1000,
+      habit: null,
     });
+  });
+
+  it('aceita aumento zero ou vazio (SEQ-01)', () => {
+    for (const streakStep of ['0', '', ' ']) {
+      expect(activityFormSchema.parse({ ...input, streakStep }).streakStep).toBe(0);
+    }
+    for (const streakStep of ['-1', 'abc', '10000,01']) {
+      expect(activityFormSchema.safeParse({ ...input, streakStep }).success).toBe(false);
+    }
+  });
+
+  it('exige vezes por dia e bônus no hábito (HAB-01)', () => {
+    const marked = { ...input, isHabit: true, habitTarget: '3', habitBonus: '50' };
+    expect(activityFormSchema.parse(marked).habit).toEqual({ target: 3, bonus: 5000 });
+    for (const bad of [
+      { habitTarget: '' },
+      { habitTarget: '0' },
+      { habitTarget: '21' },
+      { habitTarget: '1,5' },
+      { habitBonus: '' },
+      { habitBonus: '0' },
+      { habitBonus: '10000,01' },
+    ]) {
+      expect(activityFormSchema.safeParse({ ...marked, ...bad }).success).toBe(false);
+    }
+  });
+
+  it('mostra todos os erros de uma vez', () => {
+    const result = activityFormSchema.safeParse({
+      ...input,
+      name: '',
+      value: '',
+      isHabit: true,
+      streakStep: 'x',
+    });
+    expect(result.error?.issues.map((issue) => issue.path[0]).sort()).toEqual([
+      'habitBonus',
+      'habitTarget',
+      'name',
+      'streakStep',
+      'value',
+    ]);
+  });
+
+  it('ignora hábito e aumento na negativa', () => {
+    const parsed = activityFormSchema.parse({
+      ...input,
+      kind: 'negative',
+      streakStep: 'x',
+      isHabit: true,
+    });
+    expect(parsed).toMatchObject({ streakStep: 0, habit: null });
   });
 
   it('aplica as faixas de nome, valor e minutos', () => {

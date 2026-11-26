@@ -18,6 +18,7 @@ import {
 } from '@firebase/rules-unit-testing';
 import {
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   increment,
@@ -42,6 +43,8 @@ const activity: Activity = {
   order: 1,
   archived: false,
   createdAt: at,
+  streakStep: 0,
+  penaltyCount: 0,
 };
 const item: ShopItem = { ...base, id: 's1', order: 1, archived: false, createdAt: at };
 
@@ -69,6 +72,13 @@ beforeEach(async () => {
       await setDoc(doc(db, `users/${uid}/entries/earn1`), entryDoc);
       await setDoc(doc(db, `users/${uid}/entries/use1`), useDoc);
       await setDoc(doc(db, `users/${uid}/activities/a0`), { ...activityDoc, createdAt: at });
+      // Registrar também atualiza a atividade: ela precisa existir.
+      await setDoc(doc(db, `users/${uid}/activities/a1`), { ...activityDoc, createdAt: at });
+      await setDoc(doc(db, `users/${uid}/activities/n1neg`), {
+        ...activityDoc,
+        kind: 'negative',
+        createdAt: at,
+      });
     }
   });
 });
@@ -84,7 +94,7 @@ function commit(db: Firestore, ops: readonly WriteOp[]) {
       batch.delete(ref);
       continue;
     }
-    const data = encodeData(op.data, increment);
+    const data = encodeData(op.data, { increment, deleteField });
     if (op.kind === 'set') batch.set(ref, data);
     else if (op.kind === 'merge') batch.set(ref, data, { merge: true });
     else batch.update(ref, data);
@@ -98,7 +108,10 @@ describe('as escritas do app passam nas regras', () => {
     await assertSucceeds(commit(db, registerActivityOps(context, activity, 'e1')));
     await assertSucceeds(commit(db, registerActivityOps(context, activity, 'e2')));
     await assertSucceeds(
-      commit(db, registerActivityOps(context, { ...activity, kind: 'negative' }, 'e3')),
+      commit(
+        db,
+        registerActivityOps(context, { ...activity, id: 'n1neg', kind: 'negative' }, 'e3'),
+      ),
     );
 
     const user = await getDoc(doc(db, 'users/ana'));
@@ -109,7 +122,7 @@ describe('as escritas do app passam nas regras', () => {
       lost: 1000,
       posCount: 2,
       negCount: 1,
-      counts: { a1: 3 },
+      counts: { a1: 2, n1neg: 1 },
     });
   });
 
@@ -127,6 +140,10 @@ describe('as escritas do app passam nas regras', () => {
       description: '1 hora',
       value: '15',
       minutes: '60',
+      streakStep: '10',
+      isHabit: false,
+      habitTarget: '',
+      habitBonus: '',
     });
     await assertSucceeds(commit(db, [createActivityOp('ana', 'a2', values, at)]));
     await assertSucceeds(commit(db, [updateActivityOp('ana', 'a2', values)]));
@@ -176,7 +193,7 @@ describe('livro-caixa', () => {
     ['minutos demais', { minutes: 1441 }],
     ['nome vazio', { name: '' }],
     ['nome longo', { name: 'x'.repeat(61) }],
-    ['tipo desconhecido', { type: 'bonus' }],
+    ['tipo desconhecido', { type: 'gift' }],
     ['data como texto', { at: '2026-11-25' }],
     ['campo a mais', { extra: true }],
     ['estorno sem original', { type: 'reversal' }],

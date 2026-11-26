@@ -5,6 +5,9 @@ export class Increment {
   constructor(readonly amount: number) {}
 }
 
+/** Remove o campo do documento, em um `update`. */
+export class DeleteField {}
+
 export type DocData = Record<string, unknown>;
 
 export type WriteOp =
@@ -40,10 +43,17 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return prototype === Object.prototype || prototype === null;
 }
 
-/** Troca cada `Increment` pelo valor equivalente do SDK. */
-export function encodeData(data: DocData, increment: (amount: number) => unknown): DocData {
+/** Os valores especiais de cada SDK. */
+export interface FieldValues {
+  increment: (amount: number) => unknown;
+  deleteField: () => unknown;
+}
+
+/** Troca cada `Increment` e `DeleteField` pelo valor equivalente do SDK. */
+export function encodeData(data: DocData, { increment, deleteField }: FieldValues): DocData {
   const encode = (value: unknown): unknown => {
     if (value instanceof Increment) return increment(value.amount);
+    if (value instanceof DeleteField) return deleteField();
     if (!isPlainObject(value)) return value;
     return Object.fromEntries(Object.entries(value).map(([key, child]) => [key, encode(child)]));
   };

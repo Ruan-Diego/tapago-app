@@ -1,4 +1,4 @@
-import { activitySchema, type Activity, type ActivityValues } from '@tapago/core';
+import { activitySchema, type Activity, type ActivityValues, type Habit } from '@tapago/core';
 
 import { backend } from './backend';
 import { parseDocs } from './parse';
@@ -6,8 +6,10 @@ import type { Unsubscribe } from './types';
 import {
   archiveOp,
   createActivityOp,
+  habitBonusOps,
   paths,
   registerActivityOps,
+  resetPenaltyOp,
   updateActivityOp,
   type ActionContext,
 } from './writes';
@@ -46,5 +48,15 @@ export const activitiesRepository = {
   register(context: ActionContext, activity: Activity): Promise<void> {
     const entryId = backend.newId(paths.entries(context.uid));
     return backend.commit(registerActivityOps(context, activity, entryId));
+  },
+
+  /** Pagar o bônus do hábito. O servidor recusa se o dia já foi pago (R13). */
+  payHabitBonus(context: ActionContext, activity: Activity & { habit: Habit }): Promise<void> {
+    return backend.commit(habitBonusOps(context, activity));
+  },
+
+  /** Zerar o custo de uma negativa (SEQ-04). */
+  resetPenalty(uid: string, id: string): Promise<void> {
+    return backend.commit([resetPenaltyOp(uid, id)]);
   },
 };

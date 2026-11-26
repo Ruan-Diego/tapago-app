@@ -9,6 +9,7 @@ import {
 } from '@firebase/rules-unit-testing';
 import {
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   increment,
@@ -63,7 +64,7 @@ function commit(db: Firestore, ops: readonly WriteOp[]) {
       batch.delete(ref);
       continue;
     }
-    const data = encodeData(op.data, increment);
+    const data = encodeData(op.data, { increment, deleteField });
     if (op.kind === 'set') batch.set(ref, data);
     else if (op.kind === 'merge') batch.set(ref, data, { merge: true });
     else batch.update(ref, data);
@@ -75,7 +76,7 @@ const onboarding = {
   profile: { name: 'Ana Souza', notif: { end: false, warn5: false, weekly: true } },
   activities: ACTIVITY_PRESETS.map(({ selected: _selected, ...preset }, index) => ({
     id: `a${index}`,
-    values: { ...preset, description: '' },
+    values: { ...preset, description: '', streakStep: 0, habit: null },
   })),
   shopItems: SHOP_PRESETS.map(({ selected: _selected, ...values }, index) => ({
     id: `s${index}`,

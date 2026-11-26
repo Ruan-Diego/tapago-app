@@ -27,6 +27,7 @@ import {
   doc,
   getDoc,
   increment,
+  deleteField,
   setDoc,
   updateDoc,
   writeBatch,
@@ -91,7 +92,7 @@ function commit(db: Firestore, ops: readonly WriteOp[]) {
       batch.delete(ref);
       continue;
     }
-    const data = encodeData(op.data, increment);
+    const data = encodeData(op.data, { increment, deleteField });
     if (op.kind === 'set') batch.set(ref, data);
     else if (op.kind === 'merge') batch.set(ref, data, { merge: true });
     else batch.update(ref, data);

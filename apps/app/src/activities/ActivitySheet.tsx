@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
+  DEFAULT_STREAK_STEP,
   activityFormSchema,
   reaisInput,
   type Activity,
@@ -8,7 +9,7 @@ import {
   type ActivityValues,
 } from '@tapago/core';
 import { activitiesRepository } from '@tapago/data';
-import { Button, Sheet, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
+import { Button, Sheet, ToggleRow, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
 import { useController, useForm, useWatch } from 'react-hook-form';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
@@ -40,11 +41,26 @@ export function ActivitySheet({ uid, activity, onClose }: ActivitySheetProps) {
           description: activity.description,
           value: reaisInput(activity.value),
           minutes: String(activity.minutes),
+          streakStep: reaisInput(activity.streakStep),
+          isHabit: Boolean(activity.habit),
+          habitTarget: activity.habit ? String(activity.habit.target) : '',
+          habitBonus: activity.habit ? reaisInput(activity.habit.bonus) : '',
         }
-      : { kind: 'positive', name: '', description: '', value: '', minutes: '30' },
+      : {
+          kind: 'positive',
+          name: '',
+          description: '',
+          value: '',
+          minutes: '30',
+          streakStep: reaisInput(DEFAULT_STREAK_STEP),
+          isHabit: false,
+          habitTarget: '',
+          habitBonus: '',
+        },
   });
   const { field: kind } = useController({ control, name: 'kind' });
   const negative = useWatch({ control, name: 'kind' }) === 'negative';
+  const { field: isHabit } = useController({ control, name: 'isHabit' });
 
   const submit = handleSubmit((values) => {
     if (activity) {
@@ -125,6 +141,52 @@ export function ActivitySheet({ uid, activity, onClose }: ActivitySheetProps) {
           />
         </View>
       </View>
+      {negative ? (
+        <Text style={styles.note}>
+          O custo sobe a cada registro: o 2º cobra o dobro do valor, o 3º o triplo, e assim por
+          diante. Ele não zera sozinho: você zera no cartão da atividade.
+        </Text>
+      ) : (
+        <>
+          <View style={styles.group}>
+            <FormField
+              control={control}
+              name="streakStep"
+              label="Aumento por dia de sequência (R$)"
+              keyboardType="decimal-pad"
+              placeholder="0"
+            />
+            <Text style={styles.note}>
+              Cada dia seguido soma isso ao valor. Um dia sem fazer volta ao início. Use 0 para o
+              valor não mudar.
+            </Text>
+          </View>
+          <ToggleRow
+            label="É um hábito diário?"
+            hint="Paga um bônus ao completar as vezes do dia."
+            value={isHabit.value}
+            onChange={isHabit.onChange}
+          />
+          {isHabit.value ? (
+            <>
+              <FormField
+                control={control}
+                name="habitTarget"
+                label="Quantas vezes por dia?"
+                keyboardType="number-pad"
+                placeholder="3"
+              />
+              <FormField
+                control={control}
+                name="habitBonus"
+                label="Bônus ao completar (R$)"
+                keyboardType="decimal-pad"
+                placeholder="50"
+              />
+            </>
+          ) : null}
+        </>
+      )}
       <Button
         label={negative ? 'Salvar atividade negativa' : 'Salvar atividade'}
         onPress={() => void submit()}
@@ -153,4 +215,11 @@ const styles = StyleSheet.create({
   kindHint: { fontFamily: fonts.body, fontSize: fontSizes.caption, marginTop: 2 },
   row: { flexDirection: 'row', gap: 10 },
   cell: { flex: 1, minWidth: 0 },
+  group: { gap: 6 },
+  note: {
+    fontFamily: fonts.body,
+    fontSize: fontSizes.caption,
+    lineHeight: 18,
+    color: colors.graphite,
+  },
 });

@@ -11,7 +11,19 @@ const KINDS: Record<VisibleType, { sign: string; prefix: string; label: string }
   loss: { sign: '↓', prefix: '−', label: 'perda' },
   purchase: { sign: '−', prefix: '−', label: 'compra' },
   reversal: { sign: '↺', prefix: '', label: 'estorno' },
+  bonus: { sign: '★', prefix: '+', label: 'bônus' },
 };
+
+const BONUS_TITLES: Record<NonNullable<Entry['source']>, string> = {
+  habit: 'Bônus de hábito completo',
+  mission: 'Bônus da missão do dia',
+};
+
+/** O que explica um valor diferente do inicial (R14, R15), ou `null`. */
+function levelNote({ type, value, base, level }: Entry): string | null {
+  if (base === undefined || level === undefined || value === base) return null;
+  return type === 'earn' ? `${level}º dia de sequência` : `${level}º desde o zeramento`;
+}
 
 interface EntryRowProps {
   entry: Entry;
@@ -22,6 +34,13 @@ interface EntryRowProps {
 export function EntryRow({ entry, today, timeZone }: EntryRowProps) {
   if (entry.type === 'use') return null;
   const kind = KINDS[entry.type];
+  // O bônus é identificado pelo título; a atividade vai na linha de baixo (HAB-03).
+  const bonus = entry.source ? BONUS_TITLES[entry.source] : null;
+  const when = whenLabel(entry.at, today, timeZone);
+  const habit = entry.target ? ` (${entry.target} de ${entry.target} no dia)` : '';
+  const detail = bonus
+    ? `${entry.name}${habit} · ${when}`
+    : [when, formatDuration(entry.minutes), levelNote(entry)].filter(Boolean).join(' · ');
 
   return (
     <View style={styles.row}>
@@ -31,19 +50,24 @@ export function EntryRow({ entry, today, timeZone }: EntryRowProps) {
           styles.icon,
           entry.type === 'earn' && styles.iconEarn,
           entry.type === 'purchase' && styles.iconPurchase,
+          entry.type === 'bonus' && styles.iconBonus,
         ]}
       >
-        <Text style={[styles.sign, entry.type === 'purchase' && styles.signPurchase]}>
+        <Text
+          style={[
+            styles.sign,
+            entry.type === 'purchase' && styles.signPurchase,
+            entry.type === 'bonus' && styles.signBonus,
+          ]}
+        >
           {kind.sign}
         </Text>
       </View>
       <View style={styles.texts}>
-        <Text numberOfLines={1} style={styles.name}>
-          {entry.name}
+        <Text numberOfLines={bonus ? 2 : 1} style={styles.name}>
+          {bonus ?? entry.name}
         </Text>
-        <Text style={styles.when}>
-          {whenLabel(entry.at, today, timeZone)} · {formatDuration(entry.minutes)}
-        </Text>
+        <Text style={styles.when}>{detail}</Text>
       </View>
       <Text style={styles.amount}>
         {kind.prefix}
@@ -74,6 +98,8 @@ const styles = StyleSheet.create({
   iconPurchase: { backgroundColor: colors.ink },
   sign: { fontFamily: fonts.displayBold, fontSize: 18, color: colors.ink },
   signPurchase: { color: colors.white },
+  iconBonus: { backgroundColor: colors.ink },
+  signBonus: { color: colors.accent },
   texts: { flex: 1, minWidth: 0 },
   name: { fontFamily: fonts.bodySemiBold, fontSize: fontSizes.label, color: colors.ink },
   when: {

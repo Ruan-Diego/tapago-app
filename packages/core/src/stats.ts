@@ -26,6 +26,10 @@ export function dailiesFromEntries(entries: readonly Entry[], timeZone: string):
       const step = entry.type === 'reversal' ? -1 : 1;
       daily.counts[source.refId] = (daily.counts[source.refId] ?? 0) + step;
     }
+    if (source.type === 'bonus' && source.source === 'habit') {
+      const step = entry.type === 'reversal' ? -1 : 1;
+      daily.bonuses[source.refId] = (daily.bonuses[source.refId] ?? 0) + step;
+    }
     days.set(date, daily);
   }
 

@@ -1,7 +1,11 @@
 import {
+  dayKey,
+  earnsHabitBonus,
   formatDuration,
   formatMoney,
+  habitBonusId,
   isExpired,
+  nextCharge,
   usedMinutes,
   type Activity,
   type InventoryItem,
@@ -15,6 +19,7 @@ import {
   type ActionContext,
 } from '@tapago/data';
 
+import { confirm } from '@/platform/confirm';
 import { deviceId } from '@/platform/deviceId';
 import { requestAlertPermission } from '@/platform/notifications';
 import { useSession } from '@/session/store';
@@ -44,16 +49,78 @@ export function save(write: Promise<void>) {
   });
 }
 
+/** Bônus já pedidos com o app aberto, antes de o agregado do dia mostrar o pagamento. */
+const requestedBonuses = new Set<string>();
+
+/**
+ * O pagamento do bônus do hábito, se este registro dá direito a ele (R13), ou `null`.
+ * Precisa ser chamado antes de gravar o registro, com o agregado ainda sem ele.
+ */
+function habitBonusFor(context: ActionContext, activity: Activity): (() => void) | null {
+  const { habit } = activity;
+  const { dailies } = useLedger.getState();
+  if (!habit || !dailies) return null;
+  const today = dayKey(context.at, context.timeZone);
+  const daily = dailies.find((candidate) => candidate.date === today);
+  const id = habitBonusId(activity.id, today);
+  const paid = (daily?.bonuses[activity.id] ?? 0) > 0 || requestedBonuses.has(id);
+  if (!earnsHabitBonus(activity, (daily?.counts[activity.id] ?? 0) + 1, paid)) return null;
+
+  return () => {
+    requestedBonuses.add(id);
+    activitiesRepository.payHabitBonus(context, { ...activity, habit }).catch((error: unknown) => {
+      // Outro aparelho pode ter pagado antes: a recusa do servidor é esperada.
+      if (String((error as { code?: unknown }).code).endsWith('permission-denied')) {
+        console.warn('O bônus do dia já tinha sido pago.', error);
+        return;
+      }
+      requestedBonuses.delete(id);
+      console.error('Falha ao pagar o bônus.', error);
+      showToast('Não foi possível salvar o bônus. Ele volta no próximo registro.');
+    });
+  };
+}
+
 /** Registrar com 1 toque, sem confirmação (ACT-03). */
-export function registerActivity(activity: Activity) {
+export function registerActivity(tapped: Activity) {
   const context = actionContext();
   if (!context) return;
+  // A versão mais nova: um segundo toque pode chegar antes de o cartão ser redesenhado.
+  const activity =
+    useLedger.getState().activities?.find((candidate) => candidate.id === tapped.id) ?? tapped;
+  const { value } = nextCharge(activity, dayKey(context.at, context.timeZone));
+  const payBonus = habitBonusFor(context, activity);
   save(activitiesRepository.register(context, activity));
+  // Em um lote separado, depois do registro: se for recusado, o registro fica.
+  payBonus?.();
+
   const positive = activity.kind === 'positive';
+  if (payBonus && activity.habit) {
+    const { bonus } = activity.habit;
+    showToast(
+      `Hábito completo! ${activity.name}: ${formatMoney(value)} + ${formatMoney(bonus)} de bônus.`,
+      `+${formatMoney(value + bonus)}`,
+    );
+    return;
+  }
   showToast(
     `${activity.name} — ${positive ? 'feito.' : 'registrado.'}`,
-    `${positive ? '+' : '−'}${formatMoney(activity.value)}`,
+    `${positive ? '+' : '−'}${formatMoney(value)}`,
   );
+}
+
+/** Zerar o custo de uma negativa: só o usuário zera, e com confirmação (R15, SEQ-04). */
+export async function resetPenalty(activity: Activity) {
+  const uid = useSession.getState().user?.uid;
+  if (!uid) return;
+  const proceed = await confirm({
+    title: `Zerar o custo de "${activity.name}"?`,
+    message: `O próximo registro volta a custar ${formatMoney(activity.value)}. O histórico não muda.`,
+    confirmLabel: 'Zerar custo',
+  });
+  if (!proceed) return;
+  save(activitiesRepository.resetPenalty(uid, activity.id));
+  showToast(`${activity.name} — custo zerado.`);
 }
 
 /** Pedido no toque de começar, quando dá para explicar para que serve. */

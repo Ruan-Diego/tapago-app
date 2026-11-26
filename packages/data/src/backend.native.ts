@@ -17,6 +17,7 @@ import {
   doc,
   getDocs,
   getFirestore,
+  deleteField,
   increment,
   limit,
   onSnapshot,
@@ -206,7 +207,7 @@ export const backend: Backend = {
         batch.delete(ref);
         continue;
       }
-      const data = encodeData(op.data, increment);
+      const data = encodeData(op.data, { increment, deleteField });
       if (op.kind === 'set') batch.set(ref, data);
       else if (op.kind === 'merge') batch.set(ref, data, { merge: true });
       else batch.update(ref, data);

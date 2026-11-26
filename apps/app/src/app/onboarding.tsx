@@ -161,6 +161,9 @@ export default function Onboarding() {
         activities: chosenActivities.map(({ selected: _selected, ...preset }) => ({
           ...preset,
           description: '',
+          // Hábito e aumento por sequência são ligados depois, na própria atividade.
+          streakStep: 0,
+          habit: null,
         })),
         shopItems: chosenShop.map(({ selected: _selected, ...preset }) => preset),
       }),

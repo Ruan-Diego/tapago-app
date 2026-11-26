@@ -19,7 +19,12 @@ const day = (date: string, totals: Partial<Daily> = {}): Daily => ({
   ...totals,
 });
 
-function entry(id: string, type: Exclude<EntryType, 'reversal'>, iso: string, value = 1000): Entry {
+function entry(
+  id: string,
+  type: Exclude<EntryType, 'reversal' | 'bonus'>,
+  iso: string,
+  value = 1000,
+): Entry {
   const source = { id: 'a1', name: 'x', value, minutes: 30 };
   return { id, ...entryFrom(type, source, new Date(iso), 'web') };
 }

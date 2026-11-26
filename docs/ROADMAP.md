@@ -318,35 +318,35 @@ Cerca de 12 semanas do zero ao uso diário, com o MVP em uso a partir da semana 
 | **Bônus de hábito completo** · Escovar os dentes (3 de 3 no dia) | + R$ 50 |
 
 **Documentação**
-- [ ] Levar R13–R16 e os requisitos HAB-01–03 e SEQ-01–04 para o `PRD.md`; ajustar R2, R11 e o modelo de dados
+- [x] Levar R13–R16 e os requisitos HAB-01–03 e SEQ-01–04 para o `PRD.md`; ajustar R2, R11 e o modelo de dados
 
 **Livro-caixa** (`packages/core`)
-- [ ] `Activity` ganha `habit?: { target, bonus }`, `streakStep` e `streak { days, lastDay }` (positivas) e `penaltyCount` (negativas); atividades já existentes ficam sem hábito, com aumento R$ 0 e contagens zeradas
-- [ ] Novo tipo de lançamento `bonus`, com a origem (hábito ou missão) e `minutes = 0`: soma no saldo, em `earned` e na meta semanal, sem contar como registro nem como tempo
-- [ ] Lançamentos `earn` e `loss` guardam o que explica o valor (valor inicial e nível da sequência ou da escalada)
-- [ ] Funções puras para o valor do dia, o custo atual, o progresso do hábito e o direito ao bônus
-- [ ] Testes de R13–R16: virada do dia e fuso, sequência quebrada, vários registros no dia, meta ultrapassada, teto
+- [x] `Activity` ganha `habit?: { target, bonus }`, `streakStep` e `streak { days, lastDay }` (positivas) e `penaltyCount` (negativas); atividades já existentes ficam sem hábito, com aumento R$ 0 e contagens zeradas
+- [x] Novo tipo de lançamento `bonus`, com a origem (hábito ou missão) e `minutes = 0`: soma no saldo, em `earned` e na meta semanal, sem contar como registro nem como tempo
+- [x] Lançamentos `earn` e `loss` guardam o que explica o valor (valor inicial e nível da sequência ou da escalada)
+- [x] Funções puras para o valor do dia, o custo atual, o progresso do hábito e o direito ao bônus
+- [x] Testes de R13–R16: virada do dia e fuso, sequência quebrada, vários registros no dia, meta ultrapassada, teto
 
 **Escritas** (`packages/data`)
-- [ ] Registrar atualiza a sequência ou a contagem da negativa no mesmo `writeBatch` do lançamento
-- [ ] Bônus em lote próprio (lançamento + saldo + `daily`) com id fixo `habit_{activityId}_{AAAA-MM-DD}`: se outro aparelho já pagou, só o lote do bônus é recusado e o registro fica
-- [ ] Anotar a limitação aceita: dois aparelhos offline podem pagar ou cobrar o mesmo nível de sequência ou de escalada
+- [x] Registrar atualiza a sequência ou a contagem da negativa no mesmo `writeBatch` do lançamento
+- [x] Bônus em lote próprio (lançamento + saldo + `daily`) com id fixo `habit_{activityId}_{AAAA-MM-DD}`: se outro aparelho já pagou, só o lote do bônus é recusado e o registro fica
+- [x] Anotar a limitação aceita: dois aparelhos offline podem pagar ou cobrar o mesmo nível de sequência ou de escalada
 
 **Formulário** (HAB-01, SEQ-01)
-- [ ] HAB-01 · Criar e editar positiva: pergunta "É um hábito diário?"; se marcado, pede "Quantas vezes por dia?" e "Bônus ao completar", os dois obrigatórios
-- [ ] SEQ-01 · Criar e editar positiva: campo "Aumento por dia de sequência", próprio de cada atividade (sugestão inicial R$ 10, aceita R$ 0)
-- [ ] Negativa não mostra hábito nem aumento; o formulário avisa que o custo sobe a cada registro
+- [x] HAB-01 · Criar e editar positiva: pergunta "É um hábito diário?"; se marcado, pede "Quantas vezes por dia?" e "Bônus ao completar", os dois obrigatórios
+- [x] SEQ-01 · Criar e editar positiva: campo "Aumento por dia de sequência", próprio de cada atividade (sugestão inicial R$ 10, aceita R$ 0)
+- [x] Negativa não mostra hábito nem aumento; o formulário avisa que o custo sobe a cada registro
 
 **Atividades e histórico** (HAB-02–03, SEQ-02–04)
-- [ ] SEQ-02 · O cartão mostra o valor que o próximo toque vai pagar ou cobrar
-- [ ] HAB-02 · O cartão do hábito mostra o progresso do dia ("2 de 3") e o estado "completo"
-- [ ] SEQ-03 · O cartão positivo mostra os dias de sequência; o negativo, quantos registros houve desde o zeramento
-- [ ] SEQ-04 · "Zerar custo" na negativa, com confirmação: o próximo registro volta ao valor inicial e o histórico não muda
-- [ ] HAB-03 · O bônus aparece como linha própria no histórico, identificado como bônus, com aviso na tela quando é pago
+- [x] SEQ-02 · O cartão mostra o valor que o próximo toque vai pagar ou cobrar
+- [x] HAB-02 · O cartão do hábito mostra o progresso do dia ("2 de 3") e o estado "completo"
+- [x] SEQ-03 · O cartão positivo mostra os dias de sequência; o negativo, quantos registros houve desde o zeramento
+- [x] SEQ-04 · "Zerar custo" na negativa, com confirmação: o próximo registro volta ao valor inicial e o histórico não muda
+- [x] HAB-03 · O bônus aparece como linha própria no histórico, identificado como bônus, com aviso na tela quando é pago
 
 **Regras e testes**
-- [ ] `firestore.rules`: validar os campos novos da atividade; aceitar `bonus` com `minutes = 0` e só com os campos dele
-- [ ] Testes de regras para os campos novos e para o bônus repetido
+- [x] `firestore.rules`: validar os campos novos da atividade; aceitar `bonus` com `minutes = 0` e só com os campos dele
+- [x] Testes de regras para os campos novos e para o bônus repetido
 
 **Critério de saída:** uso real com um hábito completado, uma sequência que subiu e quebrou e uma negativa escalada e zerada, com saldo igual no Android e na web (HUM-14).
 
@@ -562,7 +562,7 @@ Atualizado pelo agente no início e no fim de cada fase.
 | F1 | código pronto (falta a validação humana)   | 25/11/2026 | | |
 | F2 | código pronto (falta a validação humana) | 25/11/2026 | | |
 | F3 | código pronto (falta a validação humana) | 26/11/2026 | | |
-| F6 | não iniciada | | | |
+| F6 | código pronto (falta a validação humana) | 26/11/2026 | | |
 | F7 | não iniciada | | | |
 | F8 | não iniciada | | | |
 | F4 | não iniciada | | | |
@@ -610,6 +610,14 @@ Atualizado pelo agente no início e no fim de cada fase.
 - F3 · O saldo diário é reconstruído de trás para frente, a partir do saldo atual.
 - F3 · O filtro vale para cartões, divisão do tempo, saldo, dias limpos e rankings. As 8 semanas, o mapa de 13 semanas, a sequência, o recorde e a atividade recente têm janela própria. A sequência e o recorde contam dias com atividade positiva (R12).
 - F3 · "Resumo semanal" já é salvo no Perfil; o aviso é da F5. "Refazer configuração" também.
+- F6 · `daily` ganhou o mapa `bonuses` (bônus de hábito pagos por atividade): é como o app sabe, sem ler nada a mais, que o dia já foi pago.
+- F6 · O bônus sai no registro em que o dia está com a meta batida e ainda sem pagamento. Em geral é o que atinge a meta; se a meta for reduzida no meio do dia, ou os registros vierem de dois aparelhos, é o seguinte. Registros do dia feitos antes de ligar o hábito contam.
+- F6 · O lançamento guarda `base` e `level` (de 1 em diante): dia da sequência na positiva, número do registro desde o zeramento na negativa. No bônus, guarda `source` e `target`. O horário do bônus é o do registro + 1 ms, para aparecer logo acima dele.
+- F6 · As regras exigem o id `habit_{atividade}_{data}` e só aceitam bônus com origem `habit`; a F7 libera `mission`. Os campos novos são opcionais nas regras, para a versão antiga do app continuar registrando.
+- F6 · Desmarcar o hábito apaga o campo `habit`; a sequência e a contagem não são alteradas pela edição.
+- F6 · Atividades criadas no onboarding nascem sem hábito e com aumento R$ 0; os R$ 10 sugeridos valem para o formulário de nova atividade.
+- F6 · Limitação aceita: dois aparelhos offline podem pagar ou cobrar o mesmo nível de sequência ou de escalada, e o que sincronizar por último define a sequência salva (um aparelho há mais de um dia offline pode fazê-la voltar). O bônus de hábito não se repete.
+- F6 · O cartão desativa o registro até o agregado do dia carregar, para o bônus não ser calculado às cegas.
 
 **Pendências humanas em aberto**
 
@@ -622,3 +630,5 @@ Atualizado pelo agente no início e no fim de cada fase.
 - F2: publicar regras e web juntas (push na `main` ou deploy manual). As regras novas são necessárias para o timer.
 - F3: publicar regras e web juntas (sem o bloco `avatar`, um onboarding com foto é recusado inteiro) e instalar um APK novo nos 2 celulares. Foi testada na web contra o emulador, não em um Android.
 - HUM-09: a Pessoa 2 faz o onboarding sozinha, cronometrando. Se a conta dela já tiver atividades e loja, o onboarding não aparece: usar uma conta nova.
+- F6: publicar regras e web juntas (com as regras antigas, registrar na web nova é recusado). Foi testada na web contra o emulador, não em um Android.
+- HUM-14: instalar um APK novo nos 2 celulares antes de usar (a versão antiga não lê o lançamento de bônus, não aplica sequência nem escalada). Completar um hábito, deixar uma sequência subir e quebrar, escalar e zerar uma negativa.

@@ -21,6 +21,10 @@ describe('sugestões do onboarding', () => {
         description: '',
         value: reaisInput(preset.value),
         minutes: String(preset.minutes),
+        streakStep: '0',
+        isHabit: false,
+        habitTarget: '',
+        habitBonus: '',
       });
       expect(parsed.success).toBe(true);
     }
