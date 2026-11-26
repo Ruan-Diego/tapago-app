@@ -106,6 +106,8 @@ Tudo gira em torno de um livro-caixa: cada ação vira um lançamento imutável,
 - **R14 — Sequência positiva.** Cada atividade positiva tem o próprio "aumento por sequência" (pode ser R$ 0) e a própria contagem. Valor do dia = `valor + aumento × dias seguidos anteriores`. Ex.: R$ 100 com aumento de R$ 10 paga 100, 110, 120… Todos os registros do mesmo dia pagam o mesmo valor. Um registro no dia mantém a sequência, mesmo em hábito que não bateu a meta. Um dia inteiro sem registro faz voltar ao valor inicial.
 - **R15 — Escalada negativa.** Cada registro soma o valor inicial ao custo: `valor × (registros desde o último zeramento + 1)`. Ex.: R$ 70 custa 70, 140, 210, 280… Vale também para vários registros no mesmo dia. Não zera com o tempo: **só o usuário zera**, na própria atividade.
 - **R16 — Teto e cópia.** O valor calculado respeita o teto de R$ 10.000 por lançamento. O lançamento guarda o que foi de fato pago ou cobrado (R2); mudar valor, aumento, meta ou bônus não altera o passado.
+- **R17 — Missão do dia.** Uma por dia, com 2 atividades positivas não arquivadas, sorteadas pelo app. Com menos de 2, não há missão. O par não repete o do dia anterior quando existe outra combinação possível. Uma atividade da missão arquivada antes de a missão ser cumprida é trocada por outra; sem substituta, a missão some.
+- **R18 — Bônus da missão.** Fixo em R$ 100. A missão é cumprida quando as 2 atividades têm pelo menos 1 registro no dia (em hábitos, 1 registro basta). O bônus é pago uma vez, em lançamento separado, e se soma ao valor das atividades e ao bônus de hábito. Registros feitos no dia antes de a missão ser criada também contam. Missão não cumprida expira na virada do dia, sem penalidade.
 
 **Exemplo no histórico** — escovar os dentes: R$ 50, 3 vezes por dia, bônus de R$ 50, aumento de sequência R$ 0.
 
@@ -118,7 +120,7 @@ Tudo gira em torno de um livro-caixa: cada ação vira um lançamento imutável,
 
 ## Requisitos funcionais
 
-São 52 requisitos em 11 módulos. P0 = necessário para começar a usar, P1 = antes de as duas pessoas adotarem de vez, P2 = quando der. A coluna Fase liga cada item ao roadmap. Login com Apple saiu do escopo, porque não há app iOS.
+São 56 requisitos em 12 módulos. P0 = necessário para começar a usar, P1 = antes de as duas pessoas adotarem de vez, P2 = quando der. A coluna Fase liga cada item ao roadmap. Login com Apple saiu do escopo, porque não há app iOS.
 
 | ID | Requisito | Critério de aceite | Prioridade | Fase |
 | --- | --- | --- | --- | --- |
@@ -147,6 +149,10 @@ São 52 requisitos em 11 módulos. P0 = necessário para começar a usar, P1 = a
 | SEQ-02 | Valor do próximo toque no cartão | O cartão mostra o que o toque vai pagar ou cobrar | P1 | F6 |
 | SEQ-03 | Contagens no cartão | Positiva: dias de sequência; negativa: registros desde o zeramento | P1 | F6 |
 | SEQ-04 | "Zerar custo" na negativa | Com confirmação; o próximo registro volta ao valor inicial e o histórico não muda | P1 | F6 |
+| MIS-01 | Missão diária criada pelo app | 2 positivas sorteadas por conta e data, iguais no Android e na web; não repete o par do dia anterior se houver outro | P1 | F7 |
+| MIS-02 | Cartão "Missão do dia" | No topo de Atividades, com as 2 atividades, o que já foi feito e o bônus | P1 | F7 |
+| MIS-03 | Bônus da missão | R$ 100 em lançamento próprio, uma vez por dia, com aviso na tela ao ser pago | P1 | F7 |
+| MIS-04 | Missão no histórico | Linha "Bônus da missão do dia" com os nomes das atividades | P1 | F7 |
 | SHOP-01 | Criar, editar e arquivar item (nome, preço, duração) | Igual a ACT-01/02 | P0 | F1 |
 | SHOP-02 | Comprar item | Bloqueado se saldo < preço, mostrando quanto falta | P0 | F1 |
 | SHOP-03 | Escolher "Usar agora" ou "Guardar" na compra | Modal com as duas opções; "Usar agora" bloqueado se há timer ativo | P0 | F2 |
@@ -246,16 +252,19 @@ Todos os dados de um usuário ficam sob `users/{uid}` no Firestore. O saldo é u
 | `users/{uid}` | `name`, `bio`, `photoURL` (da conta Google, se houver), `balance`, `weeklyGoal`, `timezone`, `notif {end, warn5, weekly}`, `onboardingDone`, `createdAt` | Um por conta |
 | `users/{uid}/activities/{id}` | `name`, `description`, `kind` (`positive` \| `negative`), `value`, `minutes`, `order`, `archived`, `createdAt`; positivas: `habit? {target, bonus}`, `streakStep`, `streak? {days, lastDay}`; negativas: `penaltyCount` | Atividades +/−. Campo ausente vale como sem hábito, aumento R$ 0 e contagem zero |
 | `users/{uid}/shopItems/{id}` | `name`, `value`, `minutes`, `order`, `archived`, `createdAt` | Loja |
-| `users/{uid}/entries/{id}` | `type` (`earn` \| `loss` \| `purchase` \| `use` \| `reversal` \| `bonus`), `refId`, `name`, `value`, `minutes`, `at`, `deviceId`, `reverses?`; em `earn` e `loss`: `base` (valor inicial) e `level` (dia da sequência ou número do registro desde o zeramento); em `bonus`: `source` (`habit` \| `mission`) e, no de hábito, `target` | Livro-caixa, só criação. O bônus tem `minutes = 0`; o de hábito tem o id `habit_{activityId}_{AAAA-MM-DD}` |
+| `users/{uid}/entries/{id}` | `type` (`earn` \| `loss` \| `purchase` \| `use` \| `reversal` \| `bonus`), `refId`, `name`, `value`, `minutes`, `at`, `deviceId`, `reverses?`; em `earn` e `loss`: `base` (valor inicial) e `level` (dia da sequência ou número do registro desde o zeramento); em `bonus`: `source` (`habit` \| `mission`), no de hábito `target` e no de missão `activities` (id e nome das 2) | Livro-caixa, só criação. O bônus tem `minutes = 0`; o de hábito tem o id `habit_{activityId}_{AAAA-MM-DD}` e o de missão, `mission_{AAAA-MM-DD}` |
 | `users/{uid}/inventory/{id}` | `shopItemId`, `name`, `value`, `minutes`, `purchaseEntryId`, `purchasedAt` | Apagado ao começar o uso |
 | `users/{uid}/state/session` | `id`, `status` (`running` \| `paused`), `itemName`, `totalMs`, `startedAt`, `endsAt`, `remainingMs`, `useEntryId`, `originDevice` | No máximo 1 sessão (R5); o `id` evita avisos duplicados no mesmo aparelho |
 | `users/{uid}/daily/{AAAA-MM-DD}` | `date`, `earned`, `lost`, `spent`, `posMin`, `negMin`, `leisureMin`, `posCount`, `negCount`, `buyCount`, `counts` (registros por atividade), `bonuses` (bônus de hábito pagos por atividade) | Agregado diário, alimenta o Histórico. O bônus soma em `earned`, sem contar registro nem tempo |
+| `users/{uid}/missions/{AAAA-MM-DD}` | `date`, `activities` (2 × `{id, name}`), `bonus`, `createdAt`, `completedAt?` | Missão do dia (R17). A primeira gravada vale para todos os aparelhos; nunca é apagada |
 | `users/{uid}/avatar/current` | `data` (JPEG em base64, ≤ 150 KB), `updatedAt` | Foto de perfil, em documento separado para não pesar nas leituras do usuário |
 
 **Como cada ação escreve (um `writeBatch` por ação)**
 
 - **Registrar atividade:** cria `entries` (`earn` ou `loss`, com o valor calculado por R14 ou R15) + `balance ± value` + incremento em `daily` + `streak` (positiva) ou `penaltyCount + 1` (negativa) na atividade.
 - **Pagar o bônus de hábito:** lote próprio, depois do registro: cria `entries/habit_{activityId}_{dia}` (`bonus`) + `balance + bônus` + `earned` e `bonuses` em `daily`. Se o dia já foi pago, o servidor recusa só este lote.
+- **Criar a missão do dia:** o app sorteia o par a partir de `uid` + data e grava `missions/{dia}` se ele ainda não existe, separado dos registros. Se outro aparelho gravou antes, o servidor recusa e vale o que está lá.
+- **Pagar o bônus da missão:** lote próprio: cria `entries/mission_{dia}` (`bonus`) + `balance + 10.000` + `earned` em `daily` + `completedAt` na missão. Se já foi pago, o servidor recusa só este lote.
 - **Zerar o custo de uma negativa:** `penaltyCount = 0`; o livro-caixa não muda.
 - **Comprar e guardar:** cria `entries` (`purchase`) + `balance − value` + cria `inventory`.
 - **Comprar e usar agora / começar do inventário:** cria `entries` (`use`) + grava `state/session` (+ `purchase` e saldo, se for compra).
@@ -266,10 +275,11 @@ Todos os dados de um usuário ficam sob `users/{uid}` no Firestore. O saldo é u
 
 - Leitura e escrita só quando `request.auth.uid == uid`.
 - `entries` aceita só `create`; `update` apenas no campo `minutes` de lançamentos `use`; nunca `delete`.
-- Ao criar um lançamento, a regra confere com `getAfter()` que o saldo do usuário mudou exatamente pelo valor do lançamento, e que `value` confere com a atividade ou o item referenciado (`get()` em `refId`): nas atividades, o valor calculado por R14 e R15; nos bônus, o do hábito. Essa conferência entra na F4.
+- Ao criar um lançamento, a regra confere com `getAfter()` que o saldo do usuário mudou exatamente pelo valor do lançamento, e que `value` confere com a atividade ou o item referenciado (`get()` em `refId`): nas atividades, o valor calculado por R14 e R15; nos bônus, o do hábito ou o da missão. Essa conferência entra na F4.
 - `purchase` só é aceito se o saldo depois da compra for ≥ 0 (R3).
 - Campos validados por tipo e faixa: `value` inteiro entre 1 e 1.000.000 centavos, `minutes` entre 1 e 1.440 (0 no bônus), `name` com 1–60 caracteres, meta do hábito entre 1 e 20.
 - O bônus só é aceito com os campos dele e com o id fixo do dia: gravar o mesmo id de novo é alterar um lançamento, o que é negado.
+- A missão tem sempre bônus de R$ 100 e nunca é apagada: só se troca o par enquanto não foi cumprida, ou se grava `completedAt` junto com o lançamento do bônus. O bônus de missão precisa repetir as atividades da missão.
 - `avatar/current` só para o próprio usuário, com `data` limitado a ~200 mil caracteres.
 
 ```
@@ -307,7 +317,7 @@ O timer é guardado como horário de fim, não como contagem, então o tempo res
 | Sessão começada em outro aparelho | Avisa se o app foi aberto pelo menos uma vez depois do início | Avisa se a aba estiver aberta |
 | Tela de bloqueio | Notificação fixa — fase F5 | — |
 
-**Limitação aceita (F6).** Dois aparelhos sem internet podem pagar ou cobrar o mesmo nível de sequência ou de escalada, e o que sincronizar por último define a sequência salva. O bônus de hábito não se repete.
+**Limitação aceita (F6).** Dois aparelhos sem internet podem pagar ou cobrar o mesmo nível de sequência ou de escalada, e o que sincronizar por último define a sequência salva. O bônus de hábito e o da missão não se repetem.
 
 **Limitação aceita.** Se o timer começar na web e o celular não abrir o app depois disso, o celular não avisa. Para quem usa o timer principalmente no celular, isso não muda nada. Se um dia for preciso aviso entre aparelhos com tudo fechado, a solução é o plano Blaze com Cloud Functions, Cloud Tasks e FCM.
 
@@ -315,7 +325,7 @@ O timer é guardado como horário de fim, não como contagem, então o tempo res
 
 ## Roadmap de implementação
 
-Seis fases levam do zero ao uso diário em cerca de 9 semanas, com o MVP usado pelas duas pessoas a partir da semana 4. As durações são estimativas para 1 desenvolvedor em tempo integral com ajuda de IA; cada fase só termina quando o seu marco é cumprido. Sem lojas nem métricas de crescimento, a antiga fase de lançamento virou uma semana de polimento. A F6 (hábitos diários e sequências) entrou depois, leva cerca de 1 semana e roda antes da F4.
+Seis fases levam do zero ao uso diário em cerca de 9 semanas, com o MVP usado pelas duas pessoas a partir da semana 4. As durações são estimativas para 1 desenvolvedor em tempo integral com ajuda de IA; cada fase só termina quando o seu marco é cumprido. Sem lojas nem métricas de crescimento, a antiga fase de lançamento virou uma semana de polimento. A F6 (hábitos diários e sequências) e a F7 (missões diárias) entraram depois, levam cerca de 1 semana cada e rodam antes da F4.
 
 O passo a passo de execução, com as tarefas de cada fase e o que precisa de ação humana, está em [`ROADMAP.md`](ROADMAP.md).
 
@@ -346,6 +356,7 @@ O MVP (F1) vem antes do timer de propósito: o livro-caixa precisa estar sólido
 | F3 | Perfil | Nome, frase, foto reduzida no Firestore, meta semanal, preferências | PROF-01, 02 | Autenticação |
 | F3 | Histórico completo | Filtro de período, divisão do tempo, gráficos, constância, rankings; painel na web | HIST-01, 03 a 07 | Histórico básico |
 | F6 | Hábitos e sequências | Hábito diário com bônus, positivas que sobem com a sequência, negativas que encarecem, zerar custo | HAB-01 a 03, SEQ-01 a 04 | Atividades |
+| F7 | Missões diárias | Missão sorteada por dia, cartão e bônus pago uma vez | MIS-01 a 04 | Hábitos e sequências |
 | F4 | Polimento | Desfazer 10 s, acessibilidade, validação de saldo nas regras, Crashlytics, ícone, ajustes pelo uso | ACT-05 | Todas as anteriores |
 | F5 | Extras | Resumo semanal, widget e notificação fixa do timer no Android, reordenar, refazer onboarding, exportar CSV, excluir conta | NOTIF-04, 05, ACT-06, ONB-06, PROF-03 | Uso diário |
 

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { LIMITS } from './limits';
+import { LIMITS, MISSION_BONUS } from './limits';
 
 const name = z.string().min(1).max(LIMITS.nameMax);
 const value = z.number().int().min(LIMITS.valueMin).max(LIMITS.valueMax);
@@ -55,6 +55,23 @@ export type EntryType = z.infer<typeof entryTypeSchema>;
 export const bonusSourceSchema = z.enum(['habit', 'mission']);
 export type BonusSource = z.infer<typeof bonusSourceSchema>;
 
+/** Uma das atividades da missão do dia, com o nome da hora do sorteio. */
+export const missionActivitySchema = z.object({ id: z.string().min(1), name });
+export type MissionActivity = z.infer<typeof missionActivitySchema>;
+
+const missionActivities = z.tuple([missionActivitySchema, missionActivitySchema]);
+
+/** Documento `users/{uid}/missions/{AAAA-MM-DD}` (R17). */
+export const missionSchema = z.object({
+  date: day,
+  activities: missionActivities,
+  bonus: value,
+  createdAt: z.date(),
+  /** Quando o bônus foi pago; ausente enquanto a missão não é cumprida. */
+  completedAt: z.date().optional(),
+});
+export type Mission = z.infer<typeof missionSchema>;
+
 /** Documento `users/{uid}/entries/{id}`: o livro-caixa, que só recebe inclusões. */
 export const entrySchema = z
   .object({
@@ -75,6 +92,8 @@ export const entrySchema = z
     source: bonusSourceSchema.optional(),
     /** Só no bônus de hábito: a meta que foi cumprida. */
     target: habitTarget.optional(),
+    /** Só no bônus de missão: as atividades que a cumpriram. */
+    activities: missionActivities.optional(),
   })
   .refine((entry) => (entry.type === 'bonus') === (entry.minutes === 0), {
     path: ['minutes'],
@@ -190,6 +209,25 @@ export function habitBonusEntry(
     value: activity.habit.bonus,
     minutes: 0,
     target: activity.habit.target,
+    at,
+    deviceId,
+  };
+}
+
+/** O bônus da missão do dia (R18). O `refId` é a data da missão. */
+export function missionBonusEntry(
+  mission: Pick<Mission, 'date' | 'activities'>,
+  at: Date,
+  deviceId: string,
+): EntryData {
+  return {
+    type: 'bonus',
+    source: 'mission',
+    refId: mission.date,
+    name: 'Missão do dia',
+    value: MISSION_BONUS,
+    minutes: 0,
+    activities: mission.activities,
     at,
     deviceId,
   };

@@ -103,9 +103,9 @@ service cloud.firestore {
     /**
      * O bônus de hábito (R13): sem tempo e com o id `habit_{atividade}_{AAAA-MM-DD}`. Gravar o
      * mesmo id de novo conta como mudar um lançamento, o que as regras recusam: o bônus sai uma
-     * vez por dia. A F7 libera o bônus de missão.
+     * vez por dia.
      */
-    function validBonus(data, id) {
+    function validHabitBonus(data, id) {
       let prefix = 'habit_' + data.refId + '_';
       return hasShape(data, ['type', 'refId', 'name', 'value', 'minutes', 'at', 'deviceId',
           'source', 'target'], [])
@@ -120,6 +120,77 @@ service cloud.firestore {
         && id.size() == prefix.size() + 10
         && id[0:prefix.size()] == prefix
         && validDay(id[prefix.size():id.size()]);
+    }
+
+    // O bônus da missão (R18), em centavos.
+    function isMissionBonus(value) {
+      return value is int && value == 10000;
+    }
+
+    function validMissionActivity(item) {
+      return hasShape(item, ['id', 'name'], [])
+        && validId(item.id)
+        && validName(item.name);
+    }
+
+    // Duas atividades diferentes (R17).
+    function validMissionActivities(list) {
+      return list is list && list.size() == 2
+        && validMissionActivity(list[0])
+        && validMissionActivity(list[1])
+        && list[0].id != list[1].id;
+    }
+
+    function validMission(data, day) {
+      return hasShape(data, ['date', 'activities', 'bonus', 'createdAt'], [])
+        && validDay(day)
+        && data.date == day
+        && validMissionActivities(data.activities)
+        && isMissionBonus(data.bonus)
+        && data.createdAt is timestamp;
+    }
+
+    function missionPath(uid, day) {
+      return /databases/$(database)/documents/users/$(uid)/missions/$(day);
+    }
+
+    /**
+     * O bônus da missão: id `mission_{AAAA-MM-DD}`, com as mesmas atividades da missão gravada e
+     * no mesmo lote que a marca como cumprida. Um aparelho que sorteou outro par não paga.
+     */
+    function validMissionBonus(uid, data, id) {
+      return hasShape(data, ['type', 'refId', 'name', 'value', 'minutes', 'at', 'deviceId',
+          'source', 'activities'], [])
+        && data.source == 'mission'
+        && validDay(data.refId)
+        && id == 'mission_' + data.refId
+        && validName(data.name)
+        && isMissionBonus(data.value)
+        && data.minutes is int && data.minutes == 0
+        && data.at is timestamp
+        && validId(data.deviceId)
+        && data.activities == getAfter(missionPath(uid, data.refId)).data.activities
+        && getAfter(missionPath(uid, data.refId)).data.completedAt == data.at;
+    }
+
+    function validBonus(uid, data, id) {
+      return data.get('source', '') == 'mission'
+        ? validMissionBonus(uid, data, id)
+        : validHabitBonus(data, id);
+    }
+
+    /** Trocar a atividade arquivada de uma missão ainda não cumprida. */
+    function replacesMissionActivities() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['activities'])
+        && validMissionActivities(request.resource.data.activities);
+    }
+
+    /** Cumprir: só junto com o lançamento do bônus. */
+    function completesMission(uid, day) {
+      let bonus = /databases/$(database)/documents/users/$(uid)/entries/$('mission_' + day);
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['completedAt'])
+        && request.resource.data.completedAt is timestamp
+        && getAfter(bonus).data.at == request.resource.data.completedAt;
     }
 
     function sessionPath(uid) {
@@ -236,7 +307,7 @@ service cloud.firestore {
         allow read: if isOwner(uid);
         allow create: if isOwner(uid)
           && (request.resource.data.type == 'bonus'
-            ? validBonus(request.resource.data, id)
+            ? validBonus(uid, request.resource.data, id)
             : validEntry(request.resource.data));
         allow update: if isOwner(uid) && isUseMinutesOnly() && closesCurrentSession(uid, id);
         allow delete: if false;
@@ -271,6 +342,17 @@ service cloud.firestore {
         allow read: if isOwner(uid);
         allow create, update: if isOwner(uid) && id == 'current'
           && validAvatar(request.resource.data);
+        allow delete: if false;
+      }
+
+      // A missão do dia. A primeira gravada vale: gravar por cima conta como mudar, e só se
+      // troca o par ou se marca como cumprida, uma vez.
+      match /missions/{day} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && validMission(request.resource.data, day);
+        allow update: if isOwner(uid)
+          && !('completedAt' in resource.data)
+          && (replacesMissionActivities() || completesMission(uid, day));
         allow delete: if false;
       }
 

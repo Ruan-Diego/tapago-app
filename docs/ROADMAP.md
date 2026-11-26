@@ -367,19 +367,19 @@ Cerca de 12 semanas do zero ao uso diário, com o MVP em uso a partir da semana 
 - **Sem servidor** (Spark): o app gera a missão ao abrir ou na virada do dia, com sorteio determinado por `uid` + data. A primeira missão gravada no dia vale para todos os aparelhos.
 
 **Documentação**
-- [ ] Levar R17–R18 e os requisitos MIS-01–04 para o `PRD.md`, com o caminho `users/{uid}/missions/{AAAA-MM-DD}`
+- [x] Levar R17–R18 e os requisitos MIS-01–04 para o `PRD.md`, com o caminho `users/{uid}/missions/{AAAA-MM-DD}`
 
 **Missões**
-- [ ] MIS-01 · Gerar a missão do dia: sorteio e checagem de cumprimento como funções puras em `packages/core`, com testes (semente, poucas atividades, não repetir, virada do dia)
-- [ ] Documento `users/{uid}/missions/{AAAA-MM-DD}`: ids e nomes das 2 atividades, bônus e `completedAt`; criado só se ainda não existir, em escrita separada dos registros
-- [ ] Atividade da missão arquivada antes de a missão ser cumprida é trocada por outra; sem substituta, a missão some
-- [ ] MIS-02 · Cartão "Missão do dia" com as 2 atividades, o que já foi feito e o bônus
-- [ ] MIS-03 · Pagar o bônus em lote próprio com id fixo `mission_{AAAA-MM-DD}` (lançamento + saldo + `daily` + `completedAt`), com aviso na tela
-- [ ] MIS-04 · O histórico mostra "**Bônus da missão do dia**" com os nomes das atividades
+- [x] MIS-01 · Gerar a missão do dia: sorteio e checagem de cumprimento como funções puras em `packages/core`, com testes (semente, poucas atividades, não repetir, virada do dia)
+- [x] Documento `users/{uid}/missions/{AAAA-MM-DD}`: ids e nomes das 2 atividades, bônus e `completedAt`; criado só se ainda não existir, em escrita separada dos registros
+- [x] Atividade da missão arquivada antes de a missão ser cumprida é trocada por outra; sem substituta, a missão some
+- [x] MIS-02 · Cartão "Missão do dia" com as 2 atividades, o que já foi feito e o bônus
+- [x] MIS-03 · Pagar o bônus em lote próprio com id fixo `mission_{AAAA-MM-DD}` (lançamento + saldo + `daily` + `completedAt`), com aviso na tela
+- [x] MIS-04 · O histórico mostra "**Bônus da missão do dia**" com os nomes das atividades
 
 **Regras e testes**
-- [ ] `firestore.rules`: bloco de `missions` (só o dono; bônus sempre de R$ 100; nunca `delete`)
-- [ ] Testes de regras: outro `uid`, campos inválidos e bônus repetido
+- [x] `firestore.rules`: bloco de `missions` (só o dono; bônus sempre de R$ 100; nunca `delete`)
+- [x] Testes de regras: outro `uid`, campos inválidos e bônus repetido
 
 **Critério de saída:** missões diferentes em dias seguidos, iguais no Android e na web, e pelo menos uma cumprida com o bônus pago uma única vez (HUM-15).
 
@@ -519,7 +519,7 @@ As decisões de produto já foram tomadas (ver [aba 0](#0-decisões-fechadas)). 
 
 | ID | Quando | Ação | Onde | Feito |
 | --- | --- | --- | --- | --- |
-| HUM-15 | Depois | Acompanhar as missões por alguns dias no Android e na web e cumprir pelo menos uma | Uso real | [ ] |
+| HUM-15 | Depois | Instalar o APK novo nos 2 celulares, acompanhar as missões por alguns dias no Android e na web e cumprir pelo menos uma | Uso real | [ ] |
 
 ### F8 · Animações e visual
 
@@ -563,7 +563,7 @@ Atualizado pelo agente no início e no fim de cada fase.
 | F2 | código pronto (falta a validação humana) | 25/11/2026 | | |
 | F3 | código pronto (falta a validação humana) | 26/11/2026 | | |
 | F6 | código pronto (falta a validação humana) | 26/11/2026 | | |
-| F7 | não iniciada | | | |
+| F7 | código pronto (falta a validação humana) | 26/11/2026 | | |
 | F8 | não iniciada | | | |
 | F4 | não iniciada | | | |
 | F5 | não iniciada | | | |
@@ -618,6 +618,13 @@ Atualizado pelo agente no início e no fim de cada fase.
 - F6 · Atividades criadas no onboarding nascem sem hábito e com aumento R$ 0; os R$ 10 sugeridos valem para o formulário de nova atividade.
 - F6 · Limitação aceita: dois aparelhos offline podem pagar ou cobrar o mesmo nível de sequência ou de escalada, e o que sincronizar por último define a sequência salva (um aparelho há mais de um dia offline pode fazê-la voltar). O bônus de hábito não se repete.
 - F6 · O cartão desativa o registro até o agregado do dia carregar, para o bônus não ser calculado às cegas.
+- F7 · O sorteio é um hash de `uid` + data sobre os pares de positivas, em ordem de id. O "par de ontem" é o do documento de ontem; sem ele (app não aberto), não há o que evitar.
+- F7 · O documento da missão tem também `date` (para ler ontem e hoje com um listener) e `createdAt` (para as regras recusarem uma segunda gravação do mesmo par). Custa até 2 leituras por dia.
+- F7 · O app grava a missão na hora se o servidor respondeu; se só tem o cache, espera 5 s. Cada gravação é tentada uma vez por sessão, para uma recusa (ou regras antigas publicadas) não virar um laço de escritas.
+- F7 · "A missão some" quando falta substituta: o cartão é escondido e o documento fica (nunca há `delete`). Se surgir uma substituta no mesmo dia, ela volta.
+- F7 · Missão já cumprida pelos registros é paga mesmo que uma das atividades seja arquivada depois. O bônus sai também quando os registros são anteriores ao sorteio ou vieram de outro aparelho.
+- F7 · O lançamento do bônus tem `refId` = data, nome "Missão do dia" e `activities` (cópia do documento). As regras exigem essa cópia idêntica e `completedAt` no mesmo lote, então um aparelho que sorteou outro par offline não paga.
+- F7 · As regras não conferem se as 2 atividades foram mesmo registradas; a conferência de valores e saldo é a F4.
 
 **Pendências humanas em aberto**
 
@@ -632,3 +639,5 @@ Atualizado pelo agente no início e no fim de cada fase.
 - HUM-09: a Pessoa 2 faz o onboarding sozinha, cronometrando. Se a conta dela já tiver atividades e loja, o onboarding não aparece: usar uma conta nova.
 - F6: publicar regras e web juntas (com as regras antigas, registrar na web nova é recusado). Foi testada na web contra o emulador, não em um Android.
 - HUM-14: instalar um APK novo nos 2 celulares antes de usar (a versão antiga não lê o lançamento de bônus, não aplica sequência nem escalada). Completar um hábito, deixar uma sequência subir e quebrar, escalar e zerar uma negativa.
+- F7: publicar regras e web juntas (com as regras antigas, a missão não é gravada). Foi testada na web contra o emulador, não em um Android.
+- HUM-15: instalar um APK novo nos 2 celulares e acompanhar as missões por alguns dias, cumprindo pelo menos uma.

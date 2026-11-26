@@ -3,6 +3,7 @@ export { authRepository } from './auth';
 export { dailyRepository } from './daily';
 export { entriesRepository, type EntryPage } from './entries';
 export { inventoryRepository } from './inventory';
+export { missionsRepository, type MissionsSnapshot } from './missions';
 export { profileRepository, watchProfile, type OnboardingChoices } from './profile';
 export { shopRepository, type Purchase } from './shop';
 export { timerRepository, type TimerSnapshot } from './timer';

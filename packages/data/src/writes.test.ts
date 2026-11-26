@@ -1,12 +1,15 @@
-import { activityFormSchema, type Activity, type ShopItem } from '@tapago/core';
+import { activityFormSchema, type Activity, type Mission, type ShopItem } from '@tapago/core';
 import { describe, expect, it } from 'vitest';
 
 import { DeleteField, Increment, decodeData, encodeData } from './documents';
 import {
   createActivityOp,
+  createMissionOp,
   habitBonusOps,
+  missionBonusOps,
   purchaseOps,
   registerActivityOps,
+  replaceMissionOp,
   resetPenaltyOp,
   updateActivityOp,
 } from './writes';
@@ -228,5 +231,60 @@ describe('tradução para o SDK', () => {
       n: 1,
       list: null,
     });
+  });
+});
+
+describe('missão do dia', () => {
+  const date = '2026-11-25';
+  const activities: Mission['activities'] = [
+    { id: 'a1', name: 'Louça' },
+    { id: 'a2', name: 'Ler' },
+  ];
+  const mission: Mission = { date, activities, bonus: 10_000, createdAt: at };
+
+  it('é criada em um documento por dia, com o bônus fixo', () => {
+    expect(createMissionOp('ana', date, activities, at)).toEqual({
+      kind: 'set',
+      path: 'users/ana/missions/2026-11-25',
+      data: { date, activities, bonus: 10_000, createdAt: at },
+    });
+  });
+
+  it('troca só o par', () => {
+    expect(replaceMissionOp('ana', date, activities)).toEqual({
+      kind: 'update',
+      path: 'users/ana/missions/2026-11-25',
+      data: { activities },
+    });
+  });
+
+  it('paga o bônus com id fixo: lançamento, saldo, dia e conclusão em um lote', () => {
+    // Logo depois do registro que cumpriu a missão.
+    const paidAt = new Date(at.getTime() + 1);
+    expect(missionBonusOps(context, mission)).toEqual([
+      {
+        kind: 'set',
+        path: 'users/ana/entries/mission_2026-11-25',
+        data: {
+          type: 'bonus',
+          source: 'mission',
+          refId: date,
+          name: 'Missão do dia',
+          value: 10_000,
+          minutes: 0,
+          activities,
+          at: paidAt,
+          deviceId: 'web-1',
+        },
+      },
+      { kind: 'update', path: 'users/ana', data: { balance: inc(10_000) } },
+      {
+        kind: 'merge',
+        path: 'users/ana/daily/2026-11-25',
+        // Sem registro, sem tempo e fora dos bônus de hábito.
+        data: { date, earned: inc(10_000) },
+      },
+      { kind: 'update', path: 'users/ana/missions/2026-11-25', data: { completedAt: paidAt } },
+    ]);
   });
 });

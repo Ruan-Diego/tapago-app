@@ -3,6 +3,7 @@ import { Tabs } from 'expo-router/js-tabs';
 import { ActivityIndicator, StyleSheet, View, useWindowDimensions } from 'react-native';
 
 import { ToastHost } from '@/ledger/ToastHost';
+import { useMissionController } from '@/missions/useMissionController';
 import { Sidebar } from '@/navigation/Sidebar';
 import { TabBar } from '@/navigation/TabBar';
 import { SECTIONS } from '@/navigation/sections';
@@ -16,6 +17,7 @@ export default function AppLayout() {
   // Até o perfil chegar não dá para saber se falta o onboarding: as abas ficam cobertas.
   const loading = useSession((state) => state.profile === null && !state.profileError);
   useTimerController();
+  useMissionController();
 
   return (
     <View style={{ flex: 1 }}>

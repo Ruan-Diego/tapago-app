@@ -10,8 +10,10 @@ import {
   activitiesRepository,
   dailyRepository,
   inventoryRepository,
+  missionsRepository,
   shopRepository,
   timerRepository,
+  type MissionsSnapshot,
   type TimerSnapshot,
 } from '@tapago/data';
 import { useEffect } from 'react';
@@ -27,6 +29,8 @@ interface LedgerState {
   dailies: Daily[] | null;
   /** Todos os agregados, lidos uma vez quando o Histórico ou o Perfil abre. */
   allDailies: Daily[] | null;
+  /** As missões de ontem e de hoje; `since` é o dia a partir do qual foram lidas. */
+  missions: (MissionsSnapshot & { since: string }) | null;
   error: boolean;
 }
 
@@ -37,6 +41,7 @@ const EMPTY: LedgerState = {
   timer: null,
   dailies: null,
   allDailies: null,
+  missions: null,
   error: false,
 };
 
@@ -68,7 +73,7 @@ export function loadAllDailies(uid: string) {
 
 /**
  * Listeners compartilhados pelas abas, um por coleção e por conta, para não gastar leituras da
- * cota do Spark. Os agregados são religados só quando o dia vira.
+ * cota do Spark. Os agregados e as missões são religados só quando o dia vira.
  */
 export function useLedgerSubscription(uid: string | undefined, today: string) {
   useEffect(() => {
@@ -107,6 +112,19 @@ export function useLedgerSubscription(uid: string | undefined, today: string) {
       addDays(today, 1 - HISTORY_WINDOW_DAYS),
       (dailies) => useLedger.setState({ dailies }),
       fail,
+    );
+  }, [uid, today]);
+
+  useEffect(() => {
+    if (!uid) return;
+    // A de ontem entra para o sorteio não repetir o par (R17).
+    const since = addDays(today, -1);
+    return missionsRepository.watchSince(
+      uid,
+      since,
+      (snapshot) => useLedger.setState({ missions: { ...snapshot, since } }),
+      // Sem as missões o resto do app continua valendo: não vira erro na tela.
+      (error) => console.warn('Falha ao ler a missão do dia.', error),
     );
   }, [uid, today]);
 }

@@ -2,6 +2,7 @@ import {
   activeInOrder,
   emptyDaily,
   formatMoney,
+  isMissionVisible,
   weeklyProgress,
   type Activity,
   type ActivityKind,
@@ -26,6 +27,7 @@ import { ActivitySheet } from '@/activities/ActivitySheet';
 import { registerActivity, resetPenalty } from '@/ledger/actions';
 import { useLedger } from '@/ledger/store';
 import { useToday } from '@/ledger/useToday';
+import { MissionCard } from '@/missions/MissionCard';
 import { Screen } from '@/navigation/Screen';
 import { useDisplayName } from '@/profile/useDisplayName';
 import { useSession } from '@/session/store';
@@ -57,6 +59,7 @@ export default function Activities() {
   const profile = useSession((state) => state.profile);
   const activities = useLedger((state) => state.activities);
   const dailies = useLedger((state) => state.dailies);
+  const missions = useLedger((state) => state.missions);
   const today = useToday();
   const firstName = useDisplayName().split(/\s+/)[0];
   /** `'new'` ao criar; a atividade ao editar. */
@@ -70,6 +73,12 @@ export default function Activities() {
   const openNew = () => setEditing('new');
   const edit = useCallback((activity: Activity) => setEditing(activity), []);
   const reset = useCallback((activity: Activity) => void resetPenalty(activity), []);
+
+  const mission = missions?.missions.find((candidate) => candidate.date === today);
+  const missionCard =
+    mission && activities && isMissionVisible(mission, activities) ? (
+      <MissionCard mission={mission} activities={activities} counts={todayTotals.counts} />
+    ) : null;
 
   const goal =
     week.goal > 0 ? (
@@ -131,6 +140,7 @@ export default function Activities() {
             </Card>
             {goal}
           </View>
+          {missionCard}
         </>
       ) : (
         <>
@@ -151,6 +161,7 @@ export default function Activities() {
               <Text style={[styles.chip, styles.chipCount]}>{countLabel}</Text>
             </View>
           </View>
+          {missionCard}
           {goal}
           <View style={styles.sectionHeader}>
             <Text accessibilityRole="header" style={styles.title}>

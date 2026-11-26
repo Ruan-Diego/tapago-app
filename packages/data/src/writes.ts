@@ -4,12 +4,15 @@
  */
 import {
   DAILY_FIELDS,
+  MISSION_BONUS,
   dailyDelta,
   dayKey,
   entryFrom,
   entryTypeFor,
   habitBonusEntry,
   habitBonusId,
+  missionBonusEntry,
+  missionBonusId,
   newSession,
   nextCharge,
   nextStreak,
@@ -19,6 +22,7 @@ import {
   type EntrySource,
   type Habit,
   type InventoryItem,
+  type Mission,
   type ProfileValues,
   type Session,
   type SessionChange,
@@ -36,6 +40,7 @@ export const paths = {
   entries: (uid: string) => `users/${uid}/entries`,
   inventory: (uid: string) => `users/${uid}/inventory`,
   daily: (uid: string) => `users/${uid}/daily`,
+  missions: (uid: string) => `users/${uid}/missions`,
   /** Foto de perfil, fora do documento do usuário para não pesar nas leituras dele. */
   avatar: (uid: string) => `users/${uid}/avatar/current`,
   /** Documento único: no máximo uma sessão por conta (R5). */
@@ -63,7 +68,8 @@ function dailyOp(
     if (amount) data[field] = new Increment(amount);
   }
   if (countRef) data.counts = { [countRef]: new Increment(1) };
-  if (entry.type === 'bonus') data.bonuses = { [entry.refId]: new Increment(1) };
+  // Só o de hábito: é como o app sabe que o dia daquela atividade já foi pago.
+  if (entry.source === 'habit') data.bonuses = { [entry.refId]: new Increment(1) };
   return { kind: 'merge', path: `${paths.daily(uid)}/${date}`, data };
 }
 
@@ -103,6 +109,12 @@ export function registerActivityOps(
   ];
 }
 
+/** 1 ms depois do registro, para o bônus aparecer logo acima dele no histórico, sem trocar de dia. */
+function bonusTime({ at, timeZone }: ActionContext): Date {
+  const after = new Date(at.getTime() + 1);
+  return dayKey(after, timeZone) === dayKey(at, timeZone) ? after : at;
+}
+
 /**
  * O bônus do hábito, em um lote próprio e com id fixo: se outro aparelho já pagou o dia, o
  * servidor recusa só este lote, e o registro fica.
@@ -113,9 +125,7 @@ export function habitBonusOps(
 ): WriteOp[] {
   const { uid, at, deviceId, timeZone } = context;
   const date = dayKey(at, timeZone);
-  // 1 ms depois do registro, para aparecer logo acima dele no histórico, sem trocar de dia.
-  const after = new Date(at.getTime() + 1);
-  const bonusAt = dayKey(after, timeZone) === date ? after : at;
+  const bonusAt = bonusTime(context);
   const entry = habitBonusEntry(activity, bonusAt, deviceId);
   return [
     {
@@ -125,6 +135,52 @@ export function habitBonusOps(
     },
     { kind: 'update', path: paths.user(uid), data: { balance: new Increment(entry.value) } },
     dailyOp({ ...context, at: bonusAt }, entry),
+  ];
+}
+
+/**
+ * Gravar a missão do dia, separada dos registros. Se outro aparelho gravou antes, o `set` conta
+ * como mudar a missão, e o servidor recusa: a primeira vale para todos.
+ */
+export function createMissionOp(
+  uid: string,
+  date: string,
+  activities: Mission['activities'],
+  at: Date,
+): WriteOp {
+  return {
+    kind: 'set',
+    path: `${paths.missions(uid)}/${date}`,
+    data: { date, activities, bonus: MISSION_BONUS, createdAt: at },
+  };
+}
+
+/** Trocar a atividade arquivada de uma missão ainda não cumprida. */
+export function replaceMissionOp(
+  uid: string,
+  date: string,
+  activities: Mission['activities'],
+): WriteOp {
+  return { kind: 'update', path: `${paths.missions(uid)}/${date}`, data: { activities } };
+}
+
+/**
+ * O bônus da missão, em lote próprio e com id fixo: lançamento + saldo + agregado do dia +
+ * `completedAt`. O servidor recusa o lote se o dia já foi pago ou se o par não é o gravado.
+ */
+export function missionBonusOps(context: ActionContext, mission: Mission): WriteOp[] {
+  const { uid, deviceId } = context;
+  const at = bonusTime(context);
+  const entry = missionBonusEntry(mission, at, deviceId);
+  return [
+    {
+      kind: 'set',
+      path: `${paths.entries(uid)}/${missionBonusId(mission.date)}`,
+      data: { ...entry },
+    },
+    { kind: 'update', path: paths.user(uid), data: { balance: new Increment(entry.value) } },
+    dailyOp({ ...context, at }, entry),
+    { kind: 'update', path: `${paths.missions(uid)}/${mission.date}`, data: { completedAt: at } },
   ];
 }
 

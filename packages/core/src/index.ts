@@ -7,6 +7,7 @@ export * from './habits';
 export * from './history';
 export * from './ledger';
 export * from './limits';
+export * from './missions';
 export * from './money';
 export * from './onboarding';
 export * from './photo';

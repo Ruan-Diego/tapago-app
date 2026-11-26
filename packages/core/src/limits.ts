@@ -1,3 +1,6 @@
+/** Bônus fixo da missão do dia, em centavos (R18). */
+export const MISSION_BONUS = 10_000;
+
 /** Faixas aceitas pelos formulários e pelas regras do Firestore. */
 export const LIMITS = {
   nameMax: 60,

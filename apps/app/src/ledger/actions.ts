@@ -1,19 +1,23 @@
 import {
+  MISSION_BONUS,
   dayKey,
   earnsHabitBonus,
   formatDuration,
   formatMoney,
   habitBonusId,
   isExpired,
+  isMissionComplete,
   nextCharge,
   usedMinutes,
   type Activity,
   type InventoryItem,
+  type Mission,
   type Session,
   type ShopItem,
 } from '@tapago/core';
 import {
   activitiesRepository,
+  missionsRepository,
   shopRepository,
   timerRepository,
   type ActionContext,
@@ -49,6 +53,10 @@ export function save(write: Promise<void>) {
   });
 }
 
+/** A recusa das regras: outro aparelho chegou antes. */
+const isDenied = (error: unknown) =>
+  String((error as { code?: unknown }).code).endsWith('permission-denied');
+
 /** Bônus já pedidos com o app aberto, antes de o agregado do dia mostrar o pagamento. */
 const requestedBonuses = new Set<string>();
 
@@ -70,7 +78,7 @@ function habitBonusFor(context: ActionContext, activity: Activity): (() => void)
     requestedBonuses.add(id);
     activitiesRepository.payHabitBonus(context, { ...activity, habit }).catch((error: unknown) => {
       // Outro aparelho pode ter pagado antes: a recusa do servidor é esperada.
-      if (String((error as { code?: unknown }).code).endsWith('permission-denied')) {
+      if (isDenied(error)) {
         console.warn('O bônus do dia já tinha sido pago.', error);
         return;
       }
@@ -81,6 +89,75 @@ function habitBonusFor(context: ActionContext, activity: Activity): (() => void)
   };
 }
 
+/**
+ * Escritas da missão já pedidas com o app aberto. Cada uma é tentada uma vez: se o servidor
+ * recusar, o cache local volta atrás, e insistir repetiria a recusa sem parar.
+ */
+const requestedMissions = new Set<string>();
+
+const missionKey = (uid: string, date: string, activities: Mission['activities']) =>
+  `${uid}:${date}:${activities.map(({ id }) => id).join(',')}`;
+
+function onMissionRefused(error: unknown) {
+  if (isDenied(error)) console.warn('A missão do dia já tinha mudado em outro aparelho.', error);
+  else console.error('Falha ao salvar a missão do dia.', error);
+}
+
+/** Gravar a missão sorteada. Vale a primeira gravada no dia, de qualquer aparelho. */
+export function createMission(uid: string, date: string, activities: Mission['activities']) {
+  const key = `criar:${uid}:${date}`;
+  if (requestedMissions.has(key)) return;
+  requestedMissions.add(key);
+  missionsRepository.create(uid, date, activities).catch(onMissionRefused);
+}
+
+export function replaceMission(uid: string, mission: Mission, activities: Mission['activities']) {
+  const key = `trocar:${missionKey(uid, mission.date, activities)}`;
+  if (requestedMissions.has(key)) return;
+  requestedMissions.add(key);
+  missionsRepository.replace(uid, mission.date, activities).catch(onMissionRefused);
+}
+
+/** Pede o pagamento do bônus (R18). `false` se ele já tinha sido pedido. */
+function payMission(context: ActionContext, mission: Mission): boolean {
+  const key = `pagar:${missionKey(context.uid, mission.date, mission.activities)}`;
+  if (requestedMissions.has(key)) return false;
+  requestedMissions.add(key);
+  missionsRepository.payBonus(context, mission).catch((error: unknown) => {
+    onMissionRefused(error);
+    if (isDenied(error)) return;
+    requestedMissions.delete(key);
+    showToast('Não foi possível salvar o bônus da missão.');
+  });
+  return true;
+}
+
+/** A missão cumprida sem um toque agora: registros de antes do sorteio ou de outro aparelho. */
+export function payPendingMission(mission: Mission) {
+  const context = actionContext();
+  // Missão de um dia que já virou expira (R18).
+  if (!context || dayKey(context.at, context.timeZone) !== mission.date) return;
+  if (!payMission(context, mission)) return;
+  const names = mission.activities.map(({ name }) => name).join(' + ');
+  showToast(`Missão cumprida! ${names}.`, `+${formatMoney(MISSION_BONUS)}`);
+}
+
+/**
+ * A missão que este registro cumpre, ou `null`. Como no hábito, precisa ser chamada antes de
+ * gravar o registro, com o agregado ainda sem ele.
+ */
+function missionCompletedBy(context: ActionContext, activity: Activity): Mission | null {
+  const { missions, dailies } = useLedger.getState();
+  if (!missions || !dailies) return null;
+  const today = dayKey(context.at, context.timeZone);
+  const mission = missions.missions.find((candidate) => candidate.date === today);
+  if (!mission || mission.completedAt) return null;
+  if (!mission.activities.some(({ id }) => id === activity.id)) return null;
+  const counts = { ...dailies.find((daily) => daily.date === today)?.counts };
+  counts[activity.id] = (counts[activity.id] ?? 0) + 1;
+  return isMissionComplete(mission, counts) ? mission : null;
+}
+
 /** Registrar com 1 toque, sem confirmação (ACT-03). */
 export function registerActivity(tapped: Activity) {
   const context = actionContext();
@@ -89,16 +166,24 @@ export function registerActivity(tapped: Activity) {
   const activity =
     useLedger.getState().activities?.find((candidate) => candidate.id === tapped.id) ?? tapped;
   const { value } = nextCharge(activity, dayKey(context.at, context.timeZone));
-  const payBonus = habitBonusFor(context, activity);
+  const payHabit = habitBonusFor(context, activity);
+  const mission = missionCompletedBy(context, activity);
   save(activitiesRepository.register(context, activity));
-  // Em um lote separado, depois do registro: se for recusado, o registro fica.
-  payBonus?.();
+  // Cada bônus em um lote separado, depois do registro: se for recusado, o registro fica.
+  payHabit?.();
+  const paidMission = mission !== null && payMission(context, mission);
 
   const positive = activity.kind === 'positive';
-  if (payBonus && activity.habit) {
-    const { bonus } = activity.habit;
+  const habitBonus = payHabit ? (activity.habit?.bonus ?? 0) : 0;
+  const bonus = habitBonus + (paidMission ? MISSION_BONUS : 0);
+  if (bonus > 0) {
+    const title = !paidMission
+      ? 'Hábito completo!'
+      : habitBonus > 0
+        ? 'Hábito e missão do dia completos!'
+        : 'Missão cumprida!';
     showToast(
-      `Hábito completo! ${activity.name}: ${formatMoney(value)} + ${formatMoney(bonus)} de bônus.`,
+      `${title} ${activity.name}: ${formatMoney(value)} + ${formatMoney(bonus)} de bônus.`,
       `+${formatMoney(value + bonus)}`,
     );
     return;

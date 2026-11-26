@@ -230,7 +230,7 @@ describe('bônus do hábito', () => {
     ['valor zero', { value: 0 }],
     ['valor acima do teto', { value: 1_000_001 }],
     ['origem desconhecida', { source: 'gift' }],
-    ['origem de missão (F7)', { source: 'mission' }],
+    ['origem de missão no bônus de hábito', { source: 'mission' }],
     ['meta fora da faixa', { target: 21 }],
     ['nome vazio', { name: '' }],
     ['campo de registro', { level: 1 }],

@@ -38,8 +38,10 @@ export function EntryRow({ entry, today, timeZone }: EntryRowProps) {
   const bonus = entry.source ? BONUS_TITLES[entry.source] : null;
   const when = whenLabel(entry.at, today, timeZone);
   const habit = entry.target ? ` (${entry.target} de ${entry.target} no dia)` : '';
+  // No bônus da missão, as atividades que a cumpriram (MIS-04).
+  const subject = entry.activities?.map(({ name }) => name).join(' + ') ?? entry.name;
   const detail = bonus
-    ? `${entry.name}${habit} · ${when}`
+    ? `${subject}${habit} · ${when}`
     : [when, formatDuration(entry.minutes), levelNote(entry)].filter(Boolean).join(' · ');
 
   return (
