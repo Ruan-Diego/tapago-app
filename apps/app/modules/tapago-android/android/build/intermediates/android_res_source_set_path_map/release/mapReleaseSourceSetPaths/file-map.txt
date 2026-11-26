@@ -1,9 +1,0 @@
-expo.modules.tapagoandroid.tapago-android-pngs-0 D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\build\generated\res\pngs\release
-expo.modules.tapagoandroid.tapago-android-updated_navigation_xml-1 D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\build\generated\updated_navigation_xml\release
-expo.modules.tapagoandroid.tapago-android-mergeReleaseResources-2 D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\build\intermediates\incremental\release\mergeReleaseResources\merged.dir
-expo.modules.tapagoandroid.tapago-android-mergeReleaseResources-3 D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\build\intermediates\incremental\release\mergeReleaseResources\stripped.dir
-expo.modules.tapagoandroid.tapago-android-release-4 D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\build\intermediates\merged_res\release\mergeReleaseResources
-expo.modules.tapagoandroid.tapago-android-release-5 D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\build\intermediates\packaged_res\release\packageReleaseResources
-expo.modules.tapagoandroid.tapago-android-main-6 D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\src\main\res
-expo.modules.tapagoandroid.tapago-android-release-7 D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\src\release\res
-gradleHome-0 C:\Users\Ruan\.gradle
