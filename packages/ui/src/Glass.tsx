@@ -26,7 +26,7 @@ export function Glass({ blurTarget, style, children, ...rest }: GlassProps) {
             blurTarget={blurTarget as BlurViewProps['blurTarget']}
             blurMethod="dimezisBlurViewSdk31Plus"
             intensity={glass.intensity}
-            tint="light"
+            tint={glass.tint}
             style={[styles.layer, { borderRadius: radius }]}
           />
           <View

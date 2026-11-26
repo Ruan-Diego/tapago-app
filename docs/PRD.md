@@ -96,7 +96,7 @@ Tudo gira em torno de um livro-caixa: cada ação vira um lançamento imutável,
 - **R4 — Comprar = pagar na hora.** Na compra o app pergunta: "Usar agora" (inicia o timer) ou "Guardar no inventário". As duas debitam o preço.
 - **R5 — Um timer por vez.** Com uma sessão ativa, "Usar agora" fica bloqueado; só é possível guardar.
 - **R6 — Encerrar antes não devolve dinheiro.** O tempo registrado é o tempo realmente usado.
-- **R7 — Pausar** congela o tempo restante; retomar recalcula o fim.
+- **R7 — Pausar** congela o tempo restante; retomar recalcula o fim. **Guardar o resto para depois** encerra a sessão como em R6 (o tempo usado conta, sem reembolso) e devolve ao inventário um item com os minutos inteiros que faltam, para começar de novo quando quiser, em qualquer aparelho.
 - **R8 — Desfazer.** Um registro, positivo ou negativo, pode ser desfeito por 10 s (gera um lançamento de estorno, nunca apaga o original). O desfazer devolve a sequência da positiva quando o dia fica sem registro, volta um passo na escalada da negativa (a não ser que o custo tenha sido zerado depois) e estorna o bônus de hábito ou de missão que deixou de valer; batida a meta de novo no dia, o bônus volta a ser pago. Compras não se desfazem.
 - **R9 — Tempo de lazer conta no uso**, não na compra. Item guardado não entra nas horas de lazer.
 - **R10 — Arquivar em vez de apagar.** Atividades e itens arquivados somem das listas, mas o histórico continua.
@@ -120,14 +120,14 @@ Tudo gira em torno de um livro-caixa: cada ação vira um lançamento imutável,
 
 ## Requisitos funcionais
 
-São 56 requisitos em 12 módulos. P0 = necessário para começar a usar, P1 = antes de as duas pessoas adotarem de vez, P2 = quando der. A coluna Fase liga cada item ao roadmap. Login com Apple saiu do escopo, porque não há app iOS.
+São 60 requisitos em 13 módulos. P0 = necessário para começar a usar, P1 = antes de as duas pessoas adotarem de vez, P2 = quando der. A coluna Fase liga cada item ao roadmap. Login com Apple saiu do escopo, porque não há app iOS.
 
 | ID | Requisito | Critério de aceite | Prioridade | Fase |
 | --- | --- | --- | --- | --- |
 | AUTH-01 | Cadastro e login com e-mail e senha | Conta criada no Firebase Auth; sessão mantida ao reabrir o app | P0 | F0 |
 | AUTH-02 | Login com Google | Funciona no Android e na web | P0 | F0 |
 | AUTH-04 | Recuperar senha | E-mail de redefinição enviado pelo Firebase | P0 | F0 |
-| AUTH-05 | Sair da conta; excluir conta (P2) | Sair limpa o cache local e cancela as notificações agendadas no aparelho | P0 | F0 |
+| AUTH-05 | Sair da conta; excluir conta (P2) | Sair limpa o cache local e cancela as notificações agendadas no aparelho. Excluir (F5) apaga pelo próprio app todos os dados da conta e o login, com confirmação; precisa de internet | P0 | F0 |
 | AUTH-06 | Mesma conta no Android e na web | Dados iguais nos dois em até 2 s com internet | P0 | F1 |
 | ONB-01 | Boas-vindas e "como funciona" | 2 telas explicando +, − e loja | P1 | F3 |
 | ONB-02 | Nome e foto no onboarding | Nome obrigatório; foto opcional | P1 | F3 |
@@ -164,11 +164,14 @@ São 56 requisitos em 12 módulos. P0 = necessário para começar a usar, P1 = a
 | TMR-03 | Encerrar antes | Registra minutos realmente usados; sem reembolso; avisos cancelados | P0 | F2 |
 | TMR-04 | Mini timer visível nas outras abas | Toque leva ao Inventário | P1 | F2 |
 | TMR-05 | Timer sincronizado entre aparelhos | Iniciado no celular, aparece na web e vice-versa | P0 | F2 |
+| TMR-06 | Guardar o resto para depois | Encerra o uso, conta o tempo usado e devolve ao inventário os minutos que faltam (≥ 1), marcado como "Resto de…" | P1 | F5 |
 | NOTIF-01 | Aviso no fim do tempo | Notificação local em todo celular Android que viu a sessão, com o app fechado e sem internet | P0 | F2 |
 | NOTIF-02 | Aviso 5 min antes | Só para sessões > 5 min; desliga no Perfil | P1 | F2 |
 | NOTIF-03 | Aviso na web | Alerta na página + notificação do navegador, com a aba aberta (sem push com a aba fechada) | P1 | F2 |
 | NOTIF-04 | Resumo semanal no domingo | Notificação local no Android que abre o Histórico (ganhos, perdas, lazer e sequência) | P2 | F5 |
-| NOTIF-05 | Timer na tela de bloqueio (notificação fixa) | Android | P2 | F5 |
+| NOTIF-05 | Timer na tela de bloqueio (notificação fixa) | Android: contagem regressiva do sistema, some no fim; pausada mostra quanto falta | P2 | F5 |
+| NOTIF-06 | Lembrete diário opcional | Notificação local no Android, na hora escolhida no Perfil; desligado por padrão | P2 | F5 |
+| WID-01 | Widget na tela inicial do Android | Saldo, resumo do dia e o timer em andamento; toque abre o app | P2 | F5 |
 | HIST-01 | Filtro de período: 7, 30, 90 dias | Todos os blocos respeitam o período | P0 | F3 |
 | HIST-02 | Cartões: ganhou, perdeu, gastou, tempo bom, lazer, tempo perdido | Com variação contra o período anterior | P0 | F1 |
 | HIST-03 | Divisão do tempo: bom × lazer × ruim | Barra + frase "para cada 1 h de lazer…" | P1 | F3 |
@@ -180,6 +183,7 @@ São 56 requisitos em 12 módulos. P0 = necessário para começar a usar, P1 = a
 | PROF-01 | Nome, frase e foto | Foto recortada em círculo, reduzida para ~256 px (≤ 150 KB) e salva no Firestore; sem foto, a da conta Google ou as iniciais | P1 | F3 |
 | PROF-02 | Meta semanal e preferências de notificação | Salvas na conta, valem em todos os aparelhos | P1 | F3 |
 | PROF-03 | Exportar dados (CSV) | Todos os lançamentos do usuário | P2 | F5 |
+| PROF-04 | Modo escuro | No Perfil: Sistema (padrão), Claro ou Escuro, por aparelho; sem informação do sistema, escuro; contraste ≥ 4,5:1 nos dois temas | P2 | F5 |
 
 ## Requisitos não funcionais
 
@@ -249,11 +253,11 @@ Todos os dados de um usuário ficam sob `users/{uid}` no Firestore. O saldo é u
 
 | Caminho | Campos principais | Observação |
 | --- | --- | --- |
-| `users/{uid}` | `name`, `bio`, `photoURL` (da conta Google, se houver), `balance`, `weeklyGoal`, `timezone`, `notif {end, warn5, weekly}`, `onboardingDone`, `createdAt` | Um por conta |
+| `users/{uid}` | `name`, `bio`, `photoURL` (da conta Google, se houver), `balance`, `weeklyGoal`, `timezone`, `notif {end, warn5, weekly, daily?, dailyHour?}`, `onboardingDone`, `deleting?` (exclusão em andamento), `createdAt` | Um por conta |
 | `users/{uid}/activities/{id}` | `name`, `description`, `kind` (`positive` \| `negative`), `value`, `minutes`, `order`, `archived`, `createdAt`; positivas: `habit? {target, bonus}`, `streakStep`, `streak? {days, lastDay}`; negativas: `penaltyCount` | Atividades +/−. Campo ausente vale como sem hábito, aumento R$ 0 e contagem zero |
 | `users/{uid}/shopItems/{id}` | `name`, `value`, `minutes`, `order`, `archived`, `createdAt` | Loja |
 | `users/{uid}/entries/{id}` | `type` (`earn` \| `loss` \| `purchase` \| `use` \| `reversal` \| `bonus`), `refId`, `name`, `value`, `minutes`, `at`, `deviceId`; em `reversal`: `reverses` e `reversedType`; em `earn` e `loss`: `base` (valor inicial) e `level` (dia da sequência ou número do registro desde o zeramento); em `bonus`: `source` (`habit` \| `mission`), no de hábito `target` e no de missão `activities` (id e nome das 2) | Livro-caixa, só criação. O bônus tem `minutes = 0`; o de hábito tem o id `habit_{activityId}_{AAAA-MM-DD}` e o de missão, `mission_{AAAA-MM-DD}` (com `_1`, `_2`… quando pago de novo depois de estornado). O estorno tem o id `undo_{lançamento}` |
-| `users/{uid}/inventory/{id}` | `shopItemId`, `name`, `value`, `minutes`, `purchaseEntryId`, `purchasedAt` | Apagado ao começar o uso |
+| `users/{uid}/inventory/{id}` | `shopItemId`, `name`, `value`, `minutes`, `purchaseEntryId`, `purchasedAt`, `leftFrom?` (só no resto guardado: a duração original) | Apagado ao começar o uso |
 | `users/{uid}/state/session` | `id`, `status` (`running` \| `paused`), `itemName`, `totalMs`, `startedAt`, `endsAt`, `remainingMs`, `useEntryId`, `originDevice` | No máximo 1 sessão (R5); o `id` evita avisos duplicados no mesmo aparelho |
 | `users/{uid}/daily/{AAAA-MM-DD}` | `date`, `earned`, `lost`, `spent`, `posMin`, `negMin`, `leisureMin`, `posCount`, `negCount`, `buyCount`, `counts` (registros por atividade), `bonuses` (bônus de hábito pagos por atividade), `undone` (bônus de hábito estornados por atividade) | Agregado diário, alimenta o Histórico. O bônus soma em `earned`, sem contar registro nem tempo |
 | `users/{uid}/missions/{AAAA-MM-DD}` | `date`, `activities` (2 × `{id, name}`), `bonus`, `createdAt`, `completedAt?`, `reversals?` (estornos do bônus) | Missão do dia (R17). A primeira gravada vale para todos os aparelhos; nunca é apagada |

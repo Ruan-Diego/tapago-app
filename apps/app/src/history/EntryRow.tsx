@@ -71,6 +71,7 @@ export function EntryRow({ entry, today, timeZone, undone = false }: EntryRowPro
         <Text
           style={[
             styles.sign,
+            entry.type === 'earn' && styles.signEarn,
             entry.type === 'purchase' && styles.signPurchase,
             entry.type === 'bonus' && styles.signBonus,
           ]}
@@ -110,10 +111,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   iconEarn: { backgroundColor: colors.accent },
-  iconPurchase: { backgroundColor: colors.ink },
+  iconPurchase: { backgroundColor: colors.surfaceInk },
   sign: { fontFamily: fonts.displayBold, fontSize: 18, color: colors.ink },
-  signPurchase: { color: colors.white },
-  iconBonus: { backgroundColor: colors.ink },
+  signEarn: { color: colors.onAccent },
+  signPurchase: { color: colors.onSurfaceInk },
+  iconBonus: { backgroundColor: colors.surfaceInk },
   signBonus: { color: colors.accent },
   texts: { flex: 1, minWidth: 0 },
   name: { fontFamily: fonts.bodySemiBold, fontSize: fontSizes.label, color: colors.ink },

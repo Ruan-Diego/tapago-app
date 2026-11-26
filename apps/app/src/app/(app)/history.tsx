@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.white,
   },
-  dark: { backgroundColor: colors.ink, borderColor: colors.ink },
+  dark: { backgroundColor: colors.surfaceInk, borderColor: colors.ink },
   outlined: { borderWidth: 1.5, borderColor: colors.ink },
   cardTitle: {
     fontFamily: fonts.bodySemiBold,
@@ -293,7 +293,7 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.caption,
     color: colors.slate,
   },
-  onInk: { color: colors.white },
+  onInk: { color: colors.onSurfaceInk },
   muted: { color: colors.onInkMuted },
   accent: { color: colors.accent },
   recentTitle: {

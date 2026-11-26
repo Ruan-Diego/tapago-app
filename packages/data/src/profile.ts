@@ -74,6 +74,13 @@ export const profileRepository = {
   },
 };
 
+/** Durante a exclusão da conta o documento some de propósito: não pode ser recriado. */
+let closingAccount: string | null = null;
+
+export function setClosingAccount(uid: string | null) {
+  closingAccount = uid;
+}
+
 /**
  * Observa `users/{uid}` em tempo real e cria o documento no primeiro login.
  *
@@ -96,7 +103,7 @@ export function watchProfile(
         else onError(parsed.error);
         return;
       }
-      if (fromCache || creating) return;
+      if (fromCache || creating || closingAccount === user.uid) return;
       creating = true;
       const profile = newUserProfile({
         displayName: user.displayName,

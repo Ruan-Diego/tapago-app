@@ -1,0 +1,37 @@
+1<?xml version="1.0" encoding="utf-8"?>
+2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+3    package="expo.modules.tapagoandroid" >
+4
+5    <uses-sdk android:minSdkVersion="24" />
+5-->INJECTED
+5-->INJECTED
+6
+7    <application>
+7-->D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\src\main\AndroidManifest.xml:2:3-15:17
+8
+9        <!-- Widget da tela inicial: saldo, o dia e o timer. Atualizado pelo app, sem servidor. -->
+10        <receiver
+10-->D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\src\main\AndroidManifest.xml:4:5-14:16
+11            android:name="expo.modules.tapagoandroid.BalanceWidget"
+11-->D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\src\main\AndroidManifest.xml:5:7-62
+12            android:exported="false"
+12-->D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\src\main\AndroidManifest.xml:6:7-31
+13            android:label="@string/tapago_widget_label" >
+13-->D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\src\main\AndroidManifest.xml:7:7-50
+14            <intent-filter>
+14-->D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\src\main\AndroidManifest.xml:8:7-10:23
+15                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+15-->D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\src\main\AndroidManifest.xml:9:9-76
+15-->D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\src\main\AndroidManifest.xml:9:17-73
+16            </intent-filter>
+17
+18            <meta-data
+18-->D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\src\main\AndroidManifest.xml:11:7-13:54
+19                android:name="android.appwidget.provider"
+19-->D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\src\main\AndroidManifest.xml:12:9-50
+20                android:resource="@xml/tapago_widget_info" />
+20-->D:\GitHub\tapago-app\.claude\worktrees\interesting-zhukovsky-82b76c\apps\app\modules\tapago-android\android\src\main\AndroidManifest.xml:13:9-51
+21        </receiver>
+22    </application>
+23
+24</manifest>

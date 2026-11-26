@@ -9,6 +9,8 @@ export * from './icons';
 export * from './Logo';
 export * from './Money';
 export * from './motion';
+export * from './palettes';
+export * from './themePreference';
 export * from './PillButton';
 export * from './Pop';
 export * from './PressableScale';

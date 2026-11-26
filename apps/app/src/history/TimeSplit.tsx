@@ -77,7 +77,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: colors.track,
   },
-  good: { backgroundColor: colors.ink },
+  good: { backgroundColor: colors.surfaceInk },
   leisure: { backgroundColor: colors.leisure },
   legend: {
     flexDirection: 'row',

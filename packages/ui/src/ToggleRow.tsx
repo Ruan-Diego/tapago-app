@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     backgroundColor: colors.badLight,
   },
-  trackOn: { backgroundColor: colors.ink },
-  knob: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.white },
+  trackOn: { backgroundColor: colors.toggleOn },
+  knob: { width: 22, height: 22, borderRadius: 11, backgroundColor: colors.onSurfaceInk },
   knobOn: { alignSelf: 'flex-end' },
 });

@@ -375,15 +375,20 @@ service cloud.firestore {
         && validId(data.originDevice);
     }
 
+    // `leftFrom` só no resto de um uso guardado para depois: a duração original, nunca menor que
+    // o que sobrou.
     function validInventoryItem(data) {
       return hasShape(data,
-          ['shopItemId', 'name', 'value', 'minutes', 'purchaseEntryId', 'purchasedAt'], [])
+          ['shopItemId', 'name', 'value', 'minutes', 'purchaseEntryId', 'purchasedAt'],
+          ['leftFrom'])
         && validId(data.shopItemId)
         && validName(data.name)
         && validValue(data.value)
         && validMinutes(data.minutes)
         && validId(data.purchaseEntryId)
-        && data.purchasedAt is timestamp;
+        && data.purchasedAt is timestamp
+        && (!('leftFrom' in data)
+          || (validMinutes(data.leftFrom) && data.leftFrom >= data.minutes));
     }
 
     // Cada escrita traz só os campos que mudaram; os outros podem nem existir.
@@ -406,11 +411,15 @@ service cloud.firestore {
         && data.get('undone', {}) is map;
     }
 
+    // O lembrete diário (F5) é opcional: a versão anterior do app grava só os três primeiros.
     function validNotif(notif) {
-      return hasShape(notif, ['end', 'warn5', 'weekly'], [])
+      return hasShape(notif, ['end', 'warn5', 'weekly'], ['daily', 'dailyHour'])
         && notif.end is bool
         && notif.warn5 is bool
-        && notif.weekly is bool;
+        && notif.weekly is bool
+        && notif.get('daily', false) is bool
+        && notif.get('dailyHour', 20) is int
+        && notif.get('dailyHour', 20) >= 0 && notif.get('dailyHour', 20) <= 23;
     }
 
     function validUser(data) {
@@ -420,7 +429,20 @@ service cloud.firestore {
         && data.get('weeklyGoal', 0) is int
         && data.get('weeklyGoal', 0) >= 0 && data.get('weeklyGoal', 0) <= 10000000
         && data.get('onboardingDone', false) is bool
+        && data.get('deleting', false) is bool
         && (!('notif' in data) || validNotif(data.notif));
+    }
+
+    /**
+     * Excluir a conta (F5): a marca `deleting` libera apagar os dados, e não volta atrás. Fora
+     * disso, nada da conta é apagado.
+     */
+    function isClosing(uid) {
+      return get(userPath(uid)).data.get('deleting', false) == true;
+    }
+    function keepsClosing() {
+      return resource.data.get('deleting', false) == false
+        || request.resource.data.get('deleting', false) == true;
     }
 
     // Foto de perfil em base64 (menos de 150 KB), sem Storage.
@@ -434,29 +456,30 @@ service cloud.firestore {
     // precisa de um bloco próprio aqui.
     match /users/{uid} {
       allow read: if isOwner(uid);
-      allow create, update: if isOwner(uid) && validUser(request.resource.data);
-      // Excluir a conta (com os dados) é a F5.
-      allow delete: if false;
+      allow create: if isOwner(uid) && validUser(request.resource.data);
+      allow update: if isOwner(uid) && validUser(request.resource.data) && keepsClosing();
+      // O último passo da exclusão da conta, depois de apagados os dados.
+      allow delete: if isOwner(uid) && resource.data.get('deleting', false) == true;
 
-      // Arquivar em vez de apagar (R10).
+      // Arquivar em vez de apagar (R10). Só se apaga ao excluir a conta.
       match /activities/{id} {
         allow read: if isOwner(uid);
         allow create, update: if isOwner(uid) && validActivity(request.resource.data);
-        allow delete: if false;
+        allow delete: if isOwner(uid) && isClosing(uid);
       }
 
       match /shopItems/{id} {
         allow read: if isOwner(uid);
         allow create, update: if isOwner(uid) && validShopItem(request.resource.data);
-        allow delete: if false;
+        allow delete: if isOwner(uid) && isClosing(uid);
       }
 
-      // Livro-caixa: só inclusão.
+      // Livro-caixa: só inclusão. Só se apaga ao excluir a conta.
       match /entries/{id} {
         allow read: if isOwner(uid);
         allow create: if isOwner(uid) && validNewEntry(uid, request.resource.data, id);
         allow update: if isOwner(uid) && isUseMinutesOnly() && closesCurrentSession(uid, id);
-        allow delete: if false;
+        allow delete: if isOwner(uid) && isClosing(uid);
       }
 
       // Apagado quando o uso começa. Apagar um item que já saiu derruba o lote inteiro, então o
@@ -488,7 +511,7 @@ service cloud.firestore {
         allow read: if isOwner(uid);
         allow create, update: if isOwner(uid) && id == 'current'
           && validAvatar(request.resource.data);
-        allow delete: if false;
+        allow delete: if isOwner(uid) && isClosing(uid);
       }
 
       // A missão do dia. A primeira gravada vale: gravar por cima conta como mudar, e só se
@@ -500,13 +523,13 @@ service cloud.firestore {
           && ((!('completedAt' in resource.data) && replacesMissionActivities())
             || completesMission(uid, day)
             || reopensMission(uid, day));
-        allow delete: if false;
+        allow delete: if isOwner(uid) && isClosing(uid);
       }
 
       match /daily/{day} {
         allow read: if isOwner(uid);
         allow create, update: if isOwner(uid) && validDaily(request.resource.data, day);
-        allow delete: if false;
+        allow delete: if isOwner(uid) && isClosing(uid);
       }
     }
   }

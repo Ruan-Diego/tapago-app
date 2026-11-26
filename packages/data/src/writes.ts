@@ -11,6 +11,7 @@ import {
   entryTypeFor,
   habitBonusEntry,
   habitBonusId,
+  leftoverValue,
   missionBonusEntry,
   missionBonusId,
   newSession,
@@ -27,6 +28,7 @@ import {
   type Habit,
   type InventoryItem,
   type Mission,
+  type OrderChange,
   type ProfileValues,
   type Session,
   type SessionChange,
@@ -381,6 +383,75 @@ export function finishSessionOps(
     },
     { kind: 'delete', path: paths.session(uid) },
   ];
+}
+
+/** O que o resto guardado copia do lançamento `use`: o item da loja e o preço pago. */
+export interface LeftoverSource {
+  shopItemId: string;
+  price: number;
+}
+
+/**
+ * Guardar o resto para depois: encerra a sessão como em `finishSessionOps` (o tempo usado conta,
+ * sem reembolso) e põe os minutos que sobraram de volta no inventário, para começar de novo
+ * quando quiser, em qualquer aparelho.
+ */
+export function stashSessionOps(
+  context: ActionContext,
+  session: Session,
+  used: number,
+  leftover: number,
+  source: LeftoverSource,
+  inventoryId: string,
+): WriteOp[] {
+  const { uid, at, timeZone } = context;
+  const totalMinutes = Math.round(session.totalMs / 60_000);
+  return [
+    ...finishSessionOps(uid, session, used, timeZone),
+    {
+      kind: 'set',
+      path: `${paths.inventory(uid)}/${inventoryId}`,
+      data: {
+        shopItemId: source.shopItemId,
+        name: session.itemName,
+        value: leftoverValue(source.price, leftover, totalMinutes),
+        minutes: leftover,
+        purchaseEntryId: session.useEntryId,
+        purchasedAt: at,
+        leftFrom: totalMinutes,
+      },
+    },
+  ];
+}
+
+/** Gravar a nova ordem das atividades movidas (ACT-06). */
+export function reorderOps(uid: string, changes: readonly OrderChange[]): WriteOp[] {
+  return changes.map(({ id, order }) => ({
+    kind: 'update',
+    path: `${paths.activities(uid)}/${id}`,
+    data: { order },
+  }));
+}
+
+/**
+ * Coleções da conta, com o campo pelo qual cada uma é lida para ser apagada. Todo documento delas
+ * tem esse campo (as regras o exigem), então nenhum fica para trás.
+ */
+export const ACCOUNT_COLLECTIONS = [
+  { path: paths.entries, field: 'at' },
+  { path: paths.daily, field: 'date' },
+  { path: paths.missions, field: 'date' },
+  { path: paths.inventory, field: 'purchasedAt' },
+  { path: paths.activities, field: 'order' },
+  { path: paths.shopItems, field: 'order' },
+] as const;
+
+/** Documentos avulsos da conta. */
+export const ACCOUNT_SINGLE_DOCS = [paths.session, paths.avatar] as const;
+
+/** Primeiro passo da exclusão: marca a conta, o que libera apagar os dados dela (regras). */
+export function markDeletingOp(uid: string): WriteOp {
+  return { kind: 'update', path: paths.user(uid), data: { deleting: true } };
 }
 
 /** `order` é o horário de criação: o item novo entra no fim da lista. */

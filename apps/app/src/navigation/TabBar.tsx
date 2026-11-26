@@ -85,7 +85,7 @@ export function TabBar(props: BottomTabBarProps) {
               {length > 0 ? <Animated.View style={[styles.drop, drop]} /> : null}
               {items.map((item, index) => {
                 const lit = (pointed ?? selected) === index;
-                const color = lit ? colors.ink : colors.slate;
+                const color = lit ? colors.onAccent : colors.slate;
                 return (
                   <Pressable
                     key={item.route}

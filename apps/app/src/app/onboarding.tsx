@@ -5,6 +5,7 @@ import {
   cheapest,
   hasPositiveSelected,
   isAlreadyConfigured,
+  newUserProfile,
   withoutExisting,
   type ActivityPreset,
   type ShopPreset,
@@ -48,7 +49,10 @@ import { Slogan } from '@/onboarding/Slogan';
 import { Welcome } from '@/onboarding/Welcome';
 import { requestAlertPermission } from '@/platform/notifications';
 import { signOut } from '@/session/signOut';
-import { useSession } from '@/session/store';
+import { setRedoingOnboarding, useSession } from '@/session/store';
+
+/** Preferências de uma conta nova, se o perfil ainda não chegou. */
+const DEFAULT_NOTIF = newUserProfile({ displayName: null, photoURL: null, timezone: 'UTC' }).notif;
 
 const WELCOME = 0;
 const NAME = 2;
@@ -70,7 +74,9 @@ export default function Onboarding() {
   const wide = useWindowDimensions().width >= SIDEBAR_BREAKPOINT;
   const uid = useSession((state) => state.user?.uid);
   const accountName = useSession((state) => state.profile?.name || state.user?.displayName || '');
-  const weekly = useSession((state) => state.profile?.notif.weekly ?? true);
+  const notif = useSession((state) => state.profile?.notif);
+  /** Refazendo pelo Perfil (ONB-06): nada é apagado, só se acrescenta. */
+  const redo = useSession((state) => state.redoingOnboarding);
   const activities = useLedger((state) => state.activities);
   const shopItems = useLedger((state) => state.shopItems);
   const ledgerError = useLedger((state) => state.error);
@@ -78,8 +84,13 @@ export default function Onboarding() {
   const [step, setStep] = useState(WELCOME);
   const [typedName, setName] = useState<string | null>(null);
   const [photo, setPhoto] = useState<string | null>(null);
-  const [activityList, setActivityList] = useState<ActivityPreset[]>([...ACTIVITY_PRESETS]);
-  const [shopList, setShopList] = useState<ShopPreset[]>([...SHOP_PRESETS]);
+  // Ao refazer, nenhum preset vem marcado: só entra o que a pessoa escolher de novo.
+  const [activityList, setActivityList] = useState<ActivityPreset[]>(() =>
+    ACTIVITY_PRESETS.map((preset) => (redo ? { ...preset, selected: false } : preset)),
+  );
+  const [shopList, setShopList] = useState<ShopPreset[]>(() =>
+    SHOP_PRESETS.map((preset) => (redo ? { ...preset, selected: false } : preset)),
+  );
   /** Quis ser avisado; e se o aparelho liberou. */
   const [alerts, setAlerts] = useState({ wanted: false, granted: false });
   const [asking, setAsking] = useState(false);
@@ -88,7 +99,8 @@ export default function Onboarding() {
   const name = typedName ?? accountName;
   const loaded = activities !== null && shopItems !== null;
   // Só nas boas-vindas: quem já passou delas segue o passo a passo, sem o que a conta já tem.
-  const configured = step === WELCOME && loaded && isAlreadyConfigured(activities, shopItems);
+  const configured =
+    !redo && step === WELCOME && loaded && isAlreadyConfigured(activities, shopItems);
 
   // Conta que já usava o app: não há o que configurar.
   useEffect(() => {
@@ -151,12 +163,16 @@ export default function Onboarding() {
   function finish() {
     if (!uid || finished.current) return;
     finished.current = true;
+    const base = notif ?? DEFAULT_NOTIF;
+    // Ao refazer, "Agora não" mantém os avisos como estavam.
+    const chosenNotif =
+      redo && !alerts.wanted ? base : { ...base, end: alerts.wanted, warn5: alerts.wanted };
     // A tela troca sozinha quando `onboardingDone` chega ao cache local.
     save(
       profileRepository.completeOnboarding(uid, {
         profile: {
           name: name.trim(),
-          notif: { end: alerts.wanted, warn5: alerts.wanted, weekly },
+          notif: chosenNotif,
         },
         avatar: photo,
         activities: chosenActivities.map(({ selected: _selected, ...preset }) => ({
@@ -169,6 +185,7 @@ export default function Onboarding() {
         shopItems: chosenShop.map(({ selected: _selected, ...preset }) => preset),
       }),
     );
+    if (redo) setRedoingOnboarding(false);
   }
 
   const welcome = step === WELCOME;
@@ -304,8 +321,7 @@ export default function Onboarding() {
             ) : null}
             <Button
               label={primaryLabel}
-              variant={welcome ? 'secondary' : 'primary'}
-              style={welcome && styles.start}
+              variant={welcome ? 'accent' : 'primary'}
               disabled={!canContinue}
               loading={asking}
               onPress={
@@ -317,7 +333,17 @@ export default function Onboarding() {
                 <Text style={styles.linkText}>Agora não</Text>
               </Pressable>
             ) : null}
-            {welcome ? (
+            {welcome && redo ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setRedoingOnboarding(false)}
+                style={styles.link}
+              >
+                <Text style={[styles.linkText, !wide && styles.linkOnInk]}>
+                  Voltar ao app sem mudar nada
+                </Text>
+              </Pressable>
+            ) : welcome ? (
               <Pressable
                 accessibilityRole="button"
                 onPress={() =>
@@ -349,7 +375,7 @@ const styles = StyleSheet.create({
   },
   aside: {
     flex: 1,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.surfaceInk,
     padding: 56,
     justifyContent: 'space-between',
     gap: 40,
@@ -360,7 +386,7 @@ const styles = StyleSheet.create({
     fontSize: 56,
     lineHeight: 58,
     letterSpacing: -2.5,
-    color: colors.white,
+    color: colors.onSurfaceInk,
   },
   accent: { color: colors.accent },
   pitchText: {
@@ -371,7 +397,7 @@ const styles = StyleSheet.create({
     color: colors.onInkMuted,
   },
   column: { flex: 1, backgroundColor: colors.paper },
-  dark: { backgroundColor: colors.ink },
+  dark: { backgroundColor: colors.surfaceInk },
   frame: { flex: 1, width: '100%', maxWidth: 480, alignSelf: 'center' },
   top: {
     flexDirection: 'row',
@@ -394,7 +420,7 @@ const styles = StyleSheet.create({
   backText: { fontFamily: fonts.body, fontSize: 24, lineHeight: 28, color: colors.ink },
   progress: { flex: 1, flexDirection: 'row', gap: spacing.xs },
   bar: { flex: 1, height: 4, borderRadius: 2, backgroundColor: colors.badLight },
-  barOn: { backgroundColor: colors.ink },
+  barOn: { backgroundColor: colors.surfaceInk },
   stepLabel: { fontFamily: fonts.mono, fontSize: fontSizes.caption, color: colors.graphite },
   scroll: {
     flexGrow: 1,
@@ -405,9 +431,12 @@ const styles = StyleSheet.create({
   scrollWelcome: { paddingTop: spacing.xl },
   welcome: { flexGrow: 1 },
   // Na web larga o texto de boas-vindas fica em um cartão escuro, ao lado do painel.
-  welcomeWide: { backgroundColor: colors.ink, borderRadius: 24, paddingHorizontal: spacing.xxl },
+  welcomeWide: {
+    backgroundColor: colors.surfaceInk,
+    borderRadius: 24,
+    paddingHorizontal: spacing.xxl,
+  },
   footer: { paddingHorizontal: spacing.xl, paddingVertical: spacing.md, gap: spacing.sm },
-  start: { backgroundColor: colors.accent, borderColor: colors.accent },
   hint: {
     textAlign: 'center',
     fontFamily: fonts.body,

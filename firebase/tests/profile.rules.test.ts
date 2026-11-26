@@ -73,7 +73,10 @@ function commit(db: Firestore, ops: readonly WriteOp[]) {
 }
 
 const onboarding = {
-  profile: { name: 'Ana Souza', notif: { end: false, warn5: false, weekly: true } },
+  profile: {
+    name: 'Ana Souza',
+    notif: { end: false, warn5: false, weekly: true, daily: false, dailyHour: 20 },
+  },
   activities: ACTIVITY_PRESETS.map(({ selected: _selected, ...preset }, index) => ({
     id: `a${index}`,
     values: { ...preset, description: '', streakStep: 0, habit: null },

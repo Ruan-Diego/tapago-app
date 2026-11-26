@@ -1,5 +1,6 @@
 import { authRepository } from '@tapago/data';
 
+import { clearAndroidSurfaces } from '@/platform/androidSurfaces';
 import { confirm } from '@/platform/confirm';
 import { cancelScheduledNotifications } from '@/platform/notifications';
 
@@ -15,5 +16,6 @@ export async function signOut(): Promise<void> {
     if (!proceed) return;
   }
   await cancelScheduledNotifications();
+  clearAndroidSurfaces();
   await authRepository.signOut();
 }

@@ -74,6 +74,23 @@ export function usedMinutes(session: Session, now: Date): number {
   return Math.max(1, Math.round(used / MINUTE_MS));
 }
 
+/**
+ * Minutos inteiros que ainda faltam, para guardar no inventário e continuar depois. Zero quando
+ * resta menos de 1 minuto: aí não há o que guardar.
+ */
+export function leftoverMinutes(session: Session, now: Date): number {
+  return Math.floor(remainingMs(session, now) / MINUTE_MS);
+}
+
+/**
+ * Quanto vale o resto guardado: a parte do preço pago que corresponde aos minutos que sobraram,
+ * no mínimo 1 centavo. Só informa; nada é cobrado nem devolvido (R6).
+ */
+export function leftoverValue(price: number, leftover: number, totalMinutes: number): number {
+  if (totalMinutes <= 0) return Math.max(1, price);
+  return Math.max(1, Math.round((price * leftover) / totalMinutes));
+}
+
 /** Contagem regressiva: "04:58" ou "1:05:00". Arredonda para cima: só mostra zero no fim. */
 export function formatClock(ms: number): string {
   const total = Math.max(0, Math.ceil(ms / 1000));

@@ -1,4 +1,6 @@
 import {
+  entrySchema,
+  leftoverMinutes,
   pauseChange,
   resumeChange,
   sessionSchema,
@@ -15,6 +17,7 @@ import {
   finishSessionOps,
   paths,
   startStoredOps,
+  stashSessionOps,
   type ActionContext,
   type SessionIds,
 } from './writes';
@@ -67,5 +70,32 @@ export const timerRepository = {
   /** Encerrar antes ou no fim: registra os minutos usados, sem reembolso (R6). */
   finish({ uid, at, timeZone }: ActionContext, session: Session): Promise<void> {
     return backend.commit(finishSessionOps(uid, session, usedMinutes(session, at), timeZone));
+  },
+
+  /**
+   * Guardar o resto para depois. O item da loja e o preço vêm do lançamento `use` da sessão (do
+   * cache, sem internet). Devolve `null` se não sobrou ao menos 1 minuto ou se o lançamento não
+   * pôde ser lido; aí nada é gravado.
+   */
+  async stash(
+    context: ActionContext,
+    session: Session,
+  ): Promise<{ leftover: number; write: Promise<void> } | null> {
+    const leftover = leftoverMinutes(session, context.at);
+    if (leftover < 1) return null;
+    const { data, exists } = await backend.getDoc(
+      `${paths.entries(context.uid)}/${session.useEntryId}`,
+    );
+    const use = exists ? entrySchema.safeParse(decodeData(data as DocData)) : null;
+    if (!use?.success) return null;
+    const ops = stashSessionOps(
+      context,
+      session,
+      usedMinutes(session, context.at),
+      leftover,
+      { shopItemId: use.data.refId, price: use.data.value },
+      backend.newId(paths.inventory(context.uid)),
+    );
+    return { leftover, write: backend.commit(ops) };
   },
 };

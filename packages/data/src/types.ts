@@ -52,4 +52,11 @@ export interface Backend {
   ): Unsubscribe;
   /** Leitura única, para as páginas antigas. */
   getQuery(spec: QuerySpec): Promise<QueryResult>;
+  /** Leitura única de um documento (do cache, sem internet). */
+  getDoc(path: string): Promise<DocSnapshot>;
+  /**
+   * Apaga o login da conta atual. Recusa com `auth/requires-recent-login` se o último login foi
+   * há muito tempo.
+   */
+  deleteCurrentUser(): Promise<void>;
 }

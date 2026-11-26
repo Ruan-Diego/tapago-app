@@ -11,6 +11,8 @@ interface SessionState {
   profileError: boolean;
   /** Foto própria em base64; `null` sem foto. */
   avatar: string | null;
+  /** Refazendo a configuração pelo Perfil (ONB-06): mostra o onboarding sem apagar nada. */
+  redoingOnboarding: boolean;
 }
 
 export const useSession = create<SessionState>(() => ({
@@ -19,7 +21,12 @@ export const useSession = create<SessionState>(() => ({
   profile: null,
   profileError: false,
   avatar: null,
+  redoingOnboarding: false,
 }));
+
+export function setRedoingOnboarding(redoingOnboarding: boolean) {
+  useSession.setState({ redoingOnboarding });
+}
 
 /**
  * Liga os listeners de autenticação e de perfil. São criados uma vez por conta,
@@ -47,6 +54,7 @@ export function startSession(): () => void {
       profile: null,
       profileError: false,
       avatar: null,
+      redoingOnboarding: false,
     });
     if (!user) return;
 

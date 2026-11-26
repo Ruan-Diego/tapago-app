@@ -6,10 +6,11 @@ import { JetBrainsMono_400Regular } from '@expo-google-fonts/jetbrains-mono/400R
 import { JetBrainsMono_600SemiBold } from '@expo-google-fonts/jetbrains-mono/600SemiBold';
 import { SpaceGrotesk_600SemiBold } from '@expo-google-fonts/space-grotesk/600SemiBold';
 import { SpaceGrotesk_700Bold } from '@expo-google-fonts/space-grotesk/700Bold';
-import { colors, useReducedMotion } from '@tapago/ui';
+import { colorScheme, colors, useReducedMotion } from '@tapago/ui';
 import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import * as SystemUI from 'expo-system-ui';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -35,11 +36,18 @@ export default function RootLayout() {
   const reducedMotion = useReducedMotion();
   const status = useSession((state) => state.status);
   const uid = useSession((state) => state.user?.uid);
-  const needsOnboarding = useSession((state) => state.profile?.onboardingDone === false);
+  const needsOnboarding = useSession(
+    (state) => state.profile?.onboardingDone === false || state.redoingOnboarding,
+  );
   // Aqui na raiz: o onboarding e as abas usam os mesmos listeners.
   useLedgerSubscription(uid, useToday());
 
   useEffect(() => startSession(), []);
+
+  // O fundo da janela do Android segue o tema: sem isto, aparece o claro nas transições.
+  useEffect(() => {
+    SystemUI.setBackgroundColorAsync(colors.paper).catch(() => undefined);
+  }, []);
 
   // Se uma fonte falhar, o app abre com a fonte do sistema em vez de travar na abertura.
   const ready = (fontsLoaded || fontError !== null) && status !== 'loading';
@@ -53,7 +61,7 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <StatusBar style="dark" />
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
         <Stack
           screenOptions={{
             headerShown: false,

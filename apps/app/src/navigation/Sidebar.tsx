@@ -85,7 +85,7 @@ export function Sidebar(props: BottomTabBarProps) {
           <Animated.View style={[styles.drop, styles.hover, hover, hoverFade]} />
           <Animated.View style={[styles.drop, styles.selected, drop]} />
           {items.map((item, index) => {
-            const color = item.selected ? colors.white : colors.ink;
+            const color = item.selected ? colors.onSurfaceInk : colors.ink;
             return (
               <Pressable
                 key={item.route}
@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     gap: 22,
   },
   logo: { paddingHorizontal: spacing.sm },
-  balance: { backgroundColor: colors.ink, borderRadius: radii.xl, padding: spacing.lg },
+  balance: { backgroundColor: colors.surfaceInk, borderRadius: radii.xl, padding: spacing.lg },
   balanceCaption: {
     fontFamily: fonts.bodySemiBold,
     fontSize: 11,
@@ -163,7 +163,12 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     color: colors.onInkMuted,
   },
-  balanceValue: { fontFamily: fonts.displayBold, fontSize: 34, color: colors.white, marginTop: 4 },
+  balanceValue: {
+    fontFamily: fonts.displayBold,
+    fontSize: 34,
+    color: colors.onSurfaceInk,
+    marginTop: 4,
+  },
   nav: { gap: STEP - ITEM },
   drop: {
     position: 'absolute',
@@ -173,8 +178,8 @@ const styles = StyleSheet.create({
     borderRadius: radii.lg,
     pointerEvents: 'none',
   },
-  selected: { backgroundColor: colors.ink },
-  hover: { backgroundColor: 'rgba(17,17,17,0.08)' },
+  selected: { backgroundColor: colors.surfaceInk },
+  hover: { backgroundColor: colors.hover },
   item: {
     height: ITEM,
     flexDirection: 'row',

@@ -1,3 +1,4 @@
+export { accountRepository, DeleteAccountError, type DeleteStep } from './account';
 export { activitiesRepository } from './activities';
 export { authRepository } from './auth';
 export { dailyRepository } from './daily';

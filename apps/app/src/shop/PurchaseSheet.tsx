@@ -49,7 +49,7 @@ export function PurchaseSheet({ item, onChoose, onClose }: PurchaseSheetProps) {
         ]}
       >
         <View style={[styles.iconBox, canUseNow ? styles.iconAccent : styles.iconBlocked]}>
-          <PlayIcon color={canUseNow ? colors.ink : colors.slate} size={20} />
+          <PlayIcon color={canUseNow ? colors.onAccent : colors.slate} size={20} />
         </View>
         <View style={styles.texts}>
           <Text style={[styles.title, canUseNow ? styles.onInk : styles.muted]}>Usar agora</Text>
@@ -87,7 +87,7 @@ const styles = StyleSheet.create({
     borderRadius: radii.xl,
     borderWidth: 1,
   },
-  primary: { backgroundColor: colors.ink, borderColor: colors.ink },
+  primary: { backgroundColor: colors.surfaceInk, borderColor: colors.ink },
   blocked: { backgroundColor: colors.track, borderColor: colors.track },
   secondary: { backgroundColor: colors.white, borderColor: colors.ink },
   pressed: { opacity: 0.8 },
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
   texts: { flex: 1, minWidth: 0 },
   title: { fontFamily: fonts.bodyBold, fontSize: 17, color: colors.ink },
   detail: { marginTop: 2, fontFamily: fonts.body, fontSize: fontSizes.small },
-  onInk: { color: colors.white },
+  onInk: { color: colors.onSurfaceInk },
   onInkMuted: { color: colors.onInkMuted },
   muted: { color: colors.slate },
   graphite: { color: colors.graphite },

@@ -64,7 +64,12 @@ async function sync(alerts: readonly TimerAlert[]) {
     if (alert.at.getTime() <= Date.now()) continue;
     await Notifications.scheduleNotificationAsync({
       identifier: alert.id,
-      content: { title: alert.title, body: alert.body, sound: 'default' },
+      content: {
+        title: alert.title,
+        body: alert.body,
+        sound: 'default',
+        data: { url: '/inventory' },
+      },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.DATE,
         date: alert.at,

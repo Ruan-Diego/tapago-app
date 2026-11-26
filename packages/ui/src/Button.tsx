@@ -4,11 +4,11 @@ import type { ReactNode } from 'react';
 import { PressableScale, type PressableScaleProps } from './PressableScale';
 import { MIN_TOUCH, colors, fonts, radii, spacing } from './tokens';
 
-export type ButtonVariant = 'primary' | 'secondary' | 'outline';
+export type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'accent';
 
 export interface ButtonProps extends Omit<PressableScaleProps, 'children'> {
   label: string;
-  /** `primary`: tinta · `secondary`: branco com borda suave · `outline`: contorno de tinta. */
+  /** `primary`: tinta · `secondary`: branco com borda suave · `outline`: contorno de tinta · `accent`: destaque verde. */
   variant?: ButtonVariant;
   loading?: boolean;
   icon?: ReactNode;
@@ -24,7 +24,12 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const inactive = Boolean(disabled) || loading;
-  const textColor = variant === 'primary' ? colors.white : colors.ink;
+  const textColor =
+    variant === 'primary'
+      ? colors.onSurfaceInk
+      : variant === 'accent'
+        ? colors.onAccent
+        : colors.ink;
 
   return (
     <PressableScale
@@ -57,9 +62,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     borderWidth: 1.5,
   },
-  primary: { backgroundColor: colors.ink, borderColor: colors.ink },
+  primary: { backgroundColor: colors.surfaceInk, borderColor: colors.surfaceInk },
   secondary: { backgroundColor: colors.white, borderColor: colors.borderStrong },
   outline: { backgroundColor: 'transparent', borderColor: colors.ink },
+  accent: { backgroundColor: colors.accent, borderColor: colors.accent },
   inactive: { opacity: 0.5 },
   content: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   label: { fontFamily: fonts.displayBold, fontSize: 16 },

@@ -1,4 +1,10 @@
-import { activityFormSchema, type Activity, type Mission, type ShopItem } from '@tapago/core';
+import {
+  activityFormSchema,
+  newSession,
+  type Activity,
+  type Mission,
+  type ShopItem,
+} from '@tapago/core';
 import { describe, expect, it } from 'vitest';
 
 import { DeleteField, Increment, decodeData, encodeData } from './documents';
@@ -6,11 +12,14 @@ import {
   createActivityOp,
   createMissionOp,
   habitBonusOps,
+  markDeletingOp,
   missionBonusOps,
   purchaseOps,
   registerActivityOps,
+  reorderOps,
   replaceMissionOp,
   resetPenaltyOp,
+  stashSessionOps,
   updateActivityOp,
 } from './writes';
 
@@ -286,5 +295,53 @@ describe('missão do dia', () => {
       },
       { kind: 'update', path: 'users/ana/missions/2026-11-25', data: { completedAt: paidAt } },
     ]);
+  });
+});
+
+describe('guardar o resto do lazer (feedback do uso real)', () => {
+  const session = newSession({
+    id: 'sess1',
+    itemName: 'Jogar 1 hora',
+    minutes: 60,
+    useEntryId: 'u1',
+    deviceId: 'web-1',
+    at,
+  });
+
+  it('encerra a sessão e põe o que sobrou no inventário, no mesmo lote', () => {
+    const ops = stashSessionOps(context, session, 15, 45, { shopItemId: 's1', price: 2000 }, 'i9');
+    expect(ops.map((op) => [op.kind, op.path])).toEqual([
+      ['update', 'users/ana/entries/u1'],
+      ['merge', 'users/ana/daily/2026-11-25'],
+      ['delete', 'users/ana/state/session'],
+      ['set', 'users/ana/inventory/i9'],
+    ]);
+    expect(ops[3]).toMatchObject({
+      data: {
+        shopItemId: 's1',
+        name: 'Jogar 1 hora',
+        value: 1500,
+        minutes: 45,
+        purchaseEntryId: 'u1',
+        purchasedAt: at,
+        leftFrom: 60,
+      },
+    });
+  });
+});
+
+describe('reordenar e excluir a conta', () => {
+  it('grava só o campo order das atividades movidas', () => {
+    expect(reorderOps('ana', [{ id: 'a2', order: 1 }])).toEqual([
+      { kind: 'update', path: 'users/ana/activities/a2', data: { order: 1 } },
+    ]);
+  });
+
+  it('a exclusão começa marcando a conta', () => {
+    expect(markDeletingOp('ana')).toEqual({
+      kind: 'update',
+      path: 'users/ana',
+      data: { deleting: true },
+    });
   });
 });

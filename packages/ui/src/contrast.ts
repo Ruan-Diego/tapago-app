@@ -19,7 +19,13 @@ export function contrastRatio(a: Rgb, b: Rgb): number {
   return (light + 0.05) / (dark + 0.05);
 }
 
-/** A cor que se vê com um véu branco de opacidade `opacity` sobre `behind`. */
-export function underWhiteVeil(behind: Rgb, opacity: number): Rgb {
-  return behind.map((channel) => 255 * opacity + channel * (1 - opacity)) as Rgb;
+/** A cor que se vê com um véu `veil` (branco, por padrão) de opacidade `opacity` sobre `behind`. */
+export function underWhiteVeil(
+  behind: Rgb,
+  opacity: number,
+  veil: readonly [number, number, number] = [255, 255, 255],
+): Rgb {
+  return behind.map(
+    (channel, index) => (veil[index] ?? 255) * opacity + channel * (1 - opacity),
+  ) as Rgb;
 }

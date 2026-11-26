@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.track,
   },
   fill: { height: '100%', borderRadius: 4 },
-  good: { backgroundColor: colors.ink },
+  good: { backgroundColor: colors.surfaceInk },
   leisure: { backgroundColor: colors.graphite },
   hint: {
     marginTop: 10,

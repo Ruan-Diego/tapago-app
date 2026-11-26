@@ -39,7 +39,7 @@ export function MiniTimer() {
             <View style={styles.bar} />
           </View>
         ) : (
-          <PlayIcon color={colors.ink} size={16} />
+          <PlayIcon color={colors.onAccent} size={16} />
         )}
         <Text numberOfLines={1} style={styles.name}>
           {session.itemName}
@@ -61,7 +61,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
   },
   pause: { width: 16, flexDirection: 'row', justifyContent: 'center', gap: 3 },
-  bar: { width: 4, height: 14, borderRadius: 1, backgroundColor: colors.ink },
-  name: { flex: 1, fontFamily: fonts.bodySemiBold, fontSize: fontSizes.label, color: colors.ink },
-  clock: { fontFamily: fonts.monoSemiBold, fontSize: 15, color: colors.ink },
+  bar: { width: 4, height: 14, borderRadius: 1, backgroundColor: colors.onAccent },
+  name: {
+    flex: 1,
+    fontFamily: fonts.bodySemiBold,
+    fontSize: fontSizes.label,
+    color: colors.onAccent,
+  },
+  clock: { fontFamily: fonts.monoSemiBold, fontSize: 15, color: colors.onAccent },
 });

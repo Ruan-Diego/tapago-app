@@ -17,10 +17,10 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 9,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.surfaceInk,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  text: { fontFamily: fonts.displayBold, fontSize: 15, color: colors.white },
+  text: { fontFamily: fonts.displayBold, fontSize: 15, color: colors.onSurfaceInk },
   dot: { color: colors.accent },
 });

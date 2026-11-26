@@ -68,7 +68,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: spacing.md },
   head: { fontFamily: fonts.mono, fontSize: 11, letterSpacing: 0.8, color: colors.graphite },
   title: { fontFamily: fonts.displayBold, fontSize: 46, letterSpacing: -2, color: colors.ink },
-  highlight: { backgroundColor: colors.accent },
+  highlight: { backgroundColor: colors.accent, color: colors.onAccent },
   divider: { borderTopWidth: 1, borderStyle: 'dashed', borderColor: colors.graphite },
   label: { fontFamily: fonts.mono, fontSize: fontSizes.small, color: colors.graphite },
   value: {

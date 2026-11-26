@@ -455,10 +455,10 @@ Cerca de 12 semanas do zero ao uso diário, com o MVP em uso a partir da semana 
 - [x] Crashlytics no Android
 - [x] Ícone do app e tela de abertura (a partir de `Marca.dc.html`)
 - [x] Rotina no app para recalcular o saldo a partir dos lançamentos (proteção contra corrupção)
-- [ ] Conferir o consumo de leituras/escritas no console contra as cotas do Spark
-- [ ] Ajustes da lista de feedback em HUM-11
+- [x] Conferir o consumo de leituras/escritas no console contra as cotas do Spark (conferido pelo usuário em 26/11/2026: dentro das cotas)
+- [x] Ajustes da lista de feedback em HUM-11: guardar o resto de um lazer em andamento no inventário para continuar depois (entregue junto com a F5)
 
-**Critério de saída:** 1 mês de uso diário sem travar (HUM-12).
+**Critério de saída:** uso diário sem travar. O acompanhamento de 1 mês (HUM-12) foi dispensado pelo usuário.
 
 ---
 
@@ -466,14 +466,20 @@ Cerca de 12 semanas do zero ao uso diário, com o MVP em uso a partir da semana 
 
 **Objetivo:** itens P2, priorizados pelo uso real. O usuário escolhe o subconjunto antes de iniciar (HUM-13); o agente executa o subconjunto escolhido inteiro, sem pausa.
 
-- [ ] Resumo semanal (NOTIF-04): notificação local no Android no domingo à noite, abrindo o Histórico
-- [ ] Timer na notificação fixa do Android (NOTIF-05)
-- [ ] Widget na tela inicial do Android
-- [ ] Reordenar atividades (ACT-06)
-- [ ] Refazer onboarding pelo Perfil sem apagar dados (ONB-06)
-- [ ] Exportar CSV (PROF-03)
-- [ ] Excluir conta (AUTH-05, P2), apagando os dados pelo próprio app
-- [ ] Lembrete diário opcional (notificação local)
+**Subconjunto escolhido (HUM-13, 26/11/2026):** todos os itens, na ordem que o agente preferir, mais o ajuste do feedback (guardar o resto do lazer).
+
+- [x] Resumo semanal (NOTIF-04): notificação local no Android no domingo à noite, abrindo o Histórico
+- [x] Timer na notificação fixa do Android (NOTIF-05)
+- [x] Widget na tela inicial do Android
+- [x] Reordenar atividades (ACT-06)
+- [x] Refazer onboarding pelo Perfil sem apagar dados (ONB-06)
+- [x] Exportar CSV (PROF-03)
+- [x] Excluir conta (AUTH-05, P2), apagando os dados pelo próprio app
+- [x] Lembrete diário opcional (notificação local)
+- [x] Feedback do uso real: "Guardar o resto para depois" no timer, que encerra o uso e devolve ao inventário os minutos que faltam
+- [x] Modo escuro (pedido do usuário durante a fase): opção no Perfil (Sistema, Claro, Escuro), seguindo o sistema por padrão e escuro quando o sistema não informa
+
+**Critério de saída:** os extras funcionando nos 2 celulares e na web (HUM-18).
 
 ---
 
@@ -538,14 +544,15 @@ As decisões de produto já foram tomadas (ver [aba 0](#0-decisões-fechadas)). 
 | ID | Quando | Ação | Onde | Feito |
 | --- | --- | --- | --- | --- |
 | HUM-10 | Antes | Ativar o **Crashlytics** no projeto (grátis no Spark) | Console → Crashlytics | [x] |
-| HUM-11 | Antes | Entregar a lista de ajustes do uso real (F1–F3) e revisar preços juntos | Arquivo `docs/feedback.md` ou chat | [ ] |
-| HUM-12 | Depois | Acompanhar 1 mês de uso diário sem travar | Uso real | [ ] |
+| HUM-11 | Antes | Entregar a lista de ajustes do uso real (F1–F3) e revisar preços juntos | Arquivo `docs/feedback.md` ou chat | [x] |
+| HUM-12 | Depois | ~~Acompanhar 1 mês de uso diário sem travar~~ (dispensado pelo usuário em 26/11/2026) | Uso real | — |
 
 ### F5 · Extras
 
 | ID | Quando | Ação | Onde | Feito |
 | --- | --- | --- | --- | --- |
-| HUM-13 | Antes | Escolher quais extras entram e em que ordem | Chat | [ ] |
+| HUM-13 | Antes | Escolher quais extras entram e em que ordem | Chat | [x] |
+| HUM-18 | Depois | Instalar o APK novo nos 2 celulares (módulo nativo novo e `expo-sharing`). Testar: guardar o resto de um lazer e começá-lo de novo; resumo semanal e lembrete diário; timer na notificação fixa com o app fechado; adicionar o widget; reordenar; refazer a configuração; exportar o CSV no celular e na web; excluir uma conta **de teste**; modo escuro (Sistema, Claro e Escuro) nos celulares e na web | Aparelhos | [ ] |
 
 ### Recorrente
 
@@ -570,8 +577,8 @@ Atualizado pelo agente no início e no fim de cada fase.
 | F6 | código pronto (falta a validação humana) | 26/11/2026 | | |
 | F7 | código pronto (falta a validação humana) | 26/11/2026 | | |
 | F8 | código pronto (falta a validação humana) | 26/11/2026 | | |
-| F4 | em andamento (faltam a conferência no console e o feedback de uso, HUM-11) | 26/11/2026 | | |
-| F5 | não iniciada | | | |
+| F4 | concluída (cotas conferidas, feedback entregue com a F5; HUM-12 dispensado) | 26/11/2026 | 26/11/2026 | 1a49051 |
+| F5 | código pronto (falta a validação humana, HUM-18) | 26/11/2026 | | |
 
 **Decisões tomadas pelo agente**
 
@@ -648,7 +655,21 @@ Atualizado pelo agente no início e no fim de cada fase.
 - F4 · Crashlytics: além das quedas, o app envia os erros que trata ao salvar e ler. Nenhum dado da conta é identificado.
 - F4 · Ícones gerados por `apps/app/scripts/icons.ps1` (GDI+ do Windows) e versionados em `apps/app/assets/`.
 - F4 · Acessibilidade: contraste das cores sobre fundos lisos coberto por teste; alvos e rótulos revisados no código. Não houve teste com leitor de tela.
-- F4 · Estimativa de cota (2 pessoas): abrir o app custa na ordem de 250 leituras; o Histórico, depois de meses de uso, até cerca de 2 mil; cada registro grava de 4 a 8 documentos e as regras leem de 2 a 4. Fica muito abaixo de 50 mil leituras e 20 mil escritas por dia. Falta confirmar no console.
+- F4 · Estimativa de cota (2 pessoas): abrir o app custa na ordem de 250 leituras; o Histórico, depois de meses de uso, até cerca de 2 mil; cada registro grava de 4 a 8 documentos e as regras leem de 2 a 4. Fica muito abaixo de 50 mil leituras e 20 mil escritas por dia. Confirmado no console pelo usuário em 26/11/2026.
+- F5 · Feedback "pausar para continuar depois": o timer já pausava, mas uma sessão pausada impede usar outro item (R5). Virou **"Guardar o resto para depois"**: um lote encerra a sessão como o "Encerrar" (minutos usados, sem reembolso) e cria no inventário um item com os minutos inteiros que faltam. O item guarda `leftFrom` (duração original), `purchaseEntryId` aponta para o `use` e o `value` é a parte proporcional do preço (só informativa). Com menos de 1 minuto restante, o botão não aparece.
+- F5 · O item da loja e o preço do resto vêm do lançamento `use`, lido com `getDoc` (do cache, sem internet). O backend ganhou `getDoc` e `deleteCurrentUser`.
+- F5 · Resumo semanal e lembrete diário são notificações locais repetidas do `expo-notifications` (`WEEKLY` domingo 20h e `DAILY` na hora escolhida), canal próprio "Resumo e lembretes", ids fixos que o agendador do timer não toca. O texto é fixo (o app não está aberto para calcular os números); tocar abre o Histórico ou as Atividades. Na web não há aviso, e o Perfil diz que chega no Android.
+- F5 · `notif` ganhou `daily` e `dailyHour` (padrão desligado, 20h), opcionais nas regras: a versão anterior do app continua gravando só os três campos antigos (e, ao mexer nas preferências, apaga os novos).
+- F5 · Notificação fixa do timer e widget vêm de um módulo nativo local (`apps/app/modules/tapago-android`, Expo Modules, Kotlin), sem biblioteca de terceiros. A notificação usa o cronômetro regressivo do sistema e some sozinha no fim (`setTimeoutAfter`); pausada, mostra "Pausado · faltam X". O widget mostra saldo, o dia e o timer (cronômetro do sistema); um alarme inexato o redesenha no fim. O app grava o estado do widget a cada mudança; sem o app aberto, o saldo do widget é o da última vez. Os dois exigem a permissão de notificação (a notificação) e um APK novo; num APK antigo o JS não acha o módulo e não faz nada.
+- F5 · Tocar na notificação de aviso do timer agora abre o Inventário.
+- F5 · Reordenar: botão "Ordenar" nas Atividades troca os cartões por linhas com setas ↑↓, dentro de cada lista (positivas e negativas). Mover troca o `order` com o vizinho; com valores repetidos, a lista inteira ganha valores novos. Sem arrastar: setas funcionam igual no Android, na web e com leitor de tela.
+- F5 · Refazer configuração: flag local `redoingOnboarding`, que mostra o onboarding sem a checagem de conta configurada. Nenhum preset vem marcado, os que a conta já tem não aparecem e nada é apagado; "Agora não" mantém os avisos como estavam. "Voltar ao app sem mudar nada" na primeira tela.
+- F5 · CSV: `;` como separador, vírgula decimal e BOM (abre direto no Excel e no Planilhas em português), do mais antigo ao mais novo, com efeito no saldo e detalhe (sequência, escalada, bônus, estorno). Nomes que começam com `=`, `+`, `-` ou `@` ganham apóstrofo. No Android, compartilhado com `expo-sharing` (dependência nova; o plugin de configuração dele não é necessário para enviar); na web, download. Precisa de internet (lê o livro-caixa do servidor, como a conferência de saldo).
+- F5 · Excluir conta, sem servidor: (1) marca `deleting: true` no usuário, que as regras não deixam desmarcar; (2) lê do servidor e apaga, em lotes de até 400, todas as coleções e os documentos avulsos que existem; (3) apaga `users/{uid}`; (4) apaga o login. As regras só permitem `delete` com a marca. Enquanto isso o app não recria o perfil. Se o login for antigo demais (`requires-recent-login`), os dados já foram: o app avisa, sai, e basta entrar de novo e repetir. Se parar no meio, o Perfil mostra "Terminar a exclusão".
+- F5 · Modo escuro: duas paletas com os mesmos nomes (`packages/ui/src/palettes.ts`). O tema é decidido uma vez, na abertura (`scheme.ts`: arquivo do app no Android, `localStorage` na web), porque os estilos são montados quando os módulos carregam; trocar no Perfil grava a escolha e reabre o app (`reloadAppAsync`, ou recarrega a página). Trocar o tema do sistema com o app aberto vale na próxima abertura. A escolha é do aparelho, não da conta. Sem informação do sistema, fica o escuro.
+- F5 · Tokens novos para os papéis que eram duplos: `surfaceInk`/`onSurfaceInk` (cartão de saldo, timer, botão primário, seleções), `onAccent` (texto sobre o verde), `inkTrack`, `hover` e `toggleOn` (no escuro, o interruptor ligado é verde). Botão ganhou a variante `accent`. Contraste ≥ 4,5:1 coberto por teste nos dois temas, inclusive o vidro (véu escuro, pior caso com branco atrás).
+- F5 · `userInterfaceStyle: 'automatic'` no `app.config.ts`, para o Android informar o tema do sistema: exige o APK novo (num APK antigo, "Sistema" vira sempre claro). O fundo da janela do Android segue o tema (`expo-system-ui`).
+- F5 · Teste de regras confirmou que um lote de 400 exclusões, cada uma conferindo a marca com `get()`, passa no emulador (as leituras repetidas do mesmo documento contam uma vez).
 
 **Pendências humanas em aberto**
 
@@ -669,7 +690,6 @@ Atualizado pelo agente no início e no fim de cada fase.
 - F8: conferida na web contra o emulador, só no navegador embutido (Chromium). O bundle Android compila, mas o APK não foi gerado nem testado em aparelho.
 - HUM-17: instalar um APK novo nos 2 celulares; testar o desfoque, o arraste da barra e da folha, a fluidez (60 quadros) e o "reduzir movimento"; conferir a web no Chrome, Safari e Edge; aprovar ou listar ajustes.
 - F4: publicar regras e web juntas (a web nova depende das regras novas para o desfazer) e instalar um APK novo nos 2 celulares (a versão antiga não entende o estorno). Foi testada na web contra o emulador, não em um Android.
-- HUM-10: Crashlytics ativo (conferido no console em 26/11/2026: chegou uma falha do app 0.1.0 em um emulador). Falta conferir se um erro tratado de um APK da F4 aparece como evento não fatal.
-- HUM-11: a lista de ajustes do uso real não foi entregue; o item "Ajustes da lista de feedback" segue aberto.
-- F4: conferir no console do Firebase o consumo de leituras e escritas contra as cotas.
-- HUM-12: 1 mês de uso diário sem travar.
+- HUM-10: Crashlytics ativo e funcionando, segundo o usuário (26/11/2026).
+- F5: publicar regras e web juntas (push na `main`): sem as regras novas, guardar o resto, o lembrete diário e excluir a conta são recusados. Instalar um APK novo nos 2 celulares (módulo nativo e `expo-sharing`). Foi testada com lint, tipos e testes (unitários e de regras no emulador); as telas (inclusive o modo escuro) não foram abertas em aparelho nem no navegador, e o módulo nativo só foi conferido se compila (o APK local compilou).
+- HUM-18: testar os extras da F5 nos 2 celulares e na web. Excluir conta só com uma conta de teste.

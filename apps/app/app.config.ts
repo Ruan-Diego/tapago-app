@@ -8,7 +8,8 @@ const config: ExpoConfig = {
   version: '0.1.0',
   platforms: ['android', 'web'],
   orientation: 'portrait',
-  userInterfaceStyle: 'light',
+  // O tema segue o do sistema, a menos que o Perfil escolha outro (ver packages/ui/src/scheme.ts).
+  userInterfaceStyle: 'automatic',
   backgroundColor: '#F4F4F1',
   // Gerados por scripts/icons.ps1 a partir de design/canvas/Marca.dc.html.
   icon: './assets/icon.png',

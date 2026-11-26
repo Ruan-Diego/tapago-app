@@ -1,4 +1,4 @@
-import { formatMoney, type InventoryItem } from '@tapago/core';
+import { formatDuration, formatMoney, type InventoryItem } from '@tapago/core';
 import { PlayIcon, PressableScale, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
 import { StyleSheet, Text, View } from 'react-native';
 
@@ -24,7 +24,9 @@ export function InventoryRow({ item, today, timeZone, canStart, onStart }: Inven
       <View style={styles.texts}>
         <Text style={styles.name}>{item.name}</Text>
         <Text style={styles.bought}>
-          Comprado {whenLabel(item.purchasedAt, today, timeZone)} · {formatMoney(item.value)}
+          {item.leftFrom
+            ? `Resto de ${formatDuration(item.leftFrom)} · guardado ${whenLabel(item.purchasedAt, today, timeZone)}`
+            : `Comprado ${whenLabel(item.purchasedAt, today, timeZone)} · ${formatMoney(item.value)}`}
         </Text>
       </View>
       {canStart ? (
@@ -71,9 +73,9 @@ const styles = StyleSheet.create({
     gap: 6,
     paddingHorizontal: 14,
     borderRadius: radii.lg,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.surfaceInk,
   },
-  buttonText: { fontFamily: fonts.display, fontSize: 15, color: colors.white },
+  buttonText: { fontFamily: fonts.display, fontSize: 15, color: colors.onSurfaceInk },
   blocked: {
     maxWidth: 90,
     textAlign: 'right',

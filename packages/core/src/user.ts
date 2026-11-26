@@ -2,6 +2,9 @@ import { z } from 'zod';
 
 import { LIMITS } from './limits';
 
+/** Horário padrão do lembrete diário. */
+export const DEFAULT_REMINDER_HOUR = 20;
+
 export const userProfileSchema = z.object({
   name: z.string().max(60),
   bio: z.string().max(140),
@@ -10,8 +13,17 @@ export const userProfileSchema = z.object({
   balance: z.number().int(),
   weeklyGoal: z.number().int().min(0),
   timezone: z.string().min(1),
-  notif: z.object({ end: z.boolean(), warn5: z.boolean(), weekly: z.boolean() }),
+  notif: z.object({
+    end: z.boolean(),
+    warn5: z.boolean(),
+    weekly: z.boolean(),
+    /** Lembrete diário opcional (F5), no horário `dailyHour` do aparelho. */
+    daily: z.boolean().default(false),
+    dailyHour: z.number().int().min(0).max(23).default(DEFAULT_REMINDER_HOUR),
+  }),
   onboardingDone: z.boolean(),
+  /** Exclusão da conta começada e não terminada (F5): libera apagar os dados. */
+  deleting: z.boolean().optional(),
   /** Gravado pelo servidor na criação; usado em "No Tá pago desde…". */
   createdAt: z.date().optional().catch(undefined),
 });
@@ -47,7 +59,13 @@ export function newUserProfile({ displayName, photoURL, timezone }: NewProfileIn
     balance: 0,
     weeklyGoal: 0,
     timezone: timezone || 'America/Sao_Paulo',
-    notif: { end: true, warn5: true, weekly: true },
+    notif: {
+      end: true,
+      warn5: true,
+      weekly: true,
+      daily: false,
+      dailyHour: DEFAULT_REMINDER_HOUR,
+    },
     onboardingDone: false,
   };
 }

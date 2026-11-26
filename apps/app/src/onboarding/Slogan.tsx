@@ -25,7 +25,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 14,
   },
-  questionText: { fontFamily: fonts.body, fontSize: fontSizes.label, color: colors.white },
+  questionText: { fontFamily: fonts.body, fontSize: fontSizes.label, color: colors.onSurfaceInk },
   answer: {
     alignSelf: 'flex-end',
     backgroundColor: colors.accent,
@@ -34,5 +34,5 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: spacing.lg,
   },
-  answerText: { fontFamily: fonts.displayBold, fontSize: 18, color: colors.ink },
+  answerText: { fontFamily: fonts.displayBold, fontSize: 18, color: colors.onAccent },
 });

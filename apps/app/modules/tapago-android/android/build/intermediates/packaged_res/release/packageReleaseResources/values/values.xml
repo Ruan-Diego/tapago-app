@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="tapago_widget_caption">Saldo disponível</string>
+    <string name="tapago_widget_description">Saldo, o resumo do dia e o timer do lazer</string>
+    <string name="tapago_widget_label">Tá pago · saldo</string>
+</resources>

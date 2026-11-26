@@ -7,8 +7,11 @@ import { useMissionController } from '@/missions/useMissionController';
 import { Sidebar } from '@/navigation/Sidebar';
 import { TabBar } from '@/navigation/TabBar';
 import { SECTIONS } from '@/navigation/sections';
+import { useNotificationRoute } from '@/platform/useNotificationRoute';
+import { useReminderController } from '@/reminders/useReminderController';
 import { useSession } from '@/session/store';
 import { AlertBanner } from '@/timer/AlertBanner';
+import { useAndroidSurfaces } from '@/timer/useAndroidSurfaces';
 import { useTimerController } from '@/timer/useTimerController';
 
 export default function AppLayout() {
@@ -19,6 +22,9 @@ export default function AppLayout() {
   const loading = useSession((state) => state.profile === null && !state.profileError);
   useTimerController();
   useMissionController();
+  useReminderController();
+  useAndroidSurfaces();
+  useNotificationRoute();
 
   return (
     <View style={{ flex: 1 }}>

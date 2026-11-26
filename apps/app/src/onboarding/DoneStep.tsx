@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
   },
   chipText: { fontFamily: fonts.bodySemiBold, fontSize: fontSizes.label, color: colors.ink },
-  goal: { backgroundColor: colors.ink, borderRadius: radii.xl, padding: 18, gap: 6 },
+  goal: { backgroundColor: colors.surfaceInk, borderRadius: radii.xl, padding: 18, gap: 6 },
   goalCaption: {
     fontFamily: fonts.bodySemiBold,
     fontSize: 11,
@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     color: colors.onInkMuted,
   },
-  goalText: { fontFamily: fonts.body, fontSize: 17, lineHeight: 25, color: colors.white },
+  goalText: { fontFamily: fonts.body, fontSize: 17, lineHeight: 25, color: colors.onSurfaceInk },
   goalValue: { fontFamily: fonts.bodyBold, color: colors.accent },
   goalName: { fontFamily: fonts.bodyBold },
 });

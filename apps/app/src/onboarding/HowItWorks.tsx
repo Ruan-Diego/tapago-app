@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   negative: { borderStyle: 'dashed', borderColor: colors.leisure },
   exampleName: { fontFamily: fonts.body, fontSize: fontSizes.label, color: colors.ink },
   price: {
-    backgroundColor: colors.ink,
+    backgroundColor: colors.surfaceInk,
     borderWidth: 1.5,
     borderColor: colors.ink,
     borderRadius: radii.sm,
@@ -98,7 +98,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
   },
   priceNegative: { backgroundColor: colors.white },
-  priceText: { fontFamily: fonts.display, fontSize: fontSizes.label, color: colors.white },
+  priceText: { fontFamily: fonts.display, fontSize: fontSizes.label, color: colors.onSurfaceInk },
   priceTextNegative: { color: colors.ink },
   balance: { marginTop: spacing.md, flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   before: { fontFamily: fonts.displayBold, fontSize: 28, color: colors.graphite },
@@ -106,7 +106,7 @@ const styles = StyleSheet.create({
   after: {
     fontFamily: fonts.displayBold,
     fontSize: 28,
-    color: colors.ink,
+    color: colors.onAccent,
     backgroundColor: colors.accent,
     paddingHorizontal: 6,
   },
@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
   paid: {
     fontFamily: fonts.displayBold,
     fontSize: 18,
-    color: colors.ink,
+    color: colors.onAccent,
     backgroundColor: colors.accent,
     paddingHorizontal: 4,
   },

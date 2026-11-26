@@ -7,6 +7,7 @@ import {
   habitBonusId,
   isExpired,
   isMissionComplete,
+  moveInOrder,
   nextCharge,
   undoPlan,
   usedMinutes,
@@ -331,6 +332,39 @@ export function endTimer() {
   const { context, session } = current;
   save(timerRepository.finish(context, session));
   showToast(`${session.itemName} — encerrado.`, formatDuration(usedMinutes(session, context.at)));
+}
+
+/**
+ * Guardar o resto para depois (feedback do uso real): o tempo usado conta, e os minutos que
+ * sobraram voltam ao inventário para começar de novo quando quiser.
+ */
+export async function stashTimer() {
+  const current = currentTimer();
+  if (!current) return;
+  const { context, session } = current;
+  try {
+    const stashed = await timerRepository.stash(context, session);
+    if (!stashed) {
+      showToast('Não foi possível guardar o resto. Tente encerrar ou de novo em instantes.');
+      return;
+    }
+    save(stashed.write);
+    showToast(
+      `${session.itemName} — resto guardado no inventário.`,
+      formatDuration(stashed.leftover),
+    );
+  } catch (error) {
+    reportError('Falha ao guardar o resto do timer.', error);
+    showToast('Não foi possível guardar o resto. Tente de novo.');
+  }
+}
+
+/** Mover uma atividade uma casa para cima ou para baixo na própria lista (ACT-06). */
+export function moveActivity(list: readonly Activity[], id: string, direction: -1 | 1) {
+  const uid = useSession.getState().user?.uid;
+  if (!uid) return;
+  const changes = moveInOrder(list, id, direction);
+  if (changes.length > 0) save(activitiesRepository.reorder(uid, changes));
 }
 
 /**

@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     justifyContent: 'space-between',
     borderRadius: radii.xl,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.surfaceInk,
   },
   caption: {
     fontFamily: fonts.bodySemiBold,

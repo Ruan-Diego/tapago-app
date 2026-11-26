@@ -34,6 +34,6 @@ export function Avatar({ size, preview }: AvatarProps) {
 }
 
 const styles = StyleSheet.create({
-  fallback: { backgroundColor: colors.ink, alignItems: 'center', justifyContent: 'center' },
+  fallback: { backgroundColor: colors.surfaceInk, alignItems: 'center', justifyContent: 'center' },
   initials: { fontFamily: fonts.displayBold, color: colors.accent },
 });

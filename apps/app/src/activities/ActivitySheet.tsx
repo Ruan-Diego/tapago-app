@@ -91,7 +91,7 @@ export function ActivitySheet({ uid, activity, onClose }: ActivitySheetProps) {
         <View accessibilityRole="radiogroup" accessibilityLabel="Tipo" style={styles.kinds}>
           {KINDS.map((option) => {
             const selected = kind.value === option.value;
-            const color = selected ? colors.white : colors.ink;
+            const color = selected ? colors.onSurfaceInk : colors.ink;
             return (
               <Pressable
                 key={option.value}
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
     borderColor: colors.ink,
     backgroundColor: colors.white,
   },
-  selected: { backgroundColor: colors.ink, borderRadius: radii.md },
+  selected: { backgroundColor: colors.surfaceInk, borderRadius: radii.md },
   kindTitle: { fontFamily: fonts.displayBold, fontSize: 17 },
   kindHint: { fontFamily: fonts.body, fontSize: fontSizes.caption, marginTop: 2 },
   row: { flexDirection: 'row', gap: 10 },

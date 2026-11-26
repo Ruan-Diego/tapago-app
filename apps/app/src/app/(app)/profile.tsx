@@ -1,5 +1,14 @@
 import { profileRepository } from '@tapago/data';
-import { Button, SIDEBAR_BREAKPOINT, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
+import {
+  Button,
+  Card,
+  SIDEBAR_BREAKPOINT,
+  colors,
+  fonts,
+  fontSizes,
+  radii,
+  spacing,
+} from '@tapago/ui';
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
@@ -9,13 +18,16 @@ import { showToast } from '@/ledger/toast';
 import { Screen } from '@/navigation/Screen';
 import { Avatar } from '@/profile/Avatar';
 import { BalanceCheck } from '@/profile/BalanceCheck';
+import { DeleteAccount } from '@/profile/DeleteAccount';
+import { ExportData } from '@/profile/ExportData';
 import { NotificationPrefs } from '@/profile/NotificationPrefs';
 import { PhotoError, usePhotoPicker } from '@/profile/PhotoButton';
 import { ProfileForm } from '@/profile/ProfileForm';
 import { ProfileStats } from '@/profile/ProfileStats';
+import { ThemeChoice } from '@/profile/ThemeChoice';
 import { useDisplayName } from '@/profile/useDisplayName';
 import { signOut } from '@/session/signOut';
-import { useSession } from '@/session/store';
+import { setRedoingOnboarding, useSession } from '@/session/store';
 
 function sinceLabel(date: Date): string {
   const month = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' }).format(date);
@@ -84,7 +96,32 @@ export default function Profile() {
         <View style={[styles.column, wide && styles.columnWide]}>
           <ProfileStats dailies={dailies} />
           {uid && profile ? <NotificationPrefs uid={uid} notif={profile.notif} /> : null}
+          <ThemeChoice />
           {uid ? <BalanceCheck key={uid} uid={uid} /> : null}
+          {uid && profile ? (
+            <ExportData key={`csv-${uid}`} uid={uid} timeZone={profile.timezone} />
+          ) : null}
+          <Card style={styles.redo}>
+            <Text accessibilityRole="header" style={styles.redoTitle}>
+              Refazer configuração
+            </Text>
+            <Text style={styles.redoHint}>
+              Passa de novo pelos passos do começo para acrescentar atividades e itens da loja. Não
+              apaga nada: saldo, histórico e o que já existe ficam como estão.
+            </Text>
+            <Button
+              label="Refazer configuração"
+              variant="secondary"
+              onPress={() => setRedoingOnboarding(true)}
+            />
+          </Card>
+          {uid ? (
+            <DeleteAccount
+              key={`delete-${uid}`}
+              uid={uid}
+              incomplete={profile?.deleting === true}
+            />
+          ) : null}
           {email ? (
             <Text numberOfLines={1} style={styles.email}>
               Conta: {email}
@@ -117,7 +154,7 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: radii.pill,
     borderBottomRightRadius: radii.pill,
   },
-  photoText: { fontFamily: fonts.bodySemiBold, fontSize: 11, color: colors.white },
+  photoText: { fontFamily: fonts.bodySemiBold, fontSize: 11, color: colors.onSurfaceInk },
   texts: { alignItems: 'center', maxWidth: '100%' },
   name: { fontFamily: fonts.displayBold, fontSize: 26, letterSpacing: -0.8, color: colors.ink },
   bio: {
@@ -136,6 +173,9 @@ const styles = StyleSheet.create({
   columnsWide: { flexDirection: 'row', alignItems: 'flex-start' },
   column: { gap: spacing.md },
   columnWide: { flex: 1, minWidth: 0 },
+  redo: { gap: spacing.sm },
+  redoTitle: { fontFamily: fonts.bodySemiBold, fontSize: 15, color: colors.ink },
+  redoHint: { fontFamily: fonts.body, fontSize: fontSizes.small, color: colors.graphite },
   email: { fontFamily: fonts.body, fontSize: fontSizes.small, color: colors.graphite },
   error: { fontFamily: fonts.bodyMedium, fontSize: fontSizes.label, color: colors.danger },
 });

@@ -31,12 +31,12 @@ export function Logo({ size = 22, inverse = false }: { size?: number; inverse?: 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'flex-end' },
   text: { fontFamily: fonts.displayBold, color: colors.ink },
-  inverse: { color: colors.white },
+  inverse: { color: colors.onSurfaceInk },
   dot: {
     marginLeft: 2,
     backgroundColor: colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  dotInk: { backgroundColor: colors.ink, borderRadius: 99 },
+  dotInk: { backgroundColor: colors.surfaceInk, borderRadius: 99 },
 });

@@ -26,7 +26,8 @@ import { StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 
 import { ActivityCard } from '@/activities/ActivityCard';
 import { ActivitySheet } from '@/activities/ActivitySheet';
-import { registerActivity, resetPenalty } from '@/ledger/actions';
+import { ReorderRow } from '@/activities/ReorderRow';
+import { moveActivity, registerActivity, resetPenalty } from '@/ledger/actions';
 import { useLedger } from '@/ledger/store';
 import { useToday } from '@/ledger/useToday';
 import { MissionCard } from '@/missions/MissionCard';
@@ -49,6 +50,11 @@ const SECTIONS: { kind: ActivityKind; title: string; hint: string; empty: string
   },
 ];
 
+/** "01", "02"… nas positivas; "−01", "−02"… nas negativas. */
+function numberLabel(kind: ActivityKind, index: number): string {
+  return `${kind === 'negative' ? '−' : ''}${String(index + 1).padStart(2, '0')}`;
+}
+
 function greeting(date: Date): string {
   const hour = date.getHours();
   if (hour < 12) return 'Bom dia';
@@ -66,6 +72,8 @@ export default function Activities() {
   const firstName = useDisplayName().split(/\s+/)[0];
   /** `'new'` ao criar; a atividade ao editar. */
   const [editing, setEditing] = useState<Activity | 'new' | null>(null);
+  /** Modo de ordenar (ACT-06): as setas trocam os cartões de lugar. */
+  const [ordering, setOrdering] = useState(false);
 
   const todayTotals = dailies?.find((daily) => daily.date === today) ?? emptyDaily(today);
   const week = weeklyProgress(dailies ?? [], today, profile?.weeklyGoal ?? 0);
@@ -80,6 +88,15 @@ export default function Activities() {
   const missionCard =
     mission && activities && isMissionVisible(mission, activities) ? (
       <MissionCard mission={mission} activities={activities} counts={todayTotals.counts} />
+    ) : null;
+
+  const orderButton =
+    active.length > 1 ? (
+      <PillButton
+        label={ordering ? 'Pronto' : 'Ordenar'}
+        accessibilityLabel={ordering ? 'Terminar de ordenar' : 'Mudar a ordem das atividades'}
+        onPress={() => setOrdering((current) => !current)}
+      />
     ) : null;
 
   const goal =
@@ -112,7 +129,10 @@ export default function Activities() {
                 {greeting(new Date())}, {firstName}.
               </Text>
             </View>
-            <Button label="+ Nova atividade" onPress={openNew} />
+            <View style={styles.headerActions}>
+              {orderButton}
+              <Button label="+ Nova atividade" onPress={openNew} />
+            </View>
           </View>
           <View style={styles.stats}>
             <View style={[styles.stat, styles.balanceCard]}>
@@ -163,7 +183,10 @@ export default function Activities() {
             <Text accessibilityRole="header" style={styles.title}>
               Atividades
             </Text>
-            <PillButton label="+ Nova" onPress={openNew} />
+            <View style={styles.headerActions}>
+              {orderButton}
+              <PillButton label="+ Nova" onPress={openNew} />
+            </View>
           </View>
         </>
       )}
@@ -189,21 +212,33 @@ export default function Activities() {
                     <Text accessibilityRole="header" style={styles.listTitle}>
                       {section.title}
                     </Text>
-                    <Text style={styles.hint}>{section.hint}</Text>
+                    <Text style={styles.hint}>
+                      {ordering ? 'use as setas para mudar a ordem' : section.hint}
+                    </Text>
                   </View>
                   {items.map((activity, index) => (
                     <Appear key={activity.id}>
-                      <ActivityCard
-                        activity={activity}
-                        number={`${section.kind === 'negative' ? '−' : ''}${String(index + 1).padStart(2, '0')}`}
-                        today={today}
-                        todayCount={todayTotals.counts[activity.id] ?? 0}
-                        // Sem o agregado do dia, não dá para saber se o hábito completou.
-                        disabled={!profile || dailies === null}
-                        onRegister={registerActivity}
-                        onEdit={edit}
-                        onResetPenalty={reset}
-                      />
+                      {ordering ? (
+                        <ReorderRow
+                          activity={activity}
+                          number={numberLabel(section.kind, index)}
+                          first={index === 0}
+                          last={index === items.length - 1}
+                          onMove={(moved, direction) => moveActivity(items, moved.id, direction)}
+                        />
+                      ) : (
+                        <ActivityCard
+                          activity={activity}
+                          number={numberLabel(section.kind, index)}
+                          today={today}
+                          todayCount={todayTotals.counts[activity.id] ?? 0}
+                          // Sem o agregado do dia, não dá para saber se o hábito completou.
+                          disabled={!profile || dailies === null}
+                          onRegister={registerActivity}
+                          onEdit={edit}
+                          onResetPenalty={reset}
+                        />
+                      )}
                     </Appear>
                   ))}
                   {items.length === 0 ? <Text style={styles.hint}>{section.empty}</Text> : null}
@@ -234,7 +269,7 @@ const styles = StyleSheet.create({
     color: colors.graphite,
   },
   captionOnInk: { color: colors.onInkMuted },
-  onInk: { color: colors.white },
+  onInk: { color: colors.onSurfaceInk },
   balance: {
     fontFamily: fonts.displayBold,
     fontSize: fontSizes.display,
@@ -251,7 +286,7 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.small,
     color: colors.ink,
   },
-  chipEarned: { backgroundColor: colors.accent },
+  chipEarned: { backgroundColor: colors.accent, color: colors.onAccent },
   chipLost: { borderWidth: 1.5, borderColor: colors.ink, paddingVertical: 5 },
   chipCount: {
     borderWidth: 1,
@@ -270,6 +305,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   title: { fontFamily: fonts.display, fontSize: fontSizes.title, color: colors.ink },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   wideHeader: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -281,7 +317,7 @@ const styles = StyleSheet.create({
   greeting: { fontFamily: fonts.displayBold, fontSize: 44, letterSpacing: -1.5, color: colors.ink },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: 14 },
   stat: { flexGrow: 1, flexBasis: 240, padding: spacing.xl },
-  balanceCard: { backgroundColor: colors.ink, borderRadius: radii.xl },
+  balanceCard: { backgroundColor: colors.surfaceInk, borderRadius: radii.xl },
   statValue: {
     marginTop: 6,
     fontFamily: fonts.displayBold,
@@ -290,12 +326,12 @@ const styles = StyleSheet.create({
     color: colors.ink,
   },
   statHint: { fontFamily: fonts.body, fontSize: fontSizes.small, color: colors.slate },
-  welcome: { backgroundColor: colors.ink, borderRadius: radii.xl, padding: spacing.lg },
+  welcome: { backgroundColor: colors.surfaceInk, borderRadius: radii.xl, padding: spacing.lg },
   welcomeText: {
     fontFamily: fonts.body,
     fontSize: fontSizes.label,
     lineHeight: 21,
-    color: colors.white,
+    color: colors.onSurfaceInk,
   },
   welcomeStrong: { fontFamily: fonts.bodyBold, color: colors.accent },
   columns: { gap: spacing.xl },

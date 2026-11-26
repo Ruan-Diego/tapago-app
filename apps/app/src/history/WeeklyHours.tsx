@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.caption,
     color: colors.graphite,
   },
-  good: { backgroundColor: colors.ink },
+  good: { backgroundColor: colors.surfaceInk },
   leisure: { backgroundColor: colors.leisure },
   chart: { flexDirection: 'row', marginTop: 14 },
   week: { flex: 1, alignItems: 'center' },

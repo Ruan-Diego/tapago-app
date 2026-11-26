@@ -1,0 +1,6 @@
+[
+    {
+        "merged": "expo.modules.tapagoandroid.tapago-android-release-10:/drawable-v21/notification_action_background.xml",
+        "source": "expo.modules.tapagoandroid.tapago-android-core-1.17.0-0:/drawable-v21/notification_action_background.xml"
+    }
+]

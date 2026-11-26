@@ -82,10 +82,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: radii.md,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.surfaceInk,
   },
   blocked: { backgroundColor: colors.track },
-  buttonText: { fontFamily: fonts.display, fontSize: fontSizes.label, color: colors.white },
+  buttonText: { fontFamily: fonts.display, fontSize: fontSizes.label, color: colors.onSurfaceInk },
   blockedText: { color: colors.slate },
   missing: { fontFamily: fonts.bodyMedium, fontSize: 11, color: colors.slate },
 });

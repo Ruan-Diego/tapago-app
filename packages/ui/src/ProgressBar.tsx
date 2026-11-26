@@ -53,5 +53,5 @@ const styles = StyleSheet.create({
     backgroundColor: colors.track,
     overflow: 'hidden',
   },
-  fill: { height: '100%', borderRadius: radii.pill, backgroundColor: colors.ink },
+  fill: { height: '100%', borderRadius: radii.pill, backgroundColor: colors.surfaceInk },
 });

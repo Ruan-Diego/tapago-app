@@ -117,7 +117,13 @@ export const inventoryItemSchema = z.object({
   value,
   minutes,
   purchaseEntryId: z.string().min(1),
+  /** Quando entrou no inventário: a compra ou, no resto guardado, a hora em que foi guardado. */
   purchasedAt: z.date(),
+  /**
+   * Só no resto de um uso interrompido e guardado para depois: a duração original, em minutos.
+   * Aí `minutes` é o que sobrou e `purchaseEntryId` aponta para o lançamento `use`.
+   */
+  leftFrom: minutes.optional(),
 });
 
 /** Documento `users/{uid}/state/session`: no máximo um por conta (R5). */

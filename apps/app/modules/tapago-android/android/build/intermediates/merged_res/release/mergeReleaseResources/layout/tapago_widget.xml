@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/tapago_widget_root"
+  android:layout_width="match_parent"
+  android:layout_height="match_parent"
+  android:background="@drawable/tapago_widget_bg"
+  android:gravity="center_vertical"
+  android:orientation="vertical"
+  android:padding="16dp">
+
+  <TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="@string/tapago_widget_caption"
+    android:textAllCaps="true"
+    android:textColor="#B3FFFFFF"
+    android:textSize="11sp" />
+
+  <TextView
+    android:id="@+id/tapago_widget_balance"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:maxLines="1"
+    android:text="—"
+    android:textColor="#FFFFFF"
+    android:textSize="28sp"
+    android:textStyle="bold" />
+
+  <TextView
+    android:id="@+id/tapago_widget_today"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:maxLines="1"
+    android:textColor="#D4FF3A"
+    android:textSize="12sp" />
+
+  <LinearLayout
+    android:id="@+id/tapago_widget_timer"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="8dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:visibility="gone">
+
+    <TextView
+      android:id="@+id/tapago_widget_timer_title"
+      android:layout_width="0dp"
+      android:layout_height="wrap_content"
+      android:layout_weight="1"
+      android:ellipsize="end"
+      android:maxLines="1"
+      android:textColor="#FFFFFF"
+      android:textSize="12sp" />
+
+    <Chronometer
+      android:id="@+id/tapago_widget_timer_clock"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="8dp"
+      android:textColor="#D4FF3A"
+      android:textSize="14sp"
+      android:textStyle="bold" />
+
+    <TextView
+      android:id="@+id/tapago_widget_timer_state"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      android:layout_marginStart="8dp"
+      android:maxLines="1"
+      android:textColor="#B3FFFFFF"
+      android:textSize="12sp"
+      android:visibility="gone" />
+  </LinearLayout>
+</LinearLayout>

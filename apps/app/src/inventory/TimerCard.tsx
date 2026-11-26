@@ -1,9 +1,16 @@
-import { MINUTE_MS, formatClock, formatDuration, remainingMs, type Session } from '@tapago/core';
+import {
+  MINUTE_MS,
+  formatClock,
+  formatDuration,
+  leftoverMinutes,
+  remainingMs,
+  type Session,
+} from '@tapago/core';
 import { PressableScale, colors, fonts, fontSizes, radii, spacing } from '@tapago/ui';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 
-import { endTimer, pauseTimer, resumeTimer } from '@/ledger/actions';
+import { endTimer, pauseTimer, resumeTimer, stashTimer } from '@/ledger/actions';
 import { ALERT_NOTICE, BLOCKED_HINT } from '@/platform/notifications';
 import { useAlertPermission } from '@/platform/useAlertPermission';
 import { useNow } from '@/timer/useNow';
@@ -17,6 +24,7 @@ export function TimerCard({ session, timeZone }: { session: Session; timeZone: s
   const running = session.status === 'running';
   const now = useNow(running);
   const left = remainingMs(session, now);
+  const leftover = leftoverMinutes(session, now);
   const { permission, request } = useAlertPermission();
   const ends = session.endsAt.toLocaleTimeString('pt-BR', {
     hour: '2-digit',
@@ -32,7 +40,14 @@ export function TimerCard({ session, timeZone }: { session: Session; timeZone: s
       </View>
       <View style={styles.ring}>
         <Svg width={SIZE} height={SIZE} viewBox={`0 0 ${SIZE} ${SIZE}`}>
-          <Circle cx={110} cy={110} r={RADIUS} fill="none" stroke="#2E2E2B" strokeWidth={12} />
+          <Circle
+            cx={110}
+            cy={110}
+            r={RADIUS}
+            fill="none"
+            stroke={colors.inkTrack}
+            strokeWidth={12}
+          />
           <Circle
             cx={110}
             cy={110}
@@ -69,6 +84,20 @@ export function TimerCard({ session, timeZone }: { session: Session; timeZone: s
           <Text style={styles.outlineText}>Encerrar</Text>
         </PressableScale>
       </View>
+      {leftover >= 1 ? (
+        <PressableScale
+          accessibilityRole="button"
+          accessibilityLabel={`Guardar os ${formatDuration(leftover)} que faltam no inventário`}
+          onPress={() => void stashTimer()}
+          style={[styles.button, styles.stash]}
+        >
+          <Text style={styles.outlineText}>Guardar o resto para depois</Text>
+        </PressableScale>
+      ) : null}
+      <Text style={styles.notice}>
+        Pausar segura este timer. Guardar o resto encerra agora e devolve o tempo que falta ao
+        inventário, para continuar quando quiser.
+      </Text>
       {ALERT_NOTICE ? <Text style={styles.notice}>{ALERT_NOTICE}</Text> : null}
       {permission === 'default' ? (
         <Pressable accessibilityRole="button" onPress={() => void request()} style={styles.link}>
@@ -87,7 +116,7 @@ const styles = StyleSheet.create({
     gap: spacing.lg,
     padding: spacing.xl,
     borderRadius: radii.xxl,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.surfaceInk,
   },
   status: {
     alignSelf: 'stretch',
@@ -106,9 +135,19 @@ const styles = StyleSheet.create({
   ends: { fontFamily: fonts.body, fontSize: fontSizes.caption, color: colors.onInkMuted },
   ring: { width: SIZE, height: SIZE },
   center: { position: 'absolute', inset: 0, alignItems: 'center', justifyContent: 'center' },
-  clock: { fontFamily: fonts.monoSemiBold, fontSize: 40, letterSpacing: -1, color: colors.white },
+  clock: {
+    fontFamily: fonts.monoSemiBold,
+    fontSize: 40,
+    letterSpacing: -1,
+    color: colors.onSurfaceInk,
+  },
   total: { marginTop: 4, fontFamily: fonts.body, fontSize: 12, color: colors.onInkMuted },
-  name: { fontFamily: fonts.displayBold, fontSize: 22, textAlign: 'center', color: colors.white },
+  name: {
+    fontFamily: fonts.displayBold,
+    fontSize: 22,
+    textAlign: 'center',
+    color: colors.onSurfaceInk,
+  },
   actions: { alignSelf: 'stretch', flexDirection: 'row', gap: 10 },
   button: {
     flex: 1,
@@ -119,8 +158,9 @@ const styles = StyleSheet.create({
   },
   primary: { backgroundColor: colors.accent },
   outline: { borderWidth: 1, borderColor: colors.graphite },
-  primaryText: { fontFamily: fonts.displayBold, fontSize: 16, color: colors.ink },
-  outlineText: { fontFamily: fonts.displayBold, fontSize: 16, color: colors.white },
+  stash: { flex: 0, alignSelf: 'stretch', borderWidth: 1, borderColor: colors.graphite },
+  primaryText: { fontFamily: fonts.displayBold, fontSize: 16, color: colors.onAccent },
+  outlineText: { fontFamily: fonts.displayBold, fontSize: 16, color: colors.onSurfaceInk },
   notice: {
     fontFamily: fonts.body,
     fontSize: fontSizes.caption,

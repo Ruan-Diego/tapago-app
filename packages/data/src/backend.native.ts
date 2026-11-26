@@ -3,6 +3,7 @@ import {
   GoogleAuthProvider,
   connectAuthEmulator,
   createUserWithEmailAndPassword,
+  deleteUser,
   getAuth,
   onAuthStateChanged,
   sendPasswordResetEmail,
@@ -15,6 +16,7 @@ import {
   collection,
   connectFirestoreEmulator,
   doc,
+  getDoc,
   getDocs,
   getFirestore,
   deleteField,
@@ -226,5 +228,19 @@ export const backend: Backend = {
 
   async getQuery(spec) {
     return toResult(await getDocs(buildQuery(spec)));
+  },
+
+  async getDoc(path) {
+    const snapshot = await getDoc(doc(db(), path));
+    return {
+      data: snapshot.data(),
+      exists: snapshot.exists(),
+      fromCache: snapshot.metadata.fromCache,
+    };
+  },
+
+  async deleteCurrentUser() {
+    const user = auth().currentUser;
+    if (user) await deleteUser(user);
   },
 };

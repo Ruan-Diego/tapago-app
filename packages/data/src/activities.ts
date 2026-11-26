@@ -4,6 +4,7 @@ import {
   type ActivityValues,
   type Entry,
   type Habit,
+  type OrderChange,
   type UndoPlan,
 } from '@tapago/core';
 
@@ -17,6 +18,7 @@ import {
   habitBonusOps,
   paths,
   registerActivityOps,
+  reorderOps,
   resetPenaltyOp,
   undoBonusOps,
   undoRegistrationOps,
@@ -77,6 +79,11 @@ export const activitiesRepository = {
   /** Estornar um bônus que deixou de valer. */
   undoBonus(context: ActionContext, bonus: Entry): Promise<void> {
     return backend.commit(undoBonusOps(context, bonus));
+  },
+
+  /** Nova ordem das atividades movidas, igual em todos os aparelhos (ACT-06). */
+  reorder(uid: string, changes: readonly OrderChange[]): Promise<void> {
+    return backend.commit(reorderOps(uid, changes));
   },
 
   /** Zerar o custo de uma negativa (SEQ-04). */

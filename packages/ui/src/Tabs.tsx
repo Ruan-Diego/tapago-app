@@ -72,7 +72,7 @@ const styles = StyleSheet.create({
     bottom: PADDING,
     left: PADDING,
     borderRadius: radii.pill,
-    backgroundColor: colors.ink,
+    backgroundColor: colors.surfaceInk,
     pointerEvents: 'none',
   },
   tab: {
@@ -82,7 +82,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  unmeasured: { backgroundColor: colors.ink },
+  unmeasured: { backgroundColor: colors.surfaceInk },
   label: { fontFamily: fonts.bodySemiBold, fontSize: fontSizes.label, color: colors.slate },
-  selectedLabel: { color: colors.white },
+  selectedLabel: { color: colors.onSurfaceInk },
 });

@@ -1,35 +1,11 @@
 /** Tokens do `design/canvas/Marca.dc.html` e `design/README.md`. */
-export const colors = {
-  /** Tinta: texto principal, botões primários, barra de abas. */
-  ink: '#111111',
-  /** Papel: fundo. */
-  paper: '#F4F4F1',
-  /** Branco: cartões. */
-  white: '#FFFFFF',
-  /** Grafite: texto secundário. */
-  graphite: '#6B6B66',
-  /** Texto de apoio, mais forte que o grafite. */
-  slate: '#3A3A36',
-  /** Borda de cartão. */
-  border: '#E3E3DE',
-  /** Borda de campo de texto. */
-  borderStrong: '#C9C9C2',
-  /** Trilho de abas e barras de progresso. */
-  track: '#E9E9E4',
-  /** Texto apagado sobre fundo escuro. */
-  onInkMuted: '#BDBDB6',
-  /** Lazer: barras de lazer nos gráficos. */
-  leisure: '#B5B5AE',
-  /** Ruim: listrado escuro/claro das atividades negativas nos gráficos. */
-  badDark: '#3A3A36',
-  badLight: '#D9D9D3',
-  /** Mapa de constância: de nenhum a quatro ou mais registros no dia. */
-  heat: ['#E6E6E1', '#C9C9C2', '#9C9C95', '#5E5E59', '#111111'],
-  /** Destaque: dinheiro, aba ativa, recibo "Tá pago.". */
-  accent: '#D4FF3A',
-  /** Mensagens de erro (contraste de 6,5:1 sobre branco). */
-  danger: '#B3261E',
-} as const;
+import { darkColors, lightColors, type Palette } from './palettes';
+import { colorScheme } from './scheme';
+
+export { colorScheme, saveThemePreference, themePreference } from './scheme';
+
+/** A paleta do tema escolhido na abertura do app (claro ou escuro). */
+export const colors: Palette = colorScheme === 'dark' ? darkColors : lightColors;
 
 /** Nomes registrados pelo `expo-font` no app: uma família por peso. */
 export const fonts = {
