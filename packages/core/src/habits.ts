@@ -1,6 +1,6 @@
 /** Hábitos diários, sequência das positivas e escalada das negativas (R13 a R16). */
 import { addDays } from './days';
-import type { Activity, Streak } from './ledger';
+import { attemptId, type Activity, type Streak } from './ledger';
 import { LIMITS } from './limits';
 
 /** O valor calculado nunca passa do teto de um lançamento (R16). */
@@ -79,7 +79,10 @@ export function earnsHabitBonus(
   return !alreadyPaid && habitProgress(activity, todayCount)?.complete === true;
 }
 
-/** Id fixo do bônus: o servidor só aceita o primeiro de cada atividade em cada dia. */
-export function habitBonusId(activityId: string, day: string): string {
-  return `habit_${activityId}_${day}`;
+/**
+ * Id fixo do bônus: o servidor só aceita um por atividade em cada dia. Depois de estornado
+ * (`reversals` vezes), o novo pagamento usa o id seguinte.
+ */
+export function habitBonusId(activityId: string, day: string, reversals = 0): string {
+  return attemptId(`habit_${activityId}_${day}`, reversals);
 }

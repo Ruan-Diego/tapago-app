@@ -76,12 +76,90 @@ service cloud.firestore {
         && data.createdAt is timestamp;
     }
 
-    // A F4 acrescenta a conferência do saldo (`getAfter`) e do valor referenciado.
+    function userPath(uid) {
+      return /databases/$(database)/documents/users/$(uid);
+    }
+    function activityPath(uid, id) {
+      return /databases/$(database)/documents/users/$(uid)/activities/$(id);
+    }
+    function entryPath(uid, id) {
+      return /databases/$(database)/documents/users/$(uid)/entries/$(id);
+    }
+    function dailyPath(uid, day) {
+      return /databases/$(database)/documents/users/$(uid)/daily/$(day);
+    }
+
+    // O saldo muda, no mesmo lote, exatamente pelo valor do lançamento. Por isso o app grava um
+    // único lançamento que mexe no saldo por lote. Limite conhecido: as regras olham um documento
+    // por vez e não percebem dois lançamentos de mesmo valor dividindo uma só mudança.
+    function movesBalance(uid, amount) {
+      return getAfter(userPath(uid)).data.balance == get(userPath(uid)).data.balance + amount;
+    }
+
+    // O valor calculado nunca passa do teto de um lançamento (R16).
+    function capped(value) {
+      return value > 1000000 ? 1000000 : value;
+    }
+
+    /**
+     * O valor de um ganho (R14): o inicial mais o aumento pelos dias anteriores. O nível é o que a
+     * atividade passa a guardar na sequência, e não passa do dia seguinte ao que ela tinha.
+     */
+    function chargesPositive(uid, data) {
+      let before = get(activityPath(uid, data.refId)).data;
+      let after = getAfter(activityPath(uid, data.refId)).data;
+      return before.kind == 'positive'
+        && data.base == before.value
+        && data.value == capped(data.base + before.get('streakStep', 0) * (data.level - 1))
+        && after.streak.days == data.level
+        && (data.level == 1 || ('streak' in before && data.level <= before.streak.days + 1));
+    }
+
+    /**
+     * O custo de uma negativa (R15). Dois aparelhos sem internet podem cobrar o mesmo nível, mas
+     * nunca um acima do próximo.
+     */
+    function chargesNegative(uid, data) {
+      let before = get(activityPath(uid, data.refId)).data;
+      let after = getAfter(activityPath(uid, data.refId)).data;
+      let count = before.get('penaltyCount', 0);
+      return before.kind == 'negative'
+        && data.base == before.value
+        && data.value == capped(data.base * data.level)
+        && data.level <= count + 1
+        && after.penaltyCount == count + 1;
+    }
+
+    // A versão do app anterior à F6 não grava `base` nem `level`: cobra o valor da atividade.
+    function chargesActivity(uid, data) {
+      return !('level' in data)
+        ? get(activityPath(uid, data.refId)).data.value == data.value
+          && get(activityPath(uid, data.refId)).data.kind
+            == (data.type == 'earn' ? 'positive' : 'negative')
+        : (data.type == 'earn' ? chargesPositive(uid, data) : chargesNegative(uid, data));
+    }
+
+    // A compra cobra o preço do item e não deixa o saldo negativo (R3).
+    function paysPurchase(uid, data) {
+      return get(/databases/$(database)/documents/users/$(uid)/shopItems/$(data.refId)).data.value
+          == data.value
+        && movesBalance(uid, -data.value)
+        && getAfter(userPath(uid)).data.balance >= 0;
+    }
+
+    /** O efeito de cada tipo no saldo. O uso não mexe nele: a compra já pagou. */
+    function booksEntry(uid, data) {
+      return data.type == 'use'
+        || (data.type == 'purchase' && paysPurchase(uid, data))
+        || (data.type == 'earn' && chargesActivity(uid, data) && movesBalance(uid, data.value))
+        || (data.type == 'loss' && chargesActivity(uid, data) && movesBalance(uid, -data.value));
+    }
+
     function validEntry(data) {
       return hasShape(data,
           ['type', 'refId', 'name', 'value', 'minutes', 'at', 'deviceId'],
-          ['reverses', 'base', 'level'])
-        && data.type in ['earn', 'loss', 'purchase', 'use', 'reversal']
+          ['base', 'level'])
+        && data.type in ['earn', 'loss', 'purchase', 'use']
         // O valor inicial e o nível explicam um ganho ou uma perda (R14, R15). São opcionais
         // porque a versão anterior do app não os grava.
         && (!data.keys().hasAny(['base', 'level'])
@@ -94,19 +172,31 @@ service cloud.firestore {
         && validValue(data.value)
         && validMinutes(data.minutes)
         && data.at is timestamp
-        && validId(data.deviceId)
-        // Só o estorno aponta para outro lançamento.
-        && (data.type == 'reversal') == ('reverses' in data)
-        && (!('reverses' in data) || validId(data.reverses));
+        && validId(data.deviceId);
     }
 
     /**
-     * O bônus de hábito (R13): sem tempo e com o id `habit_{atividade}_{AAAA-MM-DD}`. Gravar o
-     * mesmo id de novo conta como mudar um lançamento, o que as regras recusam: o bônus sai uma
-     * vez por dia.
+     * Um id de bônus: `base` no primeiro pagamento; depois de estornado, `base_1`, `base_2`… Só
+     * vale o seguinte quando o anterior já foi estornado. Gravar um id repetido conta como mudar
+     * um lançamento, o que as regras recusam: cada bônus sai uma vez.
      */
-    function validHabitBonus(data, id) {
+    function isBonusAttempt(uid, id, base) {
+      let rest = id.size() > base.size() ? id[base.size():id.size()] : '';
+      let attempt = rest.matches('^_[1-9][0-9]{0,2}$') ? int(rest[1:rest.size()]) : 0;
+      let previous = attempt > 1 ? base + '_' + string(attempt - 1) : base;
+      return id == base
+        || (attempt > 0 && id == base + rest && exists(entryPath(uid, 'undo_' + previous)));
+    }
+
+    /**
+     * O bônus de hábito (R13): sem tempo, com o id do dia, o valor e a meta da atividade, e só
+     * com a meta batida no dia.
+     */
+    function validHabitBonus(uid, data, id) {
       let prefix = 'habit_' + data.refId + '_';
+      let day = id.size() >= prefix.size() + 10
+        ? id[prefix.size():prefix.size() + 10] : '';
+      let activity = get(activityPath(uid, data.refId)).data;
       return hasShape(data, ['type', 'refId', 'name', 'value', 'minutes', 'at', 'deviceId',
           'source', 'target'], [])
         && data.source == 'habit'
@@ -117,9 +207,13 @@ service cloud.firestore {
         && data.at is timestamp
         && validId(data.deviceId)
         && validHabitTarget(data.target)
-        && id.size() == prefix.size() + 10
-        && id[0:prefix.size()] == prefix
-        && validDay(id[prefix.size():id.size()]);
+        && validDay(day)
+        && isBonusAttempt(uid, id, prefix + day)
+        && activity.kind == 'positive'
+        && data.value == activity.habit.bonus
+        && data.target == activity.habit.target
+        && getAfter(dailyPath(uid, day)).data.counts.get(data.refId, 0) >= data.target
+        && movesBalance(uid, data.value);
     }
 
     // O bônus da missão (R18), em centavos.
@@ -154,29 +248,69 @@ service cloud.firestore {
       return /databases/$(database)/documents/users/$(uid)/missions/$(day);
     }
 
+    function missionBonusId(day, reversals) {
+      return reversals > 0 ? 'mission_' + day + '_' + string(reversals) : 'mission_' + day;
+    }
+
     /**
-     * O bônus da missão: id `mission_{AAAA-MM-DD}`, com as mesmas atividades da missão gravada e
-     * no mesmo lote que a marca como cumprida. Um aparelho que sorteou outro par não paga.
+     * O bônus da missão: id do dia, com as mesmas atividades da missão gravada, as duas já
+     * registradas, e no mesmo lote que a marca como cumprida. Um aparelho que sorteou outro par
+     * não paga.
      */
     function validMissionBonus(uid, data, id) {
+      let mission = getAfter(missionPath(uid, data.refId)).data;
+      let daily = getAfter(dailyPath(uid, data.refId)).data;
       return hasShape(data, ['type', 'refId', 'name', 'value', 'minutes', 'at', 'deviceId',
           'source', 'activities'], [])
         && data.source == 'mission'
         && validDay(data.refId)
-        && id == 'mission_' + data.refId
+        && id == missionBonusId(data.refId, mission.get('reversals', 0))
         && validName(data.name)
         && isMissionBonus(data.value)
         && data.minutes is int && data.minutes == 0
         && data.at is timestamp
         && validId(data.deviceId)
-        && data.activities == getAfter(missionPath(uid, data.refId)).data.activities
-        && getAfter(missionPath(uid, data.refId)).data.completedAt == data.at;
+        && data.activities == mission.activities
+        && mission.completedAt == data.at
+        && daily.counts.get(data.activities[0].id, 0) >= 1
+        && daily.counts.get(data.activities[1].id, 0) >= 1
+        && movesBalance(uid, data.value);
     }
 
     function validBonus(uid, data, id) {
       return data.get('source', '') == 'mission'
         ? validMissionBonus(uid, data, id)
-        : validHabitBonus(data, id);
+        : validHabitBonus(uid, data, id);
+    }
+
+    /**
+     * Desfazer (R8): um lançamento novo, com o id `undo_{original}`, que copia um registro ou um
+     * bônus e devolve exatamente o valor dele. O mesmo não é desfeito duas vezes.
+     */
+    function validReversal(uid, data, id) {
+      let original = get(entryPath(uid, data.reverses)).data;
+      return hasShape(data, ['type', 'reversedType', 'reverses', 'refId', 'name', 'value',
+          'minutes', 'at', 'deviceId'], [])
+        && validId(data.reverses)
+        && id == 'undo_' + data.reverses
+        && original.type in ['earn', 'loss', 'bonus']
+        && data.reversedType == original.type
+        && data.refId == original.refId
+        && data.name == original.name
+        && data.value == original.value
+        && data.minutes == original.minutes
+        && data.at is timestamp
+        && validId(data.deviceId)
+        // O bônus de missão só é estornado reabrindo a missão no mesmo lote.
+        && (original.get('source', '') != 'mission'
+          || !('completedAt' in getAfter(missionPath(uid, original.refId)).data))
+        && movesBalance(uid, original.type == 'loss' ? original.value : -original.value);
+    }
+
+    function validNewEntry(uid, data, id) {
+      return data.type == 'bonus' ? validBonus(uid, data, id)
+        : data.type == 'reversal' ? validReversal(uid, data, id)
+        : validEntry(data) && booksEntry(uid, data);
     }
 
     /** Trocar a atividade arquivada de uma missão ainda não cumprida. */
@@ -187,10 +321,24 @@ service cloud.firestore {
 
     /** Cumprir: só junto com o lançamento do bônus. */
     function completesMission(uid, day) {
-      let bonus = /databases/$(database)/documents/users/$(uid)/entries/$('mission_' + day);
-      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['completedAt'])
+      let id = missionBonusId(day, resource.data.get('reversals', 0));
+      return !('completedAt' in resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['completedAt'])
         && request.resource.data.completedAt is timestamp
-        && getAfter(bonus).data.at == request.resource.data.completedAt;
+        && getAfter(entryPath(uid, id)).data.at == request.resource.data.completedAt;
+    }
+
+    /** Reabrir: só junto com o estorno do bônus pago. */
+    function reopensMission(uid, day) {
+      let reversals = resource.data.get('reversals', 0);
+      let undo = entryPath(uid, 'undo_' + missionBonusId(day, reversals));
+      return 'completedAt' in resource.data
+        && !('completedAt' in request.resource.data)
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['completedAt', 'reversals'])
+        && request.resource.data.reversals == reversals + 1
+        && !exists(undo)
+        && existsAfter(undo);
     }
 
     function sessionPath(uid) {
@@ -241,7 +389,7 @@ service cloud.firestore {
     // Cada escrita traz só os campos que mudaram; os outros podem nem existir.
     function validDaily(data, day) {
       return hasShape(data, ['date'], ['earned', 'lost', 'spent', 'posMin', 'negMin',
-          'leisureMin', 'posCount', 'negCount', 'buyCount', 'counts', 'bonuses'])
+          'leisureMin', 'posCount', 'negCount', 'buyCount', 'counts', 'bonuses', 'undone'])
         && validDay(day)
         && data.date == day
         && data.get('earned', 0) is int
@@ -254,7 +402,8 @@ service cloud.firestore {
         && data.get('negCount', 0) is int
         && data.get('buyCount', 0) is int
         && data.get('counts', {}) is map
-        && data.get('bonuses', {}) is map;
+        && data.get('bonuses', {}) is map
+        && data.get('undone', {}) is map;
     }
 
     function validNotif(notif) {
@@ -305,10 +454,7 @@ service cloud.firestore {
       // Livro-caixa: só inclusão.
       match /entries/{id} {
         allow read: if isOwner(uid);
-        allow create: if isOwner(uid)
-          && (request.resource.data.type == 'bonus'
-            ? validBonus(uid, request.resource.data, id)
-            : validEntry(request.resource.data));
+        allow create: if isOwner(uid) && validNewEntry(uid, request.resource.data, id);
         allow update: if isOwner(uid) && isUseMinutesOnly() && closesCurrentSession(uid, id);
         allow delete: if false;
       }
@@ -346,13 +492,14 @@ service cloud.firestore {
       }
 
       // A missão do dia. A primeira gravada vale: gravar por cima conta como mudar, e só se
-      // troca o par ou se marca como cumprida, uma vez.
+      // troca o par, se marca como cumprida ou se reabre ao estornar o bônus.
       match /missions/{day} {
         allow read: if isOwner(uid);
         allow create: if isOwner(uid) && validMission(request.resource.data, day);
         allow update: if isOwner(uid)
-          && !('completedAt' in resource.data)
-          && (replacesMissionActivities() || completesMission(uid, day));
+          && ((!('completedAt' in resource.data) && replacesMissionActivities())
+            || completesMission(uid, day)
+            || reopensMission(uid, day));
         allow delete: if false;
       }
 

@@ -1,6 +1,7 @@
 import { missionSchema, type Mission } from '@tapago/core';
 
 import { backend } from './backend';
+import { commitEntry, type WrittenEntry } from './commitEntry';
 import { parseDocs } from './parse';
 import type { Unsubscribe } from './types';
 import {
@@ -42,7 +43,7 @@ export const missionsRepository = {
   },
 
   /** Pagar o bônus da missão. O servidor recusa se o dia já foi pago (R18). */
-  payBonus(context: ActionContext, mission: Mission): Promise<void> {
-    return backend.commit(missionBonusOps(context, mission));
+  payBonus(context: ActionContext, mission: Mission): WrittenEntry {
+    return commitEntry(missionBonusOps(context, mission));
   },
 };

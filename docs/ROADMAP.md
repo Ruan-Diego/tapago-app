@@ -447,14 +447,14 @@ Cerca de 12 semanas do zero ao uso diário, com o MVP em uso a partir da semana 
 **PRD:** Requisitos não funcionais, R8, Regras de segurança (`getAfter`).
 **Intervenção humana necessária:** HUM-10 (Crashlytics), HUM-11 (feedback de uso real).
 
-- [ ] Desfazer por 10 s com lançamento de estorno (ACT-05, R8), igual para positivas e negativas
-- [ ] O desfazer também reverte a sequência ou a escalada (F6) e estorna o bônus de hábito ou de missão que deixou de valer (F6, F7); se a meta for atingida de novo no dia, o bônus volta a ser pago (revisar os ids fixos para isso)
-- [ ] Regra de saldo com `getAfter()`: saldo muda exatamente pelo valor; `value` confere com `refId` (nas atividades, o valor calculado por R14 e R15; nos bônus, o do hábito ou o da missão); `purchase` só com saldo ≥ 0
-- [ ] Testes de regras para a validação de saldo
-- [ ] Acessibilidade: contraste ≥ 4,5:1, alvos ≥ 44 pt, labels para leitor de tela
-- [ ] Crashlytics no Android
-- [ ] Ícone do app e tela de abertura (a partir de `Marca.dc.html`)
-- [ ] Rotina no app para recalcular o saldo a partir dos lançamentos (proteção contra corrupção)
+- [x] Desfazer por 10 s com lançamento de estorno (ACT-05, R8), igual para positivas e negativas
+- [x] O desfazer também reverte a sequência ou a escalada (F6) e estorna o bônus de hábito ou de missão que deixou de valer (F6, F7); se a meta for atingida de novo no dia, o bônus volta a ser pago (revisar os ids fixos para isso)
+- [x] Regra de saldo com `getAfter()`: saldo muda exatamente pelo valor; `value` confere com `refId` (nas atividades, o valor calculado por R14 e R15; nos bônus, o do hábito ou o da missão); `purchase` só com saldo ≥ 0
+- [x] Testes de regras para a validação de saldo
+- [x] Acessibilidade: contraste ≥ 4,5:1, alvos ≥ 44 pt, labels para leitor de tela
+- [x] Crashlytics no Android
+- [x] Ícone do app e tela de abertura (a partir de `Marca.dc.html`)
+- [x] Rotina no app para recalcular o saldo a partir dos lançamentos (proteção contra corrupção)
 - [ ] Conferir o consumo de leituras/escritas no console contra as cotas do Spark
 - [ ] Ajustes da lista de feedback em HUM-11
 
@@ -570,7 +570,7 @@ Atualizado pelo agente no início e no fim de cada fase.
 | F6 | código pronto (falta a validação humana) | 26/11/2026 | | |
 | F7 | código pronto (falta a validação humana) | 26/11/2026 | | |
 | F8 | código pronto (falta a validação humana) | 26/11/2026 | | |
-| F4 | não iniciada | | | |
+| F4 | em andamento (faltam a conferência no console e o feedback de uso, HUM-11) | 26/11/2026 | | |
 | F5 | não iniciada | | | |
 
 **Decisões tomadas pelo agente**
@@ -638,6 +638,17 @@ Atualizado pelo agente no início e no fim de cada fase.
 - F8 · Na web as listas animam entrada e saída, mas não o reposicionamento (o reanimated estica o item e distorce o texto).
 - F8 · A folha fecha arrastando pelo topo (alça e título), para não disputar com a rolagem do formulário. Fechar depois de salvar continua imediato.
 - F8 · Na web larga há uma luz suave atrás do menu lateral, para o vidro ter o que mostrar.
+- F4 · O "Desfazer" fica no aviso do registro por 10 s. Com vários registros seguidos, aparece o mais novo; desfeito, volta o anterior que ainda estiver no prazo. Fechar o app encerra o prazo. O prazo é do app: as regras não conferem horário.
+- F4 · O estorno tem o id `undo_{lançamento}`, copia o valor e guarda `reversedType`. Corrige o `daily` do dia do lançamento desfeito.
+- F4 · Bônus pago de novo ganha o id com `_1`, `_2`…; o número vem de `daily.undone` (hábito) e de `missions.reversals` (missão), e as regras só aceitam o seguinte se o anterior foi estornado.
+- F4 · Cada lote tem um só lançamento que mexe no saldo, então o desfazer grava o registro e cada bônus em lotes separados. Limite conhecido: as regras conferem um lançamento por vez e não recusariam dois de mesmo valor dividindo uma só mudança de saldo (o app nunca grava isso; a conferência do saldo no Perfil corrige).
+- F4 · As regras passam a exigir, no bônus, os registros do dia em `daily.counts`. O nível de sequência e de escalada pode repetir um já usado (dois aparelhos offline), mas não passar do próximo.
+- F4 · Consequência aceita da conferência de valor: escrita offline feita com preço, custo ou saldo que mudou em outro aparelho é recusada ao sincronizar (ver PRD).
+- F4 · O saldo no documento do usuário continua editável sem lançamento, para a conferência do saldo poder corrigi-lo. A conferência é manual (Perfil), lê o livro-caixa inteiro e só corrige com confirmação.
+- F4 · Crashlytics: além das quedas, o app envia os erros que trata ao salvar e ler. Nenhum dado da conta é identificado.
+- F4 · Ícones gerados por `apps/app/scripts/icons.ps1` (GDI+ do Windows) e versionados em `apps/app/assets/`.
+- F4 · Acessibilidade: contraste das cores sobre fundos lisos coberto por teste; alvos e rótulos revisados no código. Não houve teste com leitor de tela.
+- F4 · Estimativa de cota (2 pessoas): abrir o app custa na ordem de 250 leituras; o Histórico, depois de meses de uso, até cerca de 2 mil; cada registro grava de 4 a 8 documentos e as regras leem de 2 a 4. Fica muito abaixo de 50 mil leituras e 20 mil escritas por dia. Falta confirmar no console.
 
 **Pendências humanas em aberto**
 
@@ -657,3 +668,8 @@ Atualizado pelo agente no início e no fim de cada fase.
 - HUM-16: os links das referências não chegaram antes da F8; se houver, enviar para os ajustes.
 - F8: conferida na web contra o emulador, só no navegador embutido (Chromium). O bundle Android compila, mas o APK não foi gerado nem testado em aparelho.
 - HUM-17: instalar um APK novo nos 2 celulares; testar o desfoque, o arraste da barra e da folha, a fluidez (60 quadros) e o "reduzir movimento"; conferir a web no Chrome, Safari e Edge; aprovar ou listar ajustes.
+- F4: publicar regras e web juntas (a web nova depende das regras novas para o desfazer) e instalar um APK novo nos 2 celulares (a versão antiga não entende o estorno). Foi testada na web contra o emulador, não em um Android.
+- HUM-10: ativar o Crashlytics no console e conferir se um erro do APK novo aparece.
+- HUM-11: a lista de ajustes do uso real não foi entregue; o item "Ajustes da lista de feedback" segue aberto.
+- F4: conferir no console do Firebase o consumo de leituras e escritas contra as cotas.
+- HUM-12: 1 mês de uso diário sem travar.

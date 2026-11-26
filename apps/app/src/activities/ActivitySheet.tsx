@@ -97,6 +97,7 @@ export function ActivitySheet({ uid, activity, onClose }: ActivitySheetProps) {
                 key={option.value}
                 accessibilityRole="radio"
                 accessibilityState={{ checked: selected }}
+                aria-checked={selected}
                 onPress={() => kind.onChange(option.value)}
                 style={[styles.kind, selected && styles.selected]}
               >

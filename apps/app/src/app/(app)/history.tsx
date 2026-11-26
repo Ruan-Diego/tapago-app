@@ -80,6 +80,8 @@ export default function History() {
   const today = useToday();
   const recent = useRecentEntries(uid);
   const visible = recent.entries.filter((entry) => entry.type !== 'use');
+  // O estorno é sempre mais novo que o desfeito: se o original está na lista, ele também.
+  const undone = new Set(recent.entries.map((entry) => entry.reverses));
 
   const [period, setPeriod] = useState<HistoryPeriod>(DEFAULT_PERIOD);
   /** O maior período já visto: até onde os lançamentos dos rankings foram lidos. */
@@ -211,7 +213,12 @@ export default function History() {
         </Text>
         {visible.map((entry) => (
           <Appear key={entry.id}>
-            <EntryRow entry={entry} today={today} timeZone={timeZone} />
+            <EntryRow
+              entry={entry}
+              today={today}
+              timeZone={timeZone}
+              undone={undone.has(entry.id)}
+            />
           </Appear>
         ))}
         {!recent.loaded ? <Text style={styles.hint}>Carregando…</Text> : null}

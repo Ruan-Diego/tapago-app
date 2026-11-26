@@ -12,6 +12,7 @@ import { decodeData, type DocData } from './documents';
 import type { AuthUser, Unsubscribe } from './types';
 import {
   avatarOp,
+  fixBalanceOp,
   onboardingOps,
   paths,
   updateProfileOp,
@@ -28,6 +29,11 @@ export interface OnboardingChoices extends Pick<OnboardingData, 'profile' | 'ava
 export const profileRepository = {
   update(uid: string, patch: ProfilePatch): Promise<void> {
     return backend.commit([updateProfileOp(uid, patch)]);
+  },
+
+  /** Somar ao saldo a diferença achada na conferência com o livro-caixa. */
+  fixBalance(uid: string, difference: number): Promise<void> {
+    return backend.commit([fixBalanceOp(uid, difference)]);
   },
 
   saveAvatar(uid: string, data: string): Promise<void> {

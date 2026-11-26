@@ -29,6 +29,7 @@ export function dailiesFromEntries(entries: readonly Entry[], timeZone: string):
     if (source.type === 'bonus' && source.source === 'habit') {
       const step = entry.type === 'reversal' ? -1 : 1;
       daily.bonuses[source.refId] = (daily.bonuses[source.refId] ?? 0) + step;
+      if (step < 0) daily.undone[source.refId] = (daily.undone[source.refId] ?? 0) + 1;
     }
     days.set(date, daily);
   }

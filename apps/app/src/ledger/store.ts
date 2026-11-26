@@ -19,6 +19,10 @@ import {
 import { useEffect } from 'react';
 import { create } from 'zustand';
 
+import { reportError } from '@/platform/crashReports';
+
+import { clearUndo } from './undo';
+
 interface LedgerState {
   /** `null` enquanto carrega. */
   activities: Activity[] | null;
@@ -48,7 +52,7 @@ const EMPTY: LedgerState = {
 export const useLedger = create<LedgerState>(() => EMPTY);
 
 function fail(error: Error) {
-  console.error('Falha ao ler os dados.', error);
+  reportError('Falha ao ler os dados.', error);
   useLedger.setState({ error: true });
 }
 
@@ -101,6 +105,7 @@ export function useLedgerSubscription(uid: string | undefined, today: string) {
       stopInventory();
       stopTimer();
       currentUid = null;
+      clearUndo();
       useLedger.setState(EMPTY);
     };
   }, [uid]);

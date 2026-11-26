@@ -68,7 +68,14 @@ beforeEach(async () => {
   await env.withSecurityRulesDisabled(async (admin) => {
     const db = admin.firestore();
     for (const uid of ['ana', 'bia']) {
-      await setDoc(doc(db, `users/${uid}`), { name: uid, balance: 0 });
+      // Saldo para as compras, e o item cujo preço a compra confere.
+      await setDoc(doc(db, `users/${uid}`), { name: uid, balance: 1000 });
+      await setDoc(doc(db, `users/${uid}/shopItems/s1`), {
+        ...base,
+        order: 1,
+        archived: false,
+        createdAt: at,
+      });
       await setDoc(doc(db, `users/${uid}/entries/earn1`), entryDoc);
       await setDoc(doc(db, `users/${uid}/entries/use1`), useDoc);
       await setDoc(doc(db, `users/${uid}/activities/a0`), { ...activityDoc, createdAt: at });
@@ -116,7 +123,7 @@ describe('as escritas do app passam nas regras', () => {
 
     const user = await getDoc(doc(db, 'users/ana'));
     const daily = await getDoc(doc(db, 'users/ana/daily/2026-11-25'));
-    expect(user.data()?.balance).toBe(1000);
+    expect(user.data()?.balance).toBe(2000);
     expect(daily.data()).toMatchObject({
       earned: 2000,
       lost: 1000,
@@ -166,6 +173,14 @@ describe('outro uid não escreve nada', () => {
   });
 });
 
+/** Um lançamento de ganho com o saldo junto, como o app grava. */
+function earn(db: Firestore, entry: Record<string, unknown>) {
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'users/ana/entries/n1'), entry);
+  batch.update(doc(db, 'users/ana'), { balance: increment(Number(entry.value)) });
+  return batch.commit();
+}
+
 describe('livro-caixa', () => {
   it('não apaga lançamento', async () => {
     await assertFails(deleteDoc(doc(as('ana'), 'users/ana/entries/earn1')));
@@ -199,18 +214,14 @@ describe('livro-caixa', () => {
     ['estorno sem original', { type: 'reversal' }],
     ['ganho que aponta estorno', { reverses: 'use1' }],
   ])('recusa lançamento com %s', async (_label, change) => {
-    await assertFails(setDoc(doc(as('ana'), 'users/ana/entries/n1'), { ...entryDoc, ...change }));
+    await assertFails(earn(as('ana'), { ...entryDoc, ...change }));
   });
 
   it('aceita os limites', async () => {
     const db = as('ana');
+    await updateDoc(doc(db, 'users/ana/activities/a1'), { value: 1_000_000 });
     await assertSucceeds(
-      setDoc(doc(db, 'users/ana/entries/n1'), {
-        ...entryDoc,
-        value: 1_000_000,
-        minutes: 1440,
-        name: 'x'.repeat(60),
-      }),
+      earn(db, { ...entryDoc, value: 1_000_000, minutes: 1440, name: 'x'.repeat(60) }),
     );
   });
 });

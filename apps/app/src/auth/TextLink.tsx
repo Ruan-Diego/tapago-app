@@ -11,7 +11,7 @@ export function TextLink({ href, label }: { href: Href; label: string }) {
 }
 
 const styles = StyleSheet.create({
-  link: { minHeight: MIN_TOUCH, alignSelf: 'center', paddingVertical: 12 },
+  link: { minHeight: MIN_TOUCH, alignSelf: 'center', paddingVertical: 14 },
   label: {
     fontFamily: fonts.bodySemiBold,
     fontSize: fontSizes.label,

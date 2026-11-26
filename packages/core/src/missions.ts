@@ -1,6 +1,6 @@
 /** Missão do dia: sorteio, troca de atividade arquivada e cumprimento (R17, R18). */
 import { addDays } from './days';
-import type { Activity, Daily, Mission, MissionActivity } from './ledger';
+import { attemptId, type Activity, type Daily, type Mission, type MissionActivity } from './ledger';
 
 /** Quantas atividades cada missão tem. */
 export const MISSION_SIZE = 2;
@@ -127,9 +127,12 @@ interface MissionState {
   counts: Daily['counts'];
 }
 
-/** Id fixo do bônus: o servidor só aceita o primeiro de cada dia. */
-export function missionBonusId(date: string): string {
-  return `mission_${date}`;
+/**
+ * Id fixo do bônus: o servidor só aceita um por dia. Depois de estornado (`reversals` vezes), o
+ * novo pagamento usa o id seguinte.
+ */
+export function missionBonusId(date: string, reversals = 0): string {
+  return attemptId(`mission_${date}`, reversals);
 }
 
 /** O que o app precisa gravar agora sobre a missão de hoje, ou `null`. */

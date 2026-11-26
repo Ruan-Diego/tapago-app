@@ -52,6 +52,9 @@ export const shopItemSchema = z.object({
 export const entryTypeSchema = z.enum(['earn', 'loss', 'purchase', 'use', 'reversal', 'bonus']);
 export type EntryType = z.infer<typeof entryTypeSchema>;
 
+/** O que se pode desfazer: um registro ou um bônus (R8). Compras não. */
+export const reversibleTypeSchema = z.enum(['earn', 'loss', 'bonus']);
+
 export const bonusSourceSchema = z.enum(['habit', 'mission']);
 export type BonusSource = z.infer<typeof bonusSourceSchema>;
 
@@ -69,6 +72,8 @@ export const missionSchema = z.object({
   createdAt: z.date(),
   /** Quando o bônus foi pago; ausente enquanto a missão não é cumprida. */
   completedAt: z.date().optional(),
+  /** Quantas vezes o bônus foi estornado: o próximo pagamento usa um id novo. */
+  reversals: z.number().int().min(0).optional(),
 });
 export type Mission = z.infer<typeof missionSchema>;
 
@@ -79,12 +84,13 @@ export const entrySchema = z
     refId: z.string().min(1),
     name,
     value,
-    /** Zero só no bônus, que não conta como tempo. */
+    /** Zero só no bônus, que não conta como tempo, e no estorno dele. */
     minutes: z.number().int().min(0).max(LIMITS.minutesMax),
     at: z.date(),
     deviceId: z.string().min(1),
-    /** Só em estornos (R8): o lançamento desfeito. */
+    /** Só em estornos (R8): o lançamento desfeito e o tipo dele. */
     reverses: z.string().min(1).optional(),
+    reversedType: reversibleTypeSchema.optional(),
     /** Só em `earn` e `loss`: o valor inicial e o nível que explicam o valor (R14, R15). */
     base: value.optional(),
     level: z.number().int().min(1).optional(),
@@ -95,10 +101,10 @@ export const entrySchema = z
     /** Só no bônus de missão: as atividades que a cumpriram. */
     activities: missionActivities.optional(),
   })
-  .refine((entry) => (entry.type === 'bonus') === (entry.minutes === 0), {
-    path: ['minutes'],
-    message: 'Só o bônus não tem tempo.',
-  })
+  .refine(
+    (entry) => entry.type === 'reversal' || (entry.type === 'bonus') === (entry.minutes === 0),
+    { path: ['minutes'], message: 'Só o bônus não tem tempo.' },
+  )
   .refine((entry) => (entry.type === 'bonus') === (entry.source !== undefined), {
     path: ['source'],
     message: 'Só o bônus tem origem.',
@@ -145,6 +151,8 @@ export const dailySchema = z.object({
   counts: z.record(z.string(), z.number().int()).default({}),
   /** Bônus de hábito pagos no dia, por atividade (`refId` → quantidade). */
   bonuses: z.record(z.string(), z.number().int()).default({}),
+  /** Bônus de hábito estornados no dia, por atividade: definem o id do próximo pagamento. */
+  undone: z.record(z.string(), z.number().int()).default({}),
 });
 
 export type Activity = z.infer<typeof activitySchema> & { id: string };
@@ -156,7 +164,7 @@ export type Session = z.infer<typeof sessionSchema>;
 export type Daily = z.infer<typeof dailySchema>;
 
 /** Campos somáveis do agregado diário. */
-export type DailyTotals = Omit<Daily, 'date' | 'counts' | 'bonuses'>;
+export type DailyTotals = Omit<Daily, 'date' | 'counts' | 'bonuses' | 'undone'>;
 
 export const DAILY_FIELDS = [
   'earned',
@@ -231,6 +239,41 @@ export function missionBonusEntry(
     at,
     deviceId,
   };
+}
+
+/**
+ * O estorno de um registro ou de um bônus (R8): um lançamento novo que copia o desfeito e vale o
+ * inverso. O original nunca é apagado.
+ */
+export function reversalEntry(original: Entry, at: Date, deviceId: string): EntryData {
+  const { type, refId, name, value, minutes, id } = original;
+  if (type !== 'earn' && type !== 'loss' && type !== 'bonus') {
+    throw new Error('Só registros e bônus podem ser desfeitos.');
+  }
+  return {
+    type: 'reversal',
+    reversedType: type,
+    reverses: id,
+    refId,
+    name,
+    value,
+    minutes,
+    at,
+    deviceId,
+  };
+}
+
+/** Id fixo do estorno: o mesmo lançamento não é desfeito duas vezes. */
+export function reversalId(entryId: string): string {
+  return `undo_${entryId}`;
+}
+
+/**
+ * Id de um bônus que pode ser pago de novo depois de estornado: o primeiro é o próprio `base`, os
+ * seguintes ganham o número de estornos já feitos.
+ */
+export function attemptId(base: string, reversals: number): string {
+  return reversals > 0 ? `${base}_${reversals}` : base;
 }
 
 export function entryTypeFor(kind: ActivityKind): 'earn' | 'loss' {

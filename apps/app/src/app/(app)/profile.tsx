@@ -8,6 +8,7 @@ import { save } from '@/ledger/actions';
 import { showToast } from '@/ledger/toast';
 import { Screen } from '@/navigation/Screen';
 import { Avatar } from '@/profile/Avatar';
+import { BalanceCheck } from '@/profile/BalanceCheck';
 import { NotificationPrefs } from '@/profile/NotificationPrefs';
 import { PhotoError, usePhotoPicker } from '@/profile/PhotoButton';
 import { ProfileForm } from '@/profile/ProfileForm';
@@ -83,6 +84,7 @@ export default function Profile() {
         <View style={[styles.column, wide && styles.columnWide]}>
           <ProfileStats dailies={dailies} />
           {uid && profile ? <NotificationPrefs uid={uid} notif={profile.notif} /> : null}
+          {uid ? <BalanceCheck key={uid} uid={uid} /> : null}
           {email ? (
             <Text numberOfLines={1} style={styles.email}>
               Conta: {email}

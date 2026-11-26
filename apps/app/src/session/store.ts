@@ -2,6 +2,8 @@ import type { UserProfile } from '@tapago/core';
 import { authRepository, profileRepository, watchProfile, type AuthUser } from '@tapago/data';
 import { create } from 'zustand';
 
+import { reportError } from '@/platform/crashReports';
+
 interface SessionState {
   status: 'loading' | 'signedOut' | 'signedIn';
   user: AuthUser | null;
@@ -59,7 +61,7 @@ export function startSession(): () => void {
       user,
       (profile) => useSession.setState({ profile, profileError: false }),
       (error) => {
-        console.error('Falha ao ler o perfil.', error);
+        reportError('Falha ao ler o perfil.', error);
         useSession.setState({ profileError: true });
       },
     );

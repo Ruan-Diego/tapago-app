@@ -62,6 +62,19 @@ export const entriesRepository = {
     );
   },
 
+  /**
+   * O livro-caixa inteiro, lido do servidor, para conferir o saldo. `complete` é falso sem
+   * internet ou com algum documento ilegível: a soma não valeria.
+   */
+  async getAll(uid: string): Promise<{ entries: Entry[]; complete: boolean }> {
+    const { docs, fromCache } = await backend.getQuery({
+      path: paths.entries(uid),
+      orderBy: { field: 'at', direction: 'desc' },
+    });
+    const entries = parseDocs(entrySchema, docs);
+    return { entries, complete: !fromCache && entries.length === docs.length };
+  },
+
   /** Lançamentos anteriores a `before`, lidos uma vez. */
   async getOlder(uid: string, before: Date, limit: number): Promise<EntryPage> {
     return toPage(await backend.getQuery(newestFirst(uid, limit, before)), limit);

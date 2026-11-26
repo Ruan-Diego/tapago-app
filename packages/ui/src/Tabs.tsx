@@ -45,6 +45,7 @@ export function Tabs<Value extends string>({ options, value, onChange }: TabsPro
             key={option.value}
             accessibilityRole="tab"
             accessibilityState={{ selected }}
+            aria-selected={selected}
             onPress={() => onChange(option.value)}
             // Antes da primeira medida a gota não existe: o fundo fica no próprio item.
             style={[styles.tab, selected && length === 0 && styles.unmeasured]}

@@ -1,6 +1,14 @@
-import { activitySchema, type Activity, type ActivityValues, type Habit } from '@tapago/core';
+import {
+  activitySchema,
+  type Activity,
+  type ActivityValues,
+  type Entry,
+  type Habit,
+  type UndoPlan,
+} from '@tapago/core';
 
 import { backend } from './backend';
+import { commitEntry, type WrittenEntry } from './commitEntry';
 import { parseDocs } from './parse';
 import type { Unsubscribe } from './types';
 import {
@@ -10,6 +18,8 @@ import {
   paths,
   registerActivityOps,
   resetPenaltyOp,
+  undoBonusOps,
+  undoRegistrationOps,
   updateActivityOp,
   type ActionContext,
 } from './writes';
@@ -44,15 +54,29 @@ export const activitiesRepository = {
     return backend.commit([archiveOp(paths.activities(uid), id)]);
   },
 
-  /** Registrar com 1 toque (ACT-03). */
-  register(context: ActionContext, activity: Activity): Promise<void> {
+  /** Registrar com 1 toque (ACT-03). Devolve também o lançamento, para o desfazer. */
+  register(context: ActionContext, activity: Activity): WrittenEntry {
     const entryId = backend.newId(paths.entries(context.uid));
-    return backend.commit(registerActivityOps(context, activity, entryId));
+    return commitEntry(registerActivityOps(context, activity, entryId));
   },
 
   /** Pagar o bônus do hábito. O servidor recusa se o dia já foi pago (R13). */
-  payHabitBonus(context: ActionContext, activity: Activity & { habit: Habit }): Promise<void> {
-    return backend.commit(habitBonusOps(context, activity));
+  payHabitBonus(
+    context: ActionContext,
+    activity: Activity & { habit: Habit },
+    reversals: number,
+  ): WrittenEntry {
+    return commitEntry(habitBonusOps(context, activity, reversals));
+  },
+
+  /** Desfazer um registro (R8). */
+  undo(context: ActionContext, entry: Entry, plan: UndoPlan): Promise<void> {
+    return backend.commit(undoRegistrationOps(context, entry, plan));
+  },
+
+  /** Estornar um bônus que deixou de valer. */
+  undoBonus(context: ActionContext, bonus: Entry): Promise<void> {
+    return backend.commit(undoBonusOps(context, bonus));
   },
 
   /** Zerar o custo de uma negativa (SEQ-04). */

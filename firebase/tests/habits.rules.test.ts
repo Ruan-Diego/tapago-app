@@ -170,8 +170,28 @@ describe('registrar com sequência e escalada', () => {
   });
 });
 
+/** Liga o hábito em `a1` e, se pedido, já deixa a meta batida no dia. */
+async function seedHabit(counts?: number, day = '2026-11-26') {
+  await env.withSecurityRulesDisabled(async (admin) => {
+    const db = admin.firestore();
+    await updateDoc(doc(db, 'users/ana/activities/a1'), { habit });
+    if (counts === undefined) return;
+    await setDoc(doc(db, `users/ana/daily/${day}`), { date: day, counts: { a1: counts } });
+  });
+}
+
+/** Um bônus escrito à mão, com o saldo junto: só o que muda no documento pode derrubar o lote. */
+function writeBonus(db: Firestore, data: Record<string, unknown>, id = 'habit_a1_2026-11-26') {
+  const batch = writeBatch(db);
+  batch.set(doc(db, `users/ana/entries/${id}`), data);
+  batch.update(doc(db, 'users/ana'), { balance: increment(Number(data.value)) });
+  return batch.commit();
+}
+
 describe('bônus do hábito', () => {
   const habitual = async (db: Firestore) => ({ ...(await activity(db, 'a1')), habit });
+
+  beforeEach(() => seedHabit(3));
 
   it('entra com o saldo e o dia', async () => {
     const db = as('ana');
@@ -205,7 +225,8 @@ describe('bônus do hábito', () => {
       bonuses: { a1: 1 },
     });
 
-    // No dia seguinte sai de novo.
+    // No dia seguinte sai de novo, com a meta batida outra vez.
+    await seedHabit(3, '2026-11-27');
     await assertSucceeds(commit(db, habitBonusOps(tomorrow, await habitual(db))));
   });
 
@@ -218,11 +239,27 @@ describe('bônus do hábito', () => {
     };
     await assertFails(commit(db, habitBonusOps(context, target)));
     await assertFails(commit(db, [resetPenaltyOp('ana', 'n1')]));
-    await assertFails(setDoc(doc(db, bonusPath), bonusDoc));
+    await assertFails(writeBonus(db, bonusDoc));
   });
 
   it('aceita o documento certo', async () => {
-    await assertSucceeds(setDoc(doc(as('ana'), bonusPath), bonusDoc));
+    await assertSucceeds(writeBonus(as('ana'), bonusDoc));
+  });
+
+  it('recusa antes de a meta ser batida', async () => {
+    await seedHabit(2);
+    await assertFails(writeBonus(as('ana'), bonusDoc));
+  });
+
+  it.each([
+    ['outro valor', { value: 6000 }],
+    ['outra meta', { target: 2 }],
+  ])('recusa %s que o da atividade', async (_label, change) => {
+    await assertFails(writeBonus(as('ana'), { ...bonusDoc, ...change }));
+  });
+
+  it('recusa o lançamento sem mexer no saldo', async () => {
+    await assertFails(setDoc(doc(as('ana'), bonusPath), bonusDoc));
   });
 
   it.each([
@@ -237,24 +274,30 @@ describe('bônus do hábito', () => {
     ['estorno junto', { reverses: 'e1' }],
     ['outra atividade no id', { refId: 'n1' }],
   ])('recusa bônus com %s', async (_label, change) => {
-    await assertFails(setDoc(doc(as('ana'), bonusPath), { ...bonusDoc, ...change }));
+    await assertFails(writeBonus(as('ana'), { ...bonusDoc, ...change }));
   });
 
   it.each(['source', 'target', 'refId'])('recusa bônus sem %s', async (field) => {
     const { [field as keyof typeof bonusDoc]: _removed, ...rest } = bonusDoc;
-    await assertFails(setDoc(doc(as('ana'), bonusPath), rest));
+    await assertFails(writeBonus(as('ana'), rest));
   });
 
-  it.each(['n1', 'habit_a1', 'habit_a1_hoje', 'habit_a1_2026-11-26x', 'habit_n1_2026-11-26'])(
-    'recusa bônus com o id %s',
-    async (id) => {
-      await assertFails(setDoc(doc(as('ana'), `users/ana/entries/${id}`), bonusDoc));
-    },
-  );
+  it.each([
+    'n1',
+    'habit_a1',
+    'habit_a1_hoje',
+    'habit_a1_2026-11-26x',
+    'habit_a1_2026-11-26_0',
+    // Segundo pagamento sem o primeiro ter sido estornado.
+    'habit_a1_2026-11-26_1',
+    'habit_n1_2026-11-26',
+  ])('recusa bônus com o id %s', async (id) => {
+    await assertFails(writeBonus(as('ana'), bonusDoc, id));
+  });
 
   it('não é reescrito nem apagado', async () => {
     const db = as('ana');
-    await setDoc(doc(db, bonusPath), bonusDoc);
+    await writeBonus(db, bonusDoc);
     await assertFails(updateDoc(doc(db, bonusPath), { value: 1 }));
     await assertFails(updateDoc(doc(db, bonusPath), { minutes: 1 }));
     await assertFails(deleteDoc(doc(db, bonusPath)));
@@ -262,8 +305,16 @@ describe('bônus do hábito', () => {
 });
 
 describe('lançamentos de registro', () => {
+  const writeEarn = (data: Record<string, unknown>) => {
+    const db = as('ana');
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'users/ana/entries/n9'), data);
+    batch.update(doc(db, 'users/ana'), { balance: increment(5000) });
+    return batch.commit();
+  };
+
   it('aceita sem os campos novos (versão anterior do app)', async () => {
-    await assertSucceeds(setDoc(doc(as('ana'), 'users/ana/entries/n9'), earnDoc));
+    await assertSucceeds(writeEarn(earnDoc));
   });
 
   it.each([
@@ -277,7 +328,7 @@ describe('lançamentos de registro', () => {
     ['origem de bônus', { source: 'habit' }],
     ['meta de bônus', { target: 3 }],
   ])('recusa %s', async (_label, change) => {
-    await assertFails(setDoc(doc(as('ana'), 'users/ana/entries/n9'), { ...earnDoc, ...change }));
+    await assertFails(writeEarn({ ...earnDoc, ...change }));
   });
 });
 

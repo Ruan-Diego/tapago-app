@@ -8,8 +8,10 @@ import {
   isExpired,
   isMissionComplete,
   nextCharge,
+  undoPlan,
   usedMinutes,
   type Activity,
+  type Entry,
   type InventoryItem,
   type Mission,
   type Session,
@@ -24,6 +26,7 @@ import {
 } from '@tapago/data';
 
 import { confirm } from '@/platform/confirm';
+import { reportError } from '@/platform/crashReports';
 import { deviceId } from '@/platform/deviceId';
 import { requestAlertPermission } from '@/platform/notifications';
 import { useSession } from '@/session/store';
@@ -31,6 +34,7 @@ import { buildReceipt, type Receipt } from '@/shop/receipt';
 
 import { useLedger } from './store';
 import { showToast } from './toast';
+import { offerUndo, takeUndo, type PendingUndo } from './undo';
 
 /** Um toque duplo em "Começar" não pode disparar duas escritas antes de a tela atualizar. */
 const START_COOLDOWN_MS = 1000;
@@ -48,7 +52,7 @@ function actionContext(): ActionContext | null {
  */
 export function save(write: Promise<void>) {
   write.catch((error: unknown) => {
-    console.error('Falha ao salvar.', error);
+    reportError('Falha ao salvar.', error);
     showToast('Não foi possível salvar. A mudança foi desfeita.');
   });
 }
@@ -64,28 +68,35 @@ const requestedBonuses = new Set<string>();
  * O pagamento do bônus do hábito, se este registro dá direito a ele (R13), ou `null`.
  * Precisa ser chamado antes de gravar o registro, com o agregado ainda sem ele.
  */
-function habitBonusFor(context: ActionContext, activity: Activity): (() => void) | null {
+function habitBonusFor(context: ActionContext, activity: Activity): (() => Entry) | null {
   const { habit } = activity;
   const { dailies } = useLedger.getState();
   if (!habit || !dailies) return null;
   const today = dayKey(context.at, context.timeZone);
   const daily = dailies.find((candidate) => candidate.date === today);
-  const id = habitBonusId(activity.id, today);
+  const reversals = daily?.undone[activity.id] ?? 0;
+  const id = habitBonusId(activity.id, today, reversals);
   const paid = (daily?.bonuses[activity.id] ?? 0) > 0 || requestedBonuses.has(id);
   if (!earnsHabitBonus(activity, (daily?.counts[activity.id] ?? 0) + 1, paid)) return null;
 
   return () => {
     requestedBonuses.add(id);
-    activitiesRepository.payHabitBonus(context, { ...activity, habit }).catch((error: unknown) => {
+    const { entry, write } = activitiesRepository.payHabitBonus(
+      context,
+      { ...activity, habit },
+      reversals,
+    );
+    write.catch((error: unknown) => {
       // Outro aparelho pode ter pagado antes: a recusa do servidor é esperada.
       if (isDenied(error)) {
         console.warn('O bônus do dia já tinha sido pago.', error);
         return;
       }
       requestedBonuses.delete(id);
-      console.error('Falha ao pagar o bônus.', error);
+      reportError('Falha ao pagar o bônus.', error);
       showToast('Não foi possível salvar o bônus. Ele volta no próximo registro.');
     });
+    return entry;
   };
 }
 
@@ -98,9 +109,13 @@ const requestedMissions = new Set<string>();
 const missionKey = (uid: string, date: string, activities: Mission['activities']) =>
   `${uid}:${date}:${activities.map(({ id }) => id).join(',')}`;
 
+/** Um pagamento por vez que a missão é cumprida: depois de um estorno, vale pedir de novo. */
+const paymentKey = (uid: string, { date, activities, reversals }: Mission) =>
+  `pagar:${missionKey(uid, date, activities)}:${reversals ?? 0}`;
+
 function onMissionRefused(error: unknown) {
   if (isDenied(error)) console.warn('A missão do dia já tinha mudado em outro aparelho.', error);
-  else console.error('Falha ao salvar a missão do dia.', error);
+  else reportError('Falha ao salvar a missão do dia.', error);
 }
 
 /** Gravar a missão sorteada. Vale a primeira gravada no dia, de qualquer aparelho. */
@@ -118,18 +133,19 @@ export function replaceMission(uid: string, mission: Mission, activities: Missio
   missionsRepository.replace(uid, mission.date, activities).catch(onMissionRefused);
 }
 
-/** Pede o pagamento do bônus (R18). `false` se ele já tinha sido pedido. */
-function payMission(context: ActionContext, mission: Mission): boolean {
-  const key = `pagar:${missionKey(context.uid, mission.date, mission.activities)}`;
-  if (requestedMissions.has(key)) return false;
+/** Pede o pagamento do bônus (R18). `null` se ele já tinha sido pedido. */
+function payMission(context: ActionContext, mission: Mission): Entry | null {
+  const key = paymentKey(context.uid, mission);
+  if (requestedMissions.has(key)) return null;
   requestedMissions.add(key);
-  missionsRepository.payBonus(context, mission).catch((error: unknown) => {
+  const { entry, write } = missionsRepository.payBonus(context, mission);
+  write.catch((error: unknown) => {
     onMissionRefused(error);
     if (isDenied(error)) return;
     requestedMissions.delete(key);
     showToast('Não foi possível salvar o bônus da missão.');
   });
-  return true;
+  return entry;
 }
 
 /** A missão cumprida sem um toque agora: registros de antes do sorteio ou de outro aparelho. */
@@ -158,7 +174,7 @@ function missionCompletedBy(context: ActionContext, activity: Activity): Mission
   return isMissionComplete(mission, counts) ? mission : null;
 }
 
-/** Registrar com 1 toque, sem confirmação (ACT-03). */
+/** Registrar com 1 toque, sem confirmação (ACT-03). O erro se corrige com o desfazer (ACT-05). */
 export function registerActivity(tapped: Activity) {
   const context = actionContext();
   if (!context) return;
@@ -168,29 +184,62 @@ export function registerActivity(tapped: Activity) {
   const { value } = nextCharge(activity, dayKey(context.at, context.timeZone));
   const payHabit = habitBonusFor(context, activity);
   const mission = missionCompletedBy(context, activity);
-  save(activitiesRepository.register(context, activity));
+  const { entry, write } = activitiesRepository.register(context, activity);
+  save(write);
   // Cada bônus em um lote separado, depois do registro: se for recusado, o registro fica.
-  payHabit?.();
-  const paidMission = mission !== null && payMission(context, mission);
+  const habitEntry = payHabit?.() ?? null;
+  const missionEntry = mission && payMission(context, mission);
+  const bonuses = [habitEntry, missionEntry].filter((bonus) => bonus !== null);
 
   const positive = activity.kind === 'positive';
-  const habitBonus = payHabit ? (activity.habit?.bonus ?? 0) : 0;
-  const bonus = habitBonus + (paidMission ? MISSION_BONUS : 0);
+  const bonus = bonuses.reduce((sum, paid) => sum + paid.value, 0);
+  let text = `${activity.name} — ${positive ? 'feito.' : 'registrado.'}`;
+  let amount = `${positive ? '+' : '−'}${formatMoney(value)}`;
   if (bonus > 0) {
-    const title = !paidMission
+    const title = !missionEntry
       ? 'Hábito completo!'
-      : habitBonus > 0
+      : habitEntry
         ? 'Hábito e missão do dia completos!'
         : 'Missão cumprida!';
-    showToast(
-      `${title} ${activity.name}: ${formatMoney(value)} + ${formatMoney(bonus)} de bônus.`,
-      `+${formatMoney(value + bonus)}`,
-    );
-    return;
+    text = `${title} ${activity.name}: ${formatMoney(value)} + ${formatMoney(bonus)} de bônus.`;
+    amount = `+${formatMoney(value + bonus)}`;
+  }
+  offerUndo(
+    { entry, previousStreak: activity.streak, bonuses },
+    { text, amount, name: activity.name },
+  );
+}
+
+/**
+ * Desfazer um registro (R8): estorna o lançamento e os bônus que deixaram de valer, e volta a
+ * sequência ou a escalada. Nada é apagado.
+ */
+export function undoRegistration({ id, registration }: PendingUndo) {
+  const context = actionContext();
+  const { activities, dailies, missions } = useLedger.getState();
+  // Sai da fila antes de gravar: um toque duplo não estorna duas vezes.
+  if (!context || !takeUndo(id)) return;
+  const { entry } = registration;
+  const activity = activities?.find((candidate) => candidate.id === entry.refId);
+  if (!activity) return;
+  const date = dayKey(entry.at, context.timeZone);
+  const plan = undoPlan(registration, {
+    activity,
+    daily: dailies?.find((daily) => daily.date === date),
+    mission: missions?.missions.find((mission) => mission.date === date),
+    timeZone: context.timeZone,
+  });
+  save(activitiesRepository.undo(context, entry, plan));
+  for (const bonus of plan.bonuses) {
+    // Se outro aparelho já tinha estornado (ou o pagamento foi recusado), não há o que avisar.
+    activitiesRepository.undoBonus(context, bonus).catch((error: unknown) => {
+      console.warn('O bônus não precisou ser estornado.', error);
+    });
   }
   showToast(
-    `${activity.name} — ${positive ? 'feito.' : 'registrado.'}`,
-    `${positive ? '+' : '−'}${formatMoney(value)}`,
+    plan.bonuses.length > 0
+      ? `${activity.name} — desfeito, com o bônus.`
+      : `${activity.name} — desfeito.`,
   );
 }
 

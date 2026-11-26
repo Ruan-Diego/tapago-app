@@ -97,7 +97,7 @@ Tudo gira em torno de um livro-caixa: cada ação vira um lançamento imutável,
 - **R5 — Um timer por vez.** Com uma sessão ativa, "Usar agora" fica bloqueado; só é possível guardar.
 - **R6 — Encerrar antes não devolve dinheiro.** O tempo registrado é o tempo realmente usado.
 - **R7 — Pausar** congela o tempo restante; retomar recalcula o fim.
-- **R8 — Desfazer.** Um registro pode ser desfeito por 10 s (gera um lançamento de estorno, nunca apaga o original).
+- **R8 — Desfazer.** Um registro, positivo ou negativo, pode ser desfeito por 10 s (gera um lançamento de estorno, nunca apaga o original). O desfazer devolve a sequência da positiva quando o dia fica sem registro, volta um passo na escalada da negativa (a não ser que o custo tenha sido zerado depois) e estorna o bônus de hábito ou de missão que deixou de valer; batida a meta de novo no dia, o bônus volta a ser pago. Compras não se desfazem.
 - **R9 — Tempo de lazer conta no uso**, não na compra. Item guardado não entra nas horas de lazer.
 - **R10 — Arquivar em vez de apagar.** Atividades e itens arquivados somem das listas, mas o histórico continua.
 - **R11 — Meta semanal** = soma dos ganhos de segunda a domingo, no fuso do usuário: registros positivos e bônus.
@@ -252,11 +252,11 @@ Todos os dados de um usuário ficam sob `users/{uid}` no Firestore. O saldo é u
 | `users/{uid}` | `name`, `bio`, `photoURL` (da conta Google, se houver), `balance`, `weeklyGoal`, `timezone`, `notif {end, warn5, weekly}`, `onboardingDone`, `createdAt` | Um por conta |
 | `users/{uid}/activities/{id}` | `name`, `description`, `kind` (`positive` \| `negative`), `value`, `minutes`, `order`, `archived`, `createdAt`; positivas: `habit? {target, bonus}`, `streakStep`, `streak? {days, lastDay}`; negativas: `penaltyCount` | Atividades +/−. Campo ausente vale como sem hábito, aumento R$ 0 e contagem zero |
 | `users/{uid}/shopItems/{id}` | `name`, `value`, `minutes`, `order`, `archived`, `createdAt` | Loja |
-| `users/{uid}/entries/{id}` | `type` (`earn` \| `loss` \| `purchase` \| `use` \| `reversal` \| `bonus`), `refId`, `name`, `value`, `minutes`, `at`, `deviceId`, `reverses?`; em `earn` e `loss`: `base` (valor inicial) e `level` (dia da sequência ou número do registro desde o zeramento); em `bonus`: `source` (`habit` \| `mission`), no de hábito `target` e no de missão `activities` (id e nome das 2) | Livro-caixa, só criação. O bônus tem `minutes = 0`; o de hábito tem o id `habit_{activityId}_{AAAA-MM-DD}` e o de missão, `mission_{AAAA-MM-DD}` |
+| `users/{uid}/entries/{id}` | `type` (`earn` \| `loss` \| `purchase` \| `use` \| `reversal` \| `bonus`), `refId`, `name`, `value`, `minutes`, `at`, `deviceId`; em `reversal`: `reverses` e `reversedType`; em `earn` e `loss`: `base` (valor inicial) e `level` (dia da sequência ou número do registro desde o zeramento); em `bonus`: `source` (`habit` \| `mission`), no de hábito `target` e no de missão `activities` (id e nome das 2) | Livro-caixa, só criação. O bônus tem `minutes = 0`; o de hábito tem o id `habit_{activityId}_{AAAA-MM-DD}` e o de missão, `mission_{AAAA-MM-DD}` (com `_1`, `_2`… quando pago de novo depois de estornado). O estorno tem o id `undo_{lançamento}` |
 | `users/{uid}/inventory/{id}` | `shopItemId`, `name`, `value`, `minutes`, `purchaseEntryId`, `purchasedAt` | Apagado ao começar o uso |
 | `users/{uid}/state/session` | `id`, `status` (`running` \| `paused`), `itemName`, `totalMs`, `startedAt`, `endsAt`, `remainingMs`, `useEntryId`, `originDevice` | No máximo 1 sessão (R5); o `id` evita avisos duplicados no mesmo aparelho |
-| `users/{uid}/daily/{AAAA-MM-DD}` | `date`, `earned`, `lost`, `spent`, `posMin`, `negMin`, `leisureMin`, `posCount`, `negCount`, `buyCount`, `counts` (registros por atividade), `bonuses` (bônus de hábito pagos por atividade) | Agregado diário, alimenta o Histórico. O bônus soma em `earned`, sem contar registro nem tempo |
-| `users/{uid}/missions/{AAAA-MM-DD}` | `date`, `activities` (2 × `{id, name}`), `bonus`, `createdAt`, `completedAt?` | Missão do dia (R17). A primeira gravada vale para todos os aparelhos; nunca é apagada |
+| `users/{uid}/daily/{AAAA-MM-DD}` | `date`, `earned`, `lost`, `spent`, `posMin`, `negMin`, `leisureMin`, `posCount`, `negCount`, `buyCount`, `counts` (registros por atividade), `bonuses` (bônus de hábito pagos por atividade), `undone` (bônus de hábito estornados por atividade) | Agregado diário, alimenta o Histórico. O bônus soma em `earned`, sem contar registro nem tempo |
+| `users/{uid}/missions/{AAAA-MM-DD}` | `date`, `activities` (2 × `{id, name}`), `bonus`, `createdAt`, `completedAt?`, `reversals?` (estornos do bônus) | Missão do dia (R17). A primeira gravada vale para todos os aparelhos; nunca é apagada |
 | `users/{uid}/avatar/current` | `data` (JPEG em base64, ≤ 150 KB), `updatedAt` | Foto de perfil, em documento separado para não pesar nas leituras do usuário |
 
 **Como cada ação escreve (um `writeBatch` por ação)**
@@ -269,33 +269,22 @@ Todos os dados de um usuário ficam sob `users/{uid}` no Firestore. O saldo é u
 - **Comprar e guardar:** cria `entries` (`purchase`) + `balance − value` + cria `inventory`.
 - **Comprar e usar agora / começar do inventário:** cria `entries` (`use`) + grava `state/session` (+ `purchase` e saldo, se for compra).
 - **Encerrar sessão:** atualiza `minutes` do lançamento `use` para o tempo real + apaga `state/session` + `leisureMin` em `daily`.
-- **Desfazer:** cria `entries` (`reversal`, `reverses: <id>`) com o valor inverso + corrige saldo e `daily`.
+- **Desfazer:** cria `entries/undo_{id}` (`reversal`, com o mesmo valor, que conta ao contrário) + corrige saldo e `daily` + `streak` ou `penaltyCount` na atividade. Cada bônus estornado vai em um lote próprio; o da missão também apaga `completedAt` e soma 1 em `reversals`.
+- **Conferir o saldo:** pelo Perfil, o app soma todos os lançamentos e, se o saldo divergir, corrige a diferença com a confirmação do usuário.
 
 **Regras de segurança (resumo)**
 
 - Leitura e escrita só quando `request.auth.uid == uid`.
 - `entries` aceita só `create`; `update` apenas no campo `minutes` de lançamentos `use`; nunca `delete`.
-- Ao criar um lançamento, a regra confere com `getAfter()` que o saldo do usuário mudou exatamente pelo valor do lançamento, e que `value` confere com a atividade ou o item referenciado (`get()` em `refId`): nas atividades, o valor calculado por R14 e R15; nos bônus, o do hábito ou o da missão. Essa conferência entra na F4.
+- Ao criar um lançamento, a regra confere com `getAfter()` que o saldo do usuário mudou exatamente pelo valor do lançamento (por isso cada lote tem um só lançamento que mexe no saldo), e que `value` confere com a atividade ou o item referenciado (`get()` em `refId`): nas atividades, o valor calculado por R14 e R15; nos bônus, o do hábito ou o da missão, com os registros do dia que o justificam; no estorno, o do lançamento desfeito.
+- O documento do usuário aceita mudar o saldo sem lançamento: é o que a conferência do saldo usa.
 - `purchase` só é aceito se o saldo depois da compra for ≥ 0 (R3).
 - Campos validados por tipo e faixa: `value` inteiro entre 1 e 1.000.000 centavos, `minutes` entre 1 e 1.440 (0 no bônus), `name` com 1–60 caracteres, meta do hábito entre 1 e 20.
 - O bônus só é aceito com os campos dele e com o id fixo do dia: gravar o mesmo id de novo é alterar um lançamento, o que é negado.
 - A missão tem sempre bônus de R$ 100 e nunca é apagada: só se troca o par enquanto não foi cumprida, ou se grava `completedAt` junto com o lançamento do bônus. O bônus de missão precisa repetir as atividades da missão.
 - `avatar/current` só para o próprio usuário, com `data` limitado a ~200 mil caracteres.
 
-```
-match /users/{uid}/entries/{id} {
-  allow read: if isOwner(uid);
-  allow create: if isOwner(uid)
-    && validEntry(request.resource.data)
-    && getAfter(/databases/$(database)/documents/users/$(uid)).data.balance
-       == get(/databases/$(database)/documents/users/$(uid)).data.balance
-          + signedValue(request.resource.data);
-  allow update: if isOwner(uid) && isUseMinutesOnly();
-  allow delete: if false;
-}
-```
-
-Com dinheiro fictício, as regras protegem sobretudo contra erro de programação, não contra ataque. A validação de saldo com `getAfter()` pode ficar para a F4 se atrasar o MVP; o essencial desde o início é o acesso só ao próprio `uid`, o que mantém os dados isolados mesmo com o cadastro aberto.
+As regras completas estão em [`firestore.rules`](../firebase/firestore.rules). Com dinheiro fictício, elas protegem sobretudo contra erro de programação, não contra ataque; o essencial é o acesso só ao próprio `uid`, que mantém os dados isolados mesmo com o cadastro aberto.
 
 ## Timer e notificações
 
@@ -316,6 +305,8 @@ O timer é guardado como horário de fim, não como contagem, então o tempo res
 | Sem internet | Notificação local já agendada continua valendo | Aviso só com a aba aberta |
 | Sessão começada em outro aparelho | Avisa se o app foi aberto pelo menos uma vez depois do início | Avisa se a aba estiver aberta |
 | Tela de bloqueio | Notificação fixa — fase F5 | — |
+
+**Limitação aceita (F4).** Como o servidor confere o preço, um registro ou uma compra feitos sem internet são recusados se, antes de sincronizar, outro aparelho mudar o valor da atividade ou do item, zerar o custo de uma negativa que ficaria acima do próximo nível, ou gastar o saldo da compra. O app avisa e desfaz a mudança local.
 
 **Limitação aceita (F6).** Dois aparelhos sem internet podem pagar ou cobrar o mesmo nível de sequência ou de escalada, e o que sincronizar por último define a sequência salva. O bônus de hábito e o da missão não se repetem.
 

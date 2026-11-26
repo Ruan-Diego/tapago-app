@@ -68,6 +68,14 @@ pnpm test
 pnpm test:rules
 ```
 
+## Ícones
+
+Os ícones e a abertura ficam em `apps/app/assets/`. Para gerar de novo (só no Windows):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File apps/app/scripts/icons.ps1
+```
+
 ## Distribuir
 
 APK na própria máquina (precisa de `ANDROID_HOME`). Sai na raiz do repositório, para celulares `arm64`:

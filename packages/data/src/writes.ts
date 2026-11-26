@@ -16,8 +16,12 @@ import {
   newSession,
   nextCharge,
   nextStreak,
+  reversalEntry,
+  reversalId,
+  signedValue,
   type Activity,
   type ActivityValues,
+  type Entry,
   type EntryData,
   type EntrySource,
   type Habit,
@@ -28,6 +32,7 @@ import {
   type SessionChange,
   type ShopItem,
   type ShopItemValues,
+  type UndoPlan,
   type UserProfile,
 } from '@tapago/core';
 
@@ -55,21 +60,32 @@ export interface ActionContext {
   timeZone: string;
 }
 
+/**
+ * O agregado do dia de um lançamento. O estorno corrige o dia do lançamento desfeito
+ * (`reversed`), mesmo que seja feito depois da meia-noite.
+ */
 function dailyOp(
   { uid, at, timeZone }: ActionContext,
   entry: EntryData,
-  countRef?: string,
+  reversed?: Entry,
 ): WriteOp {
-  const date = dayKey(at, timeZone);
-  const delta = dailyDelta(entry);
+  const date = dayKey(reversed?.at ?? at, timeZone);
+  const delta = dailyDelta(entry, reversed);
   const data: DocData = { date };
   for (const field of DAILY_FIELDS) {
     const amount = delta[field];
     if (amount) data[field] = new Increment(amount);
   }
-  if (countRef) data.counts = { [countRef]: new Increment(1) };
+  const source = reversed ?? entry;
+  const step = reversed ? -1 : 1;
+  if (source.type === 'earn' || source.type === 'loss') {
+    data.counts = { [source.refId]: new Increment(step) };
+  }
   // Só o de hábito: é como o app sabe que o dia daquela atividade já foi pago.
-  if (entry.source === 'habit') data.bonuses = { [entry.refId]: new Increment(1) };
+  if (source.source === 'habit') {
+    data.bonuses = { [source.refId]: new Increment(step) };
+    if (reversed) data.undone = { [source.refId]: new Increment(1) };
+  }
   return { kind: 'merge', path: `${paths.daily(uid)}/${date}`, data };
 }
 
@@ -98,7 +114,7 @@ export function registerActivityOps(
       path: paths.user(uid),
       data: { balance: new Increment(positive ? value : -value) },
     },
-    dailyOp(context, entry, activity.id),
+    dailyOp(context, entry),
     {
       kind: 'update',
       path: `${paths.activities(uid)}/${activity.id}`,
@@ -122,6 +138,8 @@ function bonusTime({ at, timeZone }: ActionContext): Date {
 export function habitBonusOps(
   context: ActionContext,
   activity: Activity & { habit: Habit },
+  /** Quantas vezes o bônus do dia foi estornado. */
+  reversals = 0,
 ): WriteOp[] {
   const { uid, at, deviceId, timeZone } = context;
   const date = dayKey(at, timeZone);
@@ -130,7 +148,7 @@ export function habitBonusOps(
   return [
     {
       kind: 'set',
-      path: `${paths.entries(uid)}/${habitBonusId(activity.id, date)}`,
+      path: `${paths.entries(uid)}/${habitBonusId(activity.id, date, reversals)}`,
       data: { ...entry },
     },
     { kind: 'update', path: paths.user(uid), data: { balance: new Increment(entry.value) } },
@@ -175,13 +193,73 @@ export function missionBonusOps(context: ActionContext, mission: Mission): Write
   return [
     {
       kind: 'set',
-      path: `${paths.entries(uid)}/${missionBonusId(mission.date)}`,
+      path: `${paths.entries(uid)}/${missionBonusId(mission.date, mission.reversals)}`,
       data: { ...entry },
     },
     { kind: 'update', path: paths.user(uid), data: { balance: new Increment(entry.value) } },
     dailyOp({ ...context, at }, entry),
     { kind: 'update', path: `${paths.missions(uid)}/${mission.date}`, data: { completedAt: at } },
   ];
+}
+
+/** Lançamento de estorno + saldo + agregado do dia (R8). */
+function reversalOps(context: ActionContext, original: Entry): WriteOp[] {
+  const { uid, at, deviceId } = context;
+  const entry = reversalEntry(original, at, deviceId);
+  return [
+    {
+      kind: 'set',
+      path: `${paths.entries(uid)}/${reversalId(original.id)}`,
+      data: { ...entry },
+    },
+    {
+      kind: 'update',
+      path: paths.user(uid),
+      data: { balance: new Increment(signedValue(entry, original)) },
+    },
+    dailyOp(context, entry, original),
+  ];
+}
+
+/** Desfazer um registro: o estorno e a volta da sequência ou da escalada. */
+export function undoRegistrationOps(
+  context: ActionContext,
+  original: Entry,
+  { streak, revertPenalty }: Pick<UndoPlan, 'streak' | 'revertPenalty'>,
+): WriteOp[] {
+  const ops = reversalOps(context, original);
+  const data: DocData = {};
+  if (streak !== undefined) data.streak = streak ?? new DeleteField();
+  if (revertPenalty) data.penaltyCount = new Increment(-1);
+  if (Object.keys(data).length > 0) {
+    const path = `${paths.activities(context.uid)}/${original.refId}`;
+    ops.push({ kind: 'update', path, data });
+  }
+  return ops;
+}
+
+/**
+ * Estornar um bônus que deixou de valer, em lote próprio (cada lote muda o saldo por um único
+ * lançamento). O da missão também a reabre, para o bônus poder ser pago de novo.
+ */
+export function undoBonusOps(context: ActionContext, bonus: Entry): WriteOp[] {
+  const ops = reversalOps(context, bonus);
+  if (bonus.source === 'mission') {
+    ops.push({
+      kind: 'update',
+      path: `${paths.missions(context.uid)}/${bonus.refId}`,
+      data: { completedAt: new DeleteField(), reversals: new Increment(1) },
+    });
+  }
+  return ops;
+}
+
+/**
+ * Corrigir o saldo pela diferença para a soma dos lançamentos. Com `increment`, um lançamento que
+ * chegue no meio não se perde.
+ */
+export function fixBalanceOp(uid: string, difference: number): WriteOp {
+  return { kind: 'update', path: paths.user(uid), data: { balance: new Increment(difference) } };
 }
 
 /** Zerar o custo de uma negativa: o próximo registro volta ao valor inicial (SEQ-04). */

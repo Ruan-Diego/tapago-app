@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   detail: { fontFamily: fonts.body, fontSize: fontSizes.caption, color: colors.graphite },
   stepper: { flexDirection: 'row', alignItems: 'center' },
   step: {
-    width: 40,
+    width: MIN_TOUCH,
     height: MIN_TOUCH,
     borderRadius: radii.sm,
     alignItems: 'center',

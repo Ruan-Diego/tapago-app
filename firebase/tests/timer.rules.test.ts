@@ -77,6 +77,9 @@ beforeEach(async () => {
   await env.withSecurityRulesDisabled(async (admin) => {
     const db = admin.firestore();
     await setDoc(doc(db, 'users/ana'), { name: 'ana', balance: 10000 });
+    // A compra confere o preço no item.
+    const { id: itemId, ...itemDoc } = item;
+    await setDoc(doc(db, `users/ana/shopItems/${itemId}`), itemDoc);
     await setDoc(doc(db, `users/ana/inventory/${storedId}`), storedDoc);
   });
 });

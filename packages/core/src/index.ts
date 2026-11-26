@@ -13,4 +13,5 @@ export * from './onboarding';
 export * from './photo';
 export * from './session';
 export * from './stats';
+export * from './undo';
 export * from './user';

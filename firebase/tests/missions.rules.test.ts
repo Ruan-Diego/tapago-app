@@ -77,6 +77,11 @@ beforeEach(async () => {
       for (const id of ['a1', 'a2']) {
         await setDoc(doc(db, `users/${uid}/activities/${id}`), activityDoc);
       }
+      // As atividades dos pares já registradas no dia: é o que o bônus exige.
+      await setDoc(doc(db, `users/${uid}/daily/${date}`), {
+        date,
+        counts: { a1: 1, a2: 1, a3: 1 },
+      });
     }
   });
 });
@@ -240,6 +245,25 @@ describe('bônus da missão', () => {
     await create(db);
     await assertFails(commit(db, missionBonusOps(context, { ...mission, activities: otherPair })));
     expect(await read(db, 'users/ana')).toMatchObject({ balance: 0 });
+  });
+
+  it.each([
+    ['nenhum registro', {}],
+    ['só uma das atividades', { a1: 2 }],
+  ])('recusa com %s no dia', async (_label, counts) => {
+    await env.withSecurityRulesDisabled(async (admin) => {
+      await setDoc(doc(admin.firestore(), `users/ana/daily/${date}`), { date, counts });
+    });
+    const db = as('ana');
+    await create(db);
+    await assertFails(commit(db, missionBonusOps(context, mission)));
+  });
+
+  it('recusa o lote sem o saldo', async () => {
+    const db = as('ana');
+    await create(db);
+    const ops = missionBonusOps(context, mission).filter((op) => op.path !== 'users/ana');
+    await assertFails(commit(db, ops));
   });
 
   it('recusa sem a missão gravada', async () => {
