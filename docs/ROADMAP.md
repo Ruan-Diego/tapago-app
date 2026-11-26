@@ -537,7 +537,7 @@ As decisões de produto já foram tomadas (ver [aba 0](#0-decisões-fechadas)). 
 
 | ID | Quando | Ação | Onde | Feito |
 | --- | --- | --- | --- | --- |
-| HUM-10 | Antes | Ativar o **Crashlytics** no projeto (grátis no Spark) | Console → Crashlytics | [ ] |
+| HUM-10 | Antes | Ativar o **Crashlytics** no projeto (grátis no Spark) | Console → Crashlytics | [x] |
 | HUM-11 | Antes | Entregar a lista de ajustes do uso real (F1–F3) e revisar preços juntos | Arquivo `docs/feedback.md` ou chat | [ ] |
 | HUM-12 | Depois | Acompanhar 1 mês de uso diário sem travar | Uso real | [ ] |
 
@@ -669,7 +669,7 @@ Atualizado pelo agente no início e no fim de cada fase.
 - F8: conferida na web contra o emulador, só no navegador embutido (Chromium). O bundle Android compila, mas o APK não foi gerado nem testado em aparelho.
 - HUM-17: instalar um APK novo nos 2 celulares; testar o desfoque, o arraste da barra e da folha, a fluidez (60 quadros) e o "reduzir movimento"; conferir a web no Chrome, Safari e Edge; aprovar ou listar ajustes.
 - F4: publicar regras e web juntas (a web nova depende das regras novas para o desfazer) e instalar um APK novo nos 2 celulares (a versão antiga não entende o estorno). Foi testada na web contra o emulador, não em um Android.
-- HUM-10: ativar o Crashlytics no console e conferir se um erro do APK novo aparece.
+- HUM-10: Crashlytics ativo (conferido no console em 26/11/2026: chegou uma falha do app 0.1.0 em um emulador). Falta conferir se um erro tratado de um APK da F4 aparece como evento não fatal.
 - HUM-11: a lista de ajustes do uso real não foi entregue; o item "Ajustes da lista de feedback" segue aberto.
 - F4: conferir no console do Firebase o consumo de leituras e escritas contra as cotas.
 - HUM-12: 1 mês de uso diário sem travar.
