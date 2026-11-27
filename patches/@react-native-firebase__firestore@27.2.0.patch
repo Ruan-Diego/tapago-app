@@ -1,0 +1,20 @@
+diff --git a/android/src/reactnative/java/io/invertase/firebase/firestore/ReactNativeFirebaseFirestoreSerialize.java b/android/src/reactnative/java/io/invertase/firebase/firestore/ReactNativeFirebaseFirestoreSerialize.java
+index c036e0a..8238dc4 100644
+--- a/android/src/reactnative/java/io/invertase/firebase/firestore/ReactNativeFirebaseFirestoreSerialize.java
++++ b/android/src/reactnative/java/io/invertase/firebase/firestore/ReactNativeFirebaseFirestoreSerialize.java
+@@ -544,7 +544,14 @@ public class ReactNativeFirebaseFirestoreSerialize {
+         }
+ 
+         if (Objects.requireNonNull(fieldValueType).equals("increment")) {
+-          return FieldValue.increment(fieldValueArray.getDouble(1));
++          // JS numbers arrive as doubles. Incrementing an integer field by a double stores a
++          // double, which breaks `is int` security rules. Send safe integers as longs, like
++          // the web SDK does.
++          double amount = fieldValueArray.getDouble(1);
++          if (amount == Math.rint(amount) && Math.abs(amount) <= 9007199254740991d) {
++            return FieldValue.increment((long) amount);
++          }
++          return FieldValue.increment(amount);
+         }
+ 
+         if (Objects.requireNonNull(fieldValueType).equals("delete")) {

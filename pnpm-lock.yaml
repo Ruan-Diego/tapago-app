@@ -181,6 +181,9 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+patchedDependencies:
+  '@react-native-firebase/firestore@27.2.0': 8e48075dce5fa35a450e1f8fcea1d79ed6242c50bc9272879bba7bbbbf76be22
+
 importers:
 
   .:
@@ -232,7 +235,7 @@ importers:
         version: 27.2.0(91c308d0285f4463d4a45fd6d0426049)
       '@react-native-firebase/firestore':
         specifier: 27.2.0
-        version: 27.2.0(4805006df80413cd3eb9fc0f49aabd67)
+        version: 27.2.0(patch_hash=8e48075dce5fa35a450e1f8fcea1d79ed6242c50bc9272879bba7bbbbf76be22)(4805006df80413cd3eb9fc0f49aabd67)
       '@react-native-google-signin/google-signin':
         specifier: ^17.0.0
         version: 17.0.0(@expo/dom-webview@58.0.2)(@expo/log-box@58.0.15)(@expo/metro-runtime@58.0.17)(expo-router@58.0.32)(expo@58.0.26)(react-native-worklets@0.13.0(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)(supports-color@8.1.1))(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)
@@ -381,7 +384,7 @@ importers:
         version: 27.2.0(91c308d0285f4463d4a45fd6d0426049)
       '@react-native-firebase/firestore':
         specifier: 27.2.0
-        version: 27.2.0(4805006df80413cd3eb9fc0f49aabd67)
+        version: 27.2.0(patch_hash=8e48075dce5fa35a450e1f8fcea1d79ed6242c50bc9272879bba7bbbbf76be22)(4805006df80413cd3eb9fc0f49aabd67)
       '@react-native-google-signin/google-signin':
         specifier: ^17.0.0
         version: 17.0.0(@expo/dom-webview@58.0.2)(@expo/log-box@58.0.15)(@expo/metro-runtime@58.0.17)(expo-router@58.0.32)(expo@58.0.26)(react-native-worklets@0.13.0(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)(supports-color@8.1.1))(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)
@@ -9261,7 +9264,7 @@ snapshots:
       - expo-router
       - react-native-worklets
 
-  '@react-native-firebase/firestore@27.2.0(4805006df80413cd3eb9fc0f49aabd67)':
+  '@react-native-firebase/firestore@27.2.0(patch_hash=8e48075dce5fa35a450e1f8fcea1d79ed6242c50bc9272879bba7bbbbf76be22)(4805006df80413cd3eb9fc0f49aabd67)':
     dependencies:
       '@react-native-firebase/app': 27.2.0(@expo/dom-webview@58.0.2)(@expo/log-box@58.0.15)(@expo/metro-runtime@58.0.17)(@types/react@19.3.0)(expo-router@58.0.32)(expo@58.0.26)(react-native-worklets@0.13.0(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)(supports-color@8.1.1))(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))(react@19.3.0)(supports-color@8.1.1)
       react-native-url-polyfill: 4.0.0(react-native@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(@react-native/metro-config@0.88.1(@babel/core@7.29.13(supports-color@8.1.1))(supports-color@8.1.1))(@types/react@19.3.0)(react@19.3.0)(supports-color@8.1.1))

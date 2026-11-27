@@ -303,11 +303,20 @@ export function startFromInventory(item: InventoryItem) {
   save(timerRepository.startStored(context, item));
 }
 
-/** A sessão atual e o contexto da ação, ou `null` se não houver timer. */
+/**
+ * A sessão que está sendo guardada. Guardar lê o lançamento `use` antes de gravar, e no celular
+ * essa leitura vai à rede: enquanto ela não volta, o botão continua na tela. Sem esta trava, um
+ * segundo toque (ou Encerrar, ou Pausar) gravava por cima, as regras recusavam o segundo lote e o
+ * app mostrava "A mudança foi desfeita".
+ */
+let stashing: string | null = null;
+
+/** A sessão atual e o contexto da ação, ou `null` sem timer ou com a sessão sendo guardada. */
 function currentTimer() {
   const context = actionContext();
   const session = useLedger.getState().timer?.session;
-  return context && session ? { context, session } : null;
+  if (!context || !session || session.id === stashing) return null;
+  return { context, session };
 }
 
 export function pauseTimer() {
@@ -342,12 +351,16 @@ export async function stashTimer() {
   const current = currentTimer();
   if (!current) return;
   const { context, session } = current;
+  stashing = session.id;
+  let done = false;
   try {
     const stashed = await timerRepository.stash(context, session);
     if (!stashed) {
       showToast('Não foi possível guardar o resto. Tente encerrar ou de novo em instantes.');
       return;
     }
+    // A trava fica: a sessão sai do cache logo em seguida, e o id dela não volta a ser usado.
+    done = true;
     save(stashed.write);
     showToast(
       `${session.itemName} — resto guardado no inventário.`,
@@ -356,6 +369,8 @@ export async function stashTimer() {
   } catch (error) {
     reportError('Falha ao guardar o resto do timer.', error);
     showToast('Não foi possível guardar o resto. Tente de novo.');
+  } finally {
+    if (!done) stashing = null;
   }
 }
 

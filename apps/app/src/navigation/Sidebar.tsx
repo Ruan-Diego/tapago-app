@@ -12,7 +12,7 @@ import {
 } from '@tapago/ui';
 import type { BottomTabBarProps } from 'expo-router/js-tabs';
 import { useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { Avatar } from '@/profile/Avatar';
@@ -62,8 +62,10 @@ export function Sidebar(props: BottomTabBarProps) {
   return (
     <View style={styles.aside}>
       {/* Luz atrás do vidro: sem nada por trás, o desfoque não aparece. */}
-      <View style={[styles.glow, styles.glowTop]} />
-      <View style={[styles.glow, styles.glowBottom]} />
+      <View style={styles.glows}>
+        <View style={[styles.glow, styles.glowTop]} />
+        <View style={[styles.glow, styles.glowBottom]} />
+      </View>
       <Glass style={styles.panel}>
         <View style={styles.logo}>
           <Logo size={26} />
@@ -135,6 +137,23 @@ const styles = StyleSheet.create({
     backgroundColor: colors.paper,
     overflow: 'hidden',
   },
+  // A borda direita encosta no conteúdo: a luz some aos poucos antes dela, em vez de ser cortada
+  // em linha reta pelo fundo da tela.
+  glows: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    left: 0,
+    pointerEvents: 'none',
+    ...Platform.select({
+      web: {
+        maskImage: 'linear-gradient(to right, #000 calc(100% - 72px), transparent)',
+        WebkitMaskImage: 'linear-gradient(to right, #000 calc(100% - 72px), transparent)',
+      } as ViewStyle,
+      default: {},
+    }),
+  },
   glow: {
     position: 'absolute',
     width: 220,
@@ -146,7 +165,7 @@ const styles = StyleSheet.create({
     }),
   },
   glowTop: { top: -40, left: -50, backgroundColor: colors.accent },
-  glowBottom: { bottom: 40, right: -90, backgroundColor: colors.leisure },
+  glowBottom: { bottom: 40, left: 40, backgroundColor: colors.leisure },
   panel: {
     flex: 1,
     borderRadius: radii.xxl,

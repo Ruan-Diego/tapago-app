@@ -23,3 +23,8 @@ allowBuilds:
   protobufjs: false
   # Dependência opcional do firebase-tools; sem ela, o Hosting local usa o RegExp do Node.
   re2: false
+
+# No Android, o SDK nativo soma `increment()` como double: o saldo e os totais do dia viravam
+# decimais e as regras (`is int`) recusavam toda escrita do celular. O patch soma inteiros como long.
+patchedDependencies:
+  '@react-native-firebase/firestore@27.2.0': patches/@react-native-firebase__firestore@27.2.0.patch

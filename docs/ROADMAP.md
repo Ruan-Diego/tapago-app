@@ -670,6 +670,7 @@ Atualizado pelo agente no início e no fim de cada fase.
 - F5 · Tokens novos para os papéis que eram duplos: `surfaceInk`/`onSurfaceInk` (cartão de saldo, timer, botão primário, seleções), `onAccent` (texto sobre o verde), `inkTrack`, `hover` e `toggleOn` (no escuro, o interruptor ligado é verde). Botão ganhou a variante `accent`. Contraste ≥ 4,5:1 coberto por teste nos dois temas, inclusive o vidro (véu escuro, pior caso com branco atrás).
 - F5 · `userInterfaceStyle: 'automatic'` no `app.config.ts`, para o Android informar o tema do sistema: exige o APK novo (num APK antigo, "Sistema" vira sempre claro). O fundo da janela do Android segue o tema (`expo-system-ui`).
 - F5 · Teste de regras confirmou que um lote de 400 exclusões, cada uma conferindo a marca com `get()`, passa no emulador (as leituras repetidas do mesmo documento contam uma vez).
+- Correção (uso real no Android, 26/11/2026): toda escrita do celular com soma (registrar atividade, comprar, encerrar, guardar o resto) era desfeita. O React Native Firebase manda o `increment()` ao Android como double, e um inteiro somado a um double vira double, que as regras (`is int`) recusam. Corrigido com um patch no SDK (`patches/`, via `patchedDependencies` do pnpm) que soma inteiros como long, igual ao SDK da web. Exige APK novo. Ao atualizar o `@react-native-firebase/firestore`, refazer ou conferir o patch.
 
 **Pendências humanas em aberto**
 
